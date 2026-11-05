@@ -1,0 +1,45 @@
+name: Report an entry
+description: Flag a listed repo that's spam, dangerous, dead or in the wrong place.
+title: "Report: "
+labels: ["report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Spotted something on the list that shouldn't be there? Tell us which repo and why. A maintainer reads every report.
+  - type: input
+    id: entry
+    attributes:
+      label: Entry
+      description: The listed repo, as a GitHub link or owner/name.
+      placeholder: https://github.com/owner/name
+    validations:
+      required: true
+  - type: dropdown
+    id: reason
+    attributes:
+      label: Reason
+      options:
+        - Spam or SEO
+        - Malicious (malware, phishing, stolen code)
+        - Dead or abandoned
+        - Replaced by something better
+        - Wrong category
+        - Something else
+    validations:
+      required: true
+  - type: input
+    id: superseded_by
+    attributes:
+      label: Replaced by (owner/name)
+      description: Only if you picked "Replaced by something better".
+      placeholder: owner/name
+    validations:
+      required: false
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Anything that helps us check it. A few sentences is plenty.
+    validations:
+      required: false

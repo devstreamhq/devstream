@@ -1,0 +1,231 @@
+name: Reports
+
+on:
+  issues:
+    types: [opened]
+  # The sweeper re-runs reports whose run was dropped from the concurrency queue.
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: Issue number of the report
+        required: true
+        type: string
+
+permissions: {}
+
+# Shared with submit.yml and rot.yml: one run at a time edits entries.json, and each PR merges before the next starts.
+concurrency:
+  group: list-writes
+  cancel-in-progress: false
+
+jobs:
+  decide:
+    # The bot opens report issues itself for Like bursts; those are left for a maintainer.
+    if: >-
+      github.event_name == 'workflow_dispatch' || (
+      contains(github.event.issue.labels.*.name, 'report') &&
+      github.event.issue.user.type != 'Bot' &&
+      github.event.issue.user.login != 'devstreamhq-bot[bot]')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      has: ${{ steps.result.outputs.has }}
+      hide: ${{ steps.result.outputs.hide }}
+    steps:
+      - uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      # Org block reads need an App token; GITHUB_TOKEN can't see them. actions: write dispatches rot.yml.
+      - id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-organization-user-blocking: read
+          permission-issues: read
+          permission-actions: write
+      # An API failure exits non-zero with no result file, so nothing is acted on.
+      # A dispatched issue that is already handled, or a bot's issue, exits 0 with no result file.
+      - env:
+          GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+          EXCLUDED_USERS: ${{ vars.EXCLUDED_USERS }}
+          ISSUE_INPUT: ${{ inputs.issue }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            python -m scripts.reports decide --issue "$ISSUE_INPUT" --out result.json
+          else
+            python -m scripts.reports decide --event "$GITHUB_EVENT_PATH" --out result.json
+          fi
+      # A failed dispatch fails the run before any comment, so the sweeper tries again.
+      - if: hashFiles('result.json') != ''
+        env:
+          GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+        run: python -m scripts.reports dispatch --result result.json
+      - if: hashFiles('result.json') != ''
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: result
+          path: result.json
+          retention-days: 7
+      - id: result
+        if: hashFiles('result.json') != ''
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          r = json.load(open("result.json"))
+          print("has=" + ("true" if r["actions"] else "false"))
+          print("hide=" + ("true" if any(a["kind"] == "hide" for a in r["actions"]) else "false"))
+          PY
+
+  hide:
+    needs: decide
+    if: needs.decide.outputs.hide == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: audit
+      - id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+      # Separate token so the one that can push never carries issues: write.
+      - id: issues_token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-issues: write
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          token: ${{ steps.token.outputs.token }}
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: result
+          path: ${{ runner.temp }}/result
+      # The repo came from entries.json; the regexes here keep the values safe to use in shell.
+      - id: meta
+        env:
+          RESULT: ${{ runner.temp }}/result/result.json
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os, re
+          r = json.load(open(os.environ["RESULT"]))
+          repo = next(a["value"] for a in r["actions"] if a["kind"] == "hide")
+          issue = r["issue"]
+          assert re.fullmatch(r"[A-Za-z0-9-]+/[A-Za-z0-9._-]+", repo), repo
+          assert type(issue) is int and issue > 0, issue
+          print(f"repo={repo}")
+          print(f"issue={issue}")
+          PY
+      # Prints the branch name, or nothing when fresh main already has the entry hidden.
+      - id: apply
+        env:
+          RESULT: ${{ runner.temp }}/result/result.json
+        run: |
+          branch=$(python -m scripts.reports apply --result "$RESULT")
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+      - id: pr
+        if: steps.apply.outputs.branch != ''
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          RESULT: ${{ runner.temp }}/result/result.json
+          REPO_NAME: ${{ steps.meta.outputs.repo }}
+          ISSUE: ${{ steps.meta.outputs.issue }}
+          BRANCH: ${{ steps.apply.outputs.branch }}
+        run: |
+          branch="$BRANCH"
+          subject="chore(list): hide $REPO_NAME pending review"
+          git switch -c "$branch"
+          git add data/entries.json
+          git -c user.name='devstreamhq-bot[bot]' \
+            -c user.email='353074438+devstreamhq-bot[bot]@users.noreply.github.com' \
+            commit -m "$subject"
+          git push origin "$branch"
+          python -m scripts.reports pr-body --result "$RESULT" > "$RUNNER_TEMP/pr-body.md"
+          url=$(gh pr create --base main --head "$branch" --title "$subject" --body-file "$RUNNER_TEMP/pr-body.md")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          # An explicit body stops GitHub adding its Co-authored-by trailer to the squash commit.
+          gh pr merge "$url" --auto --squash --subject "$subject" --body "Reported in #$ISSUE."
+      # Holding the concurrency lock until the merge lands keeps the next writer off a stale entries.json.
+      - if: steps.apply.outputs.branch != ''
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          PR_URL: ${{ steps.pr.outputs.url }}
+        run: |
+          for _ in $(seq 45); do
+            [ "$(gh pr view "$PR_URL" --json state --jq .state)" = MERGED ] && exit 0
+            sleep 20
+          done
+          # Closing also disarms auto-merge, so it can't land later behind our backs.
+          # It may have merged in the meantime, so look once more.
+          gh pr close "$PR_URL" || true  # fails if it merged meanwhile; the check below decides
+          [ "$(gh pr view "$PR_URL" --json state --jq .state)" = MERGED ] && exit 0
+          echo "::error::$PR_URL did not merge within 15 minutes and is now closed"
+          exit 1
+      # Only now is "hidden" true, so the comment waits for the merge.
+      - env:
+          GITHUB_TOKEN: ${{ steps.issues_token.outputs.token }}
+          RESULT: ${{ runner.temp }}/result/result.json
+        run: python -m scripts.reports issue --result "$RESULT"
+      # A genuine failure (apply error, push, PR, merge timeout) is parked for a maintainer:
+      # needs-review stops the sweeper retrying it. The issue stays open.
+      - if: failure() && steps.issues_token.outputs.token != '' && steps.meta.outputs.issue != ''
+        env:
+          GITHUB_TOKEN: ${{ steps.issues_token.outputs.token }}
+          RESULT: ${{ runner.temp }}/result/result.json
+        run: python -m scripts.reports issue --result "$RESULT" --error
+
+  respond:
+    needs: decide
+    if: needs.decide.outputs.has == 'true' && needs.decide.outputs.hide != 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: result
+          path: ${{ runner.temp }}/result
+      - id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-issues: write
+      - env:
+          GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+          RESULT: ${{ runner.temp }}/result/result.json
+        run: python -m scripts.reports issue --result "$RESULT"
+      - if: failure() && steps.token.outputs.token != ''
+        env:
+          GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+          RESULT: ${{ runner.temp }}/result/result.json
+        run: python -m scripts.reports issue --result "$RESULT" --error

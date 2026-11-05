@@ -1,1 +1,17 @@
-{ "version": 1, "entries": [] }
+{
+  "version": 1,
+  "entries": [
+    {
+      "repo": "cli/cli",
+      "category": "developer-tools",
+      "description": "GitHub on the command line, so you can open PRs and issues without leaving your terminal.",
+      "submitted_by": "jamesconwaydev",
+      "submitted_at": "2026-11-05T21:49:31Z",
+      "issue": 8,
+      "status": "live",
+      "warned_at": null,
+      "superseded_by": null,
+      "added_by_seed": false
+    }
+  ]
+}

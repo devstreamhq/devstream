@@ -20,6 +20,18 @@ class Status:
         self.code = code
 
 
+class GraphQLErrors:
+    """GraphQL route value for a response carrying errors next to data.
+
+    Raises GitHubError like the real client, unless allow_not_found is set
+    and every error is NOT_FOUND; then the data comes back with its nulls.
+    """
+
+    def __init__(self, data: dict, errors: list[dict]):
+        self.data = data
+        self.errors = errors
+
+
 class FakeGitHub:
     """In-memory stand-in for GitHub, same public methods.
 
@@ -116,5 +128,10 @@ class FakeGitHub:
         for key in ([f"GRAPHQL {m.group(1)}"] if m else []) + ["GRAPHQL"]:
             if key in self.routes:
                 v = self.routes[key]
-                return v(variables) if callable(v) else v
+                v = v(variables) if callable(v) else v
+                if isinstance(v, GraphQLErrors):
+                    if not (allow_not_found and all(e.get("type") == "NOT_FOUND" for e in v.errors)):
+                        raise GitHubError(200, str(v.errors))
+                    return v.data
+                return v
         raise GitHubError(404, "no graphql route")

@@ -6,12 +6,13 @@ from datetime import datetime, timedelta, timezone
 from scripts.devstream.gh import GitHubError
 from scripts.devstream.likes import count_likes, detect_burst, rank_entries
 from scripts.sync_likes import run
-from scripts.tests.fake_gh import FakeGitHub
+from scripts.tests.fake_gh import FakeGitHub, GraphQLErrors
 
 NOW = datetime(2026, 11, 5, 12, 0, tzinfo=timezone.utc)
 API = "/repos/devstreamhq/devstream"
 OLD = "2020-01-01T00:00:00Z"  # an established account
 NEW = "2026-10-30T00:00:00Z"  # 6 days old: untrusted and under 90 days
+MID = "2026-09-06T00:00:00Z"  # 60 days old: trusted but under 90 days
 TODAY = "2026-11-05"
 WEEK_AGO = "2026-10-29"
 
@@ -46,7 +47,7 @@ class World:
         self.cursors = None  # set to a constant to simulate a stuck cursor
         users = dict(users or {})
         for nodes in discussions.values():
-            for n in nodes:
+            for n in nodes or []:
                 if n["user"]:
                     users.setdefault(n["user"]["login"], n["user"]["createdAt"])
         routes = {
@@ -69,10 +70,15 @@ class World:
         self.gh = FakeGitHub(routes)
 
     def _reactors(self, v):
-        repo = {}
+        repo, errors = {}, []
         i = 0
         while f"n{i}" in v:
             nodes = self.by_number[v[f"n{i}"]]
+            if nodes is None:  # a deleted Discussion
+                repo[f"d{i}"] = None
+                errors.append({"type": "NOT_FOUND", "path": ["repository", f"d{i}"]})
+                i += 1
+                continue
             start = 0 if self.cursors or i else int(v.get("cursor") or 0)
             chunk = nodes[start:start + self.page]
             more = start + self.page < len(nodes)
@@ -80,20 +86,22 @@ class World:
             repo[f"d{i}"] = {"reactions": {
                 "nodes": chunk, "pageInfo": {"hasNextPage": more, "endCursor": cursor if more else None}}}
             i += 1
-        return {"repository": repo}
+        return GraphQLErrors({"repository": repo}, errors) if errors else {"repository": repo}
 
     def _meta(self, v):
-        out = {}
+        out, errors = {}, []
         i = 0
         while f"o{i}" in v:
             key = f"{v[f'o{i}']}/{v[f'n{i}']}"
             stars = self.stars.get(key, 0)
+            if stars is None:
+                errors.append({"type": "NOT_FOUND", "path": [f"r{i}"]})
             out[f"r{i}"] = None if stars is None else {
                 "nameWithOwner": key, "stargazerCount": stars,
                 "primaryLanguage": {"name": "Go", "color": "#00ADD8"},
                 "pushedAt": "2026-11-01T00:00:00Z", "owner": {"avatarUrl": "https://a/x.png"}}
             i += 1
-        return out
+        return GraphQLErrors(out, errors) if errors else out
 
     def run(self, excluded=frozenset()):
         run(self.gh, self.entries, NOW, excluded)
@@ -115,13 +123,18 @@ def normalize(r):
     return r.lower()
 
 
-def burst_nodes(n, young, prefix="u"):
-    return [node(f"{prefix}{i}", NEW if i < young else OLD, RECENT) for i in range(n)]
+def burst_nodes(n, young, prefix="u", created=MID, reacted=RECENT):
+    return [node(f"{prefix}{i}", created if i < young else OLD, reacted) for i in range(n)]
+
+
+def titles(w):
+    return [i["title"] for i in w.issues_opened()]
 
 
 class Counting(unittest.TestCase):
     def test_untrusted_not_counted(self):
         self.assertEqual(count_likes(["a", "b", "c"], lambda u: u != "b"), 2)
+        self.assertEqual(count_likes(["a", "A", "a"], lambda u: True), 1)
         w = World([entry("o/a")], {"o/a": [node("old1"), node("new1", NEW)]})
         w.run()
         self.assertEqual(w.written("likes.json")["o/a"]["likes"], 1)
@@ -175,6 +188,21 @@ class Counting(unittest.TestCase):
         self.assertEqual(w.puts(), [])
         self.assertEqual(w.issues_opened(), [])
 
+    def test_deleted_discussion_carries_previous_count(self):
+        prev = {"o/b": {"likes": 7, "delta_7d": 0, "rank": 1, "rank_delta_7d": 0, "flagged": False}}
+        w = World([entry("o/a"), entry("o/b")], {"o/a": [node("x")], "o/b": None},
+                  stats={"likes.json": prev})
+        with self.assertLogs(level="WARNING") as logs:
+            w.run()
+        self.assertEqual(w.written("likes.json")["o/b"]["likes"], 7)
+        self.assertIn("Discussion 2", " ".join(logs.output))
+
+    def test_all_discussions_deleted_aborts(self):
+        w = World([entry("o/a"), entry("o/b")], {"o/a": None, "o/b": None})
+        with self.assertRaises(GitHubError):
+            w.run()
+        self.assertEqual(w.puts(), [])
+
     def test_entry_without_discussion_has_zero(self):
         w = World([entry("o/a"), entry("o/new")], {"o/a": [node("alice")]})
         w.run()
@@ -206,12 +234,97 @@ class Burst(unittest.TestCase):
         w.run()
         self.assertFalse(w.written("likes.json")["o/a"]["flagged"])
 
-    def test_burst_counts_untrusted_reactors(self):
+    def test_untrusted_young_reactors_do_not_flag(self):
+        w = World([entry("o/a")], {"o/a": burst_nodes(10, 10, created=NEW)})
+        w.run()
+        self.assertFalse(w.written("likes.json")["o/a"]["flagged"])
+        self.assertEqual(w.issues_opened(), [])
+
+    def test_trusted_young_burst_flags(self):
         w = World([entry("o/a")], {"o/a": burst_nodes(10, 10)})
         w.run()
         self.assertEqual(w.written("likes.json")["o/a"], {
-            "likes": 0, "delta_7d": 0, "rank": 1, "rank_delta_7d": 0, "flagged": True})
-        self.assertEqual(len(w.issues_opened()), 1)
+            "likes": 10, "delta_7d": 0, "rank": 1, "rank_delta_7d": 0, "flagged": True})
+        self.assertEqual(titles(w), ["Like burst: o/a"])
+
+    def test_excluded_reactors_do_not_flag(self):
+        w = World([entry("o/a")], {"o/a": burst_nodes(10, 10)})
+        w.run(excluded={"u0", "u1"})
+        self.assertFalse(w.written("likes.json")["o/a"]["flagged"])
+
+    def test_age_boundary_89_vs_90_days(self):
+        d89 = iso(NOW - timedelta(days=89, hours=23))
+        d90 = iso(NOW - timedelta(days=90))
+        w = World([entry("o/a")], {"o/a": burst_nodes(5, 5) + burst_nodes(5, 5, "v", created=d89)})
+        w.run()
+        self.assertTrue(w.written("likes.json")["o/a"]["flagged"])
+        w = World([entry("o/a")], {"o/a": burst_nodes(5, 5) + burst_nodes(5, 5, "v", created=d90)})
+        w.run()
+        self.assertFalse(w.written("likes.json")["o/a"]["flagged"])
+        self.assertTrue(detect_burst([(f"u{i}", NOW) for i in range(10)], {f"u{i}": 89 for i in range(10)}))
+        self.assertFalse(detect_burst([(f"u{i}", NOW) for i in range(10)], {f"u{i}": 90 for i in range(10)}))
+
+    def test_reaction_exactly_24h_old_counts(self):
+        edge = iso(NOW - timedelta(hours=24))
+        past = iso(NOW - timedelta(hours=24, seconds=1))
+        w = World([entry("o/a")], {"o/a": burst_nodes(9, 9) + burst_nodes(1, 1, "v", reacted=edge)})
+        w.run()
+        self.assertTrue(w.written("likes.json")["o/a"]["flagged"])
+        w = World([entry("o/a")], {"o/a": burst_nodes(9, 9) + burst_nodes(1, 1, "v", reacted=past)})
+        w.run()
+        self.assertFalse(w.written("likes.json")["o/a"]["flagged"])
+
+    def test_six_bursts_give_five_issues_and_one_aggregate(self):
+        repos = {f"o/r{j}": burst_nodes(10, 10, prefix="zqx") for j in range(6)}
+        w = World([entry(r) for r in repos], repos)
+        w.run()
+        self.assertEqual(titles(w), [f"Like burst: o/r{j}" for j in range(5)] + ["Like burst: 1 entry"])
+        agg = w.issues_opened()[-1]
+        self.assertIn("o/r5", agg["body"])
+        self.assertNotIn("zqx", agg["body"])
+        self.assertNotIn("@", agg["body"])
+        self.assertEqual(sorted(agg["labels"]), ["needs-review", "report"])
+        self.assertTrue(all(v["flagged"] for v in w.written("likes.json").values()))
+
+    def test_aggregate_deduped_by_open_aggregate(self):
+        repos = {f"o/r{j}": burst_nodes(10, 10) for j in range(7)}
+        agg = {"number": 4, "title": "Like burst: 3 entries", "labels": [{"name": "report"}]}
+        w = World([entry(r) for r in repos], repos, issues=[agg])
+        w.run()
+        self.assertEqual(titles(w), [f"Like burst: o/r{j}" for j in range(5)])
+
+    def test_drip_opens_review_issue_without_flag(self):
+        days = [iso(NOW - timedelta(days=2 + i % 4)) for i in range(30)]
+        nodes = [node(f"u{i}", MID if i < 16 else OLD, days[i]) for i in range(30)]
+        w = World([entry("o/a")], {"o/a": nodes})
+        w.run()
+        self.assertFalse(w.written("likes.json")["o/a"]["flagged"])
+        [issue] = w.issues_opened()
+        self.assertEqual(issue["title"], "Like drip: o/a")
+        self.assertIn("needs-review", issue["labels"])
+        self.assertNotIn("u1", issue["body"])
+
+    def test_drip_counts_toward_cap(self):
+        days = [iso(NOW - timedelta(days=2 + i % 4)) for i in range(30)]
+        repos = {f"o/r{j}": burst_nodes(10, 10) for j in range(5)}
+        repos["o/z"] = [node(f"d{i}", MID, days[i]) for i in range(30)]
+        w = World([entry(r) for r in repos], repos)
+        w.run()
+        self.assertEqual(titles(w)[-1], "Like burst: 1 entry")
+        self.assertIn("o/z", w.issues_opened()[-1]["body"])
+        self.assertNotIn("Like drip: o/z", titles(w))
+
+    def test_flag_persists_while_issue_open(self):
+        open_issue = {"number": 5, "title": "Like burst: o/a", "labels": [{"name": "report"}]}
+        w = World([entry("o/a")], {"o/a": [node("x")]}, issues=[open_issue])
+        w.run()
+        self.assertTrue(w.written("likes.json")["o/a"]["flagged"])
+
+    def test_flag_clears_when_issue_closed(self):
+        prev = {"o/a": {"likes": 1, "delta_7d": 0, "rank": 1, "rank_delta_7d": 0, "flagged": True}}
+        w = World([entry("o/a")], {"o/a": [node("x")]}, stats={"likes.json": prev})
+        w.run()
+        self.assertFalse(w.written("likes.json")["o/a"]["flagged"])
 
     def test_burst_report_has_no_logins(self):
         w = World([entry("Owner/Tool")], {"Owner/Tool": burst_nodes(12, 8, prefix="zqx")})
@@ -232,12 +345,6 @@ class Burst(unittest.TestCase):
         listing = [c for c in w.gh.calls if c[0] == "GET" and c[1].startswith(f"{API}/issues")]
         self.assertIn("labels=report", listing[0][1])
         self.assertIn("state=open", listing[0][1])
-
-    def test_no_second_report_while_still_flagged(self):
-        prev = {"o/a": {"likes": 0, "delta_7d": 0, "rank": 1, "rank_delta_7d": 0, "flagged": True}}
-        w = World([entry("o/a")], {"o/a": burst_nodes(10, 10)}, stats={"likes.json": prev})
-        w.run()
-        self.assertEqual(w.issues_opened(), [])
 
     def test_flagged_status_keeps_rank(self):
         w = World([entry("o/a", "flagged"), entry("o/b"), entry("o/h", "hidden")],

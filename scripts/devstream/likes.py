@@ -6,6 +6,7 @@ from typing import Callable
 from scripts.devstream.gh import GitHubError
 
 BURST_MIN = 10
+DRIP_MIN = 30
 YOUNG_DAYS = 90
 REACTOR_BATCH = 20
 META_BATCH = 50
@@ -18,13 +19,22 @@ _META = "nameWithOwner stargazerCount primaryLanguage { name color } pushedAt ow
 
 
 def count_likes(reactors: list[str], trusted: Callable[[str], bool]) -> int:
-    return sum(1 for r in reactors if trusted(r))
+    # GitHub logins are case-insensitive, so "A" and "a" are one account.
+    return sum(1 for r in {r.lower(): r for r in reactors}.values() if trusted(r))
+
+
+def young_count(reactions: list[tuple[str, datetime]], ages: dict[str, int]) -> int:
+    # A missing age counts as young: an attacker gains nothing by hiding it.
+    return sum(1 for login, _ in reactions if ages.get(login, 0) < YOUNG_DAYS)
 
 
 def detect_burst(today: list[tuple[str, datetime]], ages: dict[str, int]) -> bool:
-    # A missing age counts as young: an attacker gains nothing by hiding it.
-    young = sum(1 for login, _ in today if ages.get(login, 0) < YOUNG_DAYS)
-    return len(today) >= BURST_MIN and young * 2 > len(today)
+    return len(today) >= BURST_MIN and young_count(today, ages) * 2 > len(today)
+
+
+def detect_drip(week: list[tuple[str, datetime]], ages: dict[str, int]) -> bool:
+    """The slow version of a burst: spread over 7 days to stay under the 24-hour bar."""
+    return len(week) >= DRIP_MIN and young_count(week, ages) * 2 > len(week)
 
 
 def rank_entries(likes: dict[str, int], stars: dict[str, int]) -> dict[str, int]:
@@ -42,8 +52,8 @@ def _reactor_query(n: int, paged: bool) -> str:
     )
 
 
-def fetch_reactors(gh, numbers: list[int]) -> dict[int, list[dict]]:
-    """Every 👍 node per Discussion number. A deleted Discussion has none."""
+def fetch_reactors(gh, numbers: list[int]) -> dict[int, list[dict] | None]:
+    """Every 👍 node per Discussion number; None for a Discussion that no longer exists."""
     out = {}
     for i in range(0, len(numbers), REACTOR_BATCH):
         chunk = numbers[i:i + REACTOR_BATCH]
@@ -52,7 +62,7 @@ def fetch_reactors(gh, numbers: list[int]) -> dict[int, list[dict]]:
         for j, n in enumerate(chunk):
             d = repo[f"d{j}"]
             if d is None:
-                out[n] = []
+                out[n] = None
                 continue
             page, nodes, seen = d["reactions"], [], set()
             nodes += page["nodes"]
@@ -65,6 +75,9 @@ def fetch_reactors(gh, numbers: list[int]) -> dict[int, list[dict]]:
                 page = d["reactions"]
                 nodes += page["nodes"]
             out[n] = nodes
+    if out and all(v is None for v in out.values()):
+        # Every thread gone at once is a wrong token or repo, not deletions.
+        raise GitHubError(404, "none of the entry Discussions were found")
     return out
 
 

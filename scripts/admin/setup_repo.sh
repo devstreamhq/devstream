@@ -22,6 +22,11 @@ gh api -X PUT "repos/$REPO/topics" \
 
 gh api -X PUT "repos/$REPO/private-vulnerability-reporting" >/dev/null
 
+# Issue forms silently drop labels that don't exist, which would stop submit.yml firing.
+gh label create submission -R "$REPO" --color 0e8a16 --description "Repo submission" --force >/dev/null
+gh label create accepted -R "$REPO" --color 1d76db --description "Submission accepted" --force >/dev/null
+gh label create rejected -R "$REPO" --color b60205 --description "Submission rejected" --force >/dev/null
+
 RULESET=$(cat <<'J'
 {
   "name": "main-protection",
@@ -40,6 +45,17 @@ RULESET=$(cat <<'J'
         "require_code_owner_review": false,
         "require_last_push_approval": false,
         "required_review_thread_resolution": false
+      }
+    },
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "strict_required_status_checks_policy": false,
+        "required_status_checks": [
+          { "context": "validate", "integration_id": 15368 },
+          { "context": "test", "integration_id": 15368 },
+          { "context": "lint", "integration_id": 15368 }
+        ]
       }
     },
     { "type": "required_linear_history" },

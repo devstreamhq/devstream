@@ -28,6 +28,29 @@ class DescriptionTest(unittest.TestCase):
         bad("   short   ")
         ok("  " + "word " * 20 + "  ")
 
+    def test_trailing_punctuation_cannot_shrink_below_minimum(self):
+        bad("Toolkit!!!")
+        bad("Toolkit?!")
+        bad("Tool.......")
+
+    def test_output_is_a_fixed_point(self):
+        # validate() re-runs the filter on stored text, so cleaning must be idempotent.
+        inputs = [
+            "Toolkit!!!", "Toolkit?!", "Toolkit!!!!", "Small tool?!", "Nice tool!!!", "Great CLI tool?!?!",
+            "Tool.......", "Ends with a comma,", "Ends with colons::", "Semicolon end;", "Just right.",
+            "  lots   of    spaces   here  ", "A fast file watcher for Node.js projects.",
+            "Fast \U0001f680\U0001f680 tool for builds", "Love it \u2764\ufe0f\u2764\ufe0f really a lot",
+            "Zero\u200bwidth tool for people", "\uff26ullwidth letters tool here", "x" * 138 + "!!",
+            "y" * 139, "z" * 140, "w" * 139 + ".", "v" * 141, "short", "abcdefghi!", "abcdefghij!",
+            "Mixed ending?.!", "Tabs\tand\nnewlines in it", "Dots... in the middle... end...",
+            "Questions? Yes, answered here?", "Ending with spaces and bang !  ",
+        ]
+        self.assertGreaterEqual(len(inputs), 30)
+        for x in inputs:
+            f, reason = clean(x)
+            if reason is None:
+                self.assertEqual(clean(f), (f, None), repr(x))
+
     def test_urls_rejected(self):
         for t in (
             "See https://example.org for details",

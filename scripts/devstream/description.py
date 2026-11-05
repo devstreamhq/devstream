@@ -79,9 +79,9 @@ def clean_description(text: str) -> tuple[str | None, str | None]:
         return None, "Descriptions can't have more than 2 emoji in a row."
     t = " ".join(VARIATION.sub("", t).split())
     final = t.rstrip("!?,;: ").rstrip(".") + "."
-    # The limit covers the finished text, so a 140-character input with no
-    # period is rejected rather than stored at 141.
-    if len(final) > MAX_LEN or len(t) < MIN_LEN:
+    # Both limits cover the finished text: a 140-character input with no period
+    # would be stored at 141, and "Toolkit!!!" shrinks to an 8-character "Toolkit.".
+    if not MIN_LEN <= len(final) <= MAX_LEN:
         return None, f"Descriptions need to be between {MIN_LEN} and {MAX_LEN} characters."
     if _mixed_script(t):
         return None, "Please use one alphabet per word."

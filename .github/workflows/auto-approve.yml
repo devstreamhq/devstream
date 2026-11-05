@@ -1,0 +1,50 @@
+name: Auto-approve
+
+# pull_request_target so GITHUB_TOKEN may approve. This workflow must never
+# check out or run anything from the pull request.
+on:
+  pull_request_target:
+    # opened only: a later push to the branch must never be re-approved.
+    types: [opened]
+
+permissions: {}
+
+jobs:
+  approve:
+    if: >-
+      github.event.pull_request.user.login == 'devstreamhq-bot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: audit
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          files=$(gh pr diff "$PR" --name-only)
+          if [ "$files" != "data/entries.json" ]; then
+            echo "::error::Only data/entries.json may change, got: $files"
+            exit 1
+          fi
+          # Exactly one commit, the one this event saw, authored by the App.
+          commits=$(gh api "repos/$GH_REPO/pulls/$PR/commits" --jq '"\(length) \(.[0].sha) \(.[0].author.login)"')
+          if [ "$commits" != "1 $HEAD_SHA devstreamhq-bot[bot]" ]; then
+            echo "::error::Expected one bot commit $HEAD_SHA, got: $commits"
+            exit 1
+          fi
+          # The checked commit's own diff, so a push between checks can't slip in other files.
+          own=$(gh api "repos/$GH_REPO/commits/$HEAD_SHA" --jq '[.files[].filename] | join(",")')
+          if [ "$own" != "data/entries.json" ]; then
+            echo "::error::Commit $HEAD_SHA changes: $own"
+            exit 1
+          fi
+          # The review is pinned to the checked sha. A later push is covered by
+          # dismiss_stale_reviews_on_push plus the opened-only trigger, not by this call.
+          gh api -X POST "repos/$GH_REPO/pulls/$PR/reviews" -f event=APPROVE -f commit_id="$HEAD_SHA" >/dev/null

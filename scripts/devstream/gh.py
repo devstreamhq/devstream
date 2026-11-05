@@ -147,6 +147,9 @@ class GitHub:
     def put(self, path, body):
         return self._write("PUT", path, body)
 
+    def delete(self, path):
+        return self._write("DELETE", path, None)
+
     def graphql(self, query: str, variables: dict) -> dict:
         self.last_redirect = None
         r = self._request("POST", "/graphql", body={"query": query, "variables": variables})

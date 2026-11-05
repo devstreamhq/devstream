@@ -35,7 +35,7 @@ class FakeGitHub:
     .status(path) returns the code of a Status route, 200 for any other
     routed value, and 404 for a missing route.
 
-    Only .get returns None on a missing route; post, patch and put raise
+    Only .get returns None on a missing route; post, patch, put and delete raise
     GitHubError(404). A route whose value is None answers a write like a
     204. paginate yields nothing for a missing route (the real client does
     the same for a 404 on the first page; the fake has a single page).
@@ -105,6 +105,9 @@ class FakeGitHub:
 
     def put(self, path, body):
         return self._write("PUT", path, body)
+
+    def delete(self, path):
+        return self._write("DELETE", path, None)
 
     def graphql(self, query: str, variables: dict) -> dict:
         self.last_redirect = None

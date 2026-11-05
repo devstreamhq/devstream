@@ -1,6 +1,6 @@
 name: Sweep submissions
 
-# The submit concurrency group keeps only one pending run, so bursts drop
+# The list-writes concurrency group keeps only one pending run, so bursts drop
 # runs. This re-dispatches any submission left undecided and clears branches
 # from applies that died before opening a PR.
 on:

@@ -43,17 +43,20 @@ def _sweep_branches(gh, now) -> set[int]:
     return live
 
 
-def _submit_run_waiting(gh) -> bool:
-    runs = f"{API}/actions/workflows/submit.yml/runs"
-    return any(gh.get(f"{runs}?status={s}")["total_count"] > 0 for s in ("queued", "pending"))
+def _list_write_waiting(gh) -> bool:
+    # submit.yml and rot.yml share the list-writes group, which holds one waiting run.
+    return any(
+        gh.get(f"{API}/actions/workflows/{wf}/runs?status={s}")["total_count"] > 0
+        for wf in ("submit.yml", "rot.yml") for s in ("queued", "pending")
+    )
 
 
 def sweep(gh, now: datetime) -> None:
     # Branches first, so an issue freed by a deleted branch can be dispatched this run.
     busy = _sweep_branches(gh, now)
-    # The submit group keeps one pending run and cancels older ones, so never queue behind a waiting run.
-    if _submit_run_waiting(gh):
-        print("a submit run is already waiting")
+    # The list-writes group keeps one pending run and cancels older ones, so never queue behind a waiting run.
+    if _list_write_waiting(gh):
+        print("a list-writes run is already waiting")
         return
     todo = []
     for issue in gh.paginate(f"{API}/issues?state=open&labels=submission&per_page=100"):

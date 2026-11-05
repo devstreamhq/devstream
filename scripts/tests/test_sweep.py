@@ -12,6 +12,8 @@ REFS = f"GET {API}/git/matching-refs/heads/submit/"
 DISPATCH = f"POST {API}/actions/workflows/submit.yml/dispatches"
 QUEUED = f"GET {API}/actions/workflows/submit.yml/runs?status=queued"
 PENDING = f"GET {API}/actions/workflows/submit.yml/runs?status=pending"
+ROT_QUEUED = f"GET {API}/actions/workflows/rot.yml/runs?status=queued"
+ROT_PENDING = f"GET {API}/actions/workflows/rot.yml/runs?status=pending"
 
 
 def iso(d):
@@ -30,6 +32,7 @@ def gh(issues=(), refs=(), routes=None):
     r = {
         ISSUES: list(issues), REFS: list(refs), DISPATCH: None, f"DELETE {API}/git/refs/heads/submit/9": None,
         QUEUED: {"total_count": 0}, PENDING: {"total_count": 0},
+        ROT_QUEUED: {"total_count": 0}, ROT_PENDING: {"total_count": 0},
     }
     r.update(routes or {})
     return FakeGitHub(r)
@@ -79,6 +82,13 @@ class SweepTest(unittest.TestCase):
 
     def test_no_dispatch_while_a_submit_run_waits(self):
         for key in (QUEUED, PENDING):
+            g = gh([issue(1)], routes={key: {"total_count": 1}})
+            sweep(g, NOW)
+            self.assertEqual(dispatched(g), [], key)
+
+    def test_no_dispatch_while_a_rot_run_waits(self):
+        # Both share the list-writes group, so a new dispatch would cancel the waiting rot run.
+        for key in (ROT_QUEUED, ROT_PENDING):
             g = gh([issue(1)], routes={key: {"total_count": 1}})
             sweep(g, NOW)
             self.assertEqual(dispatched(g), [], key)

@@ -13,9 +13,9 @@ on:
 
 permissions: {}
 
-# One at a time, so each accepted entry merges before the next one edits entries.json.
+# Shared with rot.yml: one run at a time edits entries.json, and each PR merges before the next starts.
 concurrency:
-  group: submit
+  group: list-writes
   cancel-in-progress: false
 
 jobs:

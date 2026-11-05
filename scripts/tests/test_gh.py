@@ -117,6 +117,11 @@ class H(BaseHTTPRequestHandler):
         if body["variables"].get("rl"):
             hdr = [("x-ratelimit-reset", str(LONG))] if body["variables"]["rl"] == 1 else []
             self._send(200, {"errors": [{"type": "RATE_LIMITED", "message": "x"}]}, hdr)
+        elif body["variables"].get("nf"):
+            errs = [{"type": "NOT_FOUND", "path": ["r0"]}]
+            if body["variables"]["nf"] == 2:
+                errs.append({"type": "FORBIDDEN"})
+            self._send(200, {"data": {"r0": None}, "errors": errs})
         elif body["variables"].get("bad"):
             self._send(200, {"errors": [{"message": "x"}]})
         else:
@@ -195,6 +200,13 @@ class GitHubTest(unittest.TestCase):
         self.assertEqual(self.gh.graphql("query Q { viewer }", {}), {"viewer": 1})
         with self.assertRaises(GitHubError):
             self.gh.graphql("query Q { viewer }", {"bad": 1})
+
+    def test_graphql_allow_not_found(self):
+        self.assertEqual(self.gh.graphql("query Q { x }", {"nf": 1}, allow_not_found=True), {"r0": None})
+        with self.assertRaises(GitHubError):
+            self.gh.graphql("query Q { x }", {"nf": 1})
+        with self.assertRaises(GitHubError):
+            self.gh.graphql("query Q { x }", {"nf": 2}, allow_not_found=True)
 
     def test_write_success(self):
         for m in ("post", "patch", "put"):

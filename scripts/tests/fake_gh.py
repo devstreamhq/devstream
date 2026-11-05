@@ -109,7 +109,7 @@ class FakeGitHub:
     def delete(self, path):
         return self._write("DELETE", path, None)
 
-    def graphql(self, query: str, variables: dict) -> dict:
+    def graphql(self, query: str, variables: dict, allow_not_found: bool = False) -> dict:
         self.last_redirect = None
         m = re.search(r"\b(?:query|mutation)\s+(\w+)", query)
         self.calls.append(("GRAPHQL", m.group(1) if m else "", variables))

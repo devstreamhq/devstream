@@ -1,6 +1,7 @@
 """JSON files on the bot-only `stats` branch, read and written through the contents API."""
 
 import base64
+import copy
 import json
 
 from scripts.devstream.gh import GitHubError
@@ -33,3 +34,18 @@ def write_json(gh, path, data, sha, message) -> None:
     if sha:
         body["sha"] = sha
     gh.put(f"{API}/contents/{path}", body)
+
+
+def update_json(gh, path, mutate, message) -> None:
+    """Read, mutate(data) -> new data, write. On a 409 (another writer got there first) re-read and retry once."""
+    for attempt in (1, 2):
+        data, sha = read_json(gh, path)
+        new = mutate(copy.deepcopy(data) if data is not None else {})
+        if new == (data or {}):
+            return
+        try:
+            write_json(gh, path, new, sha, message)
+            return
+        except GitHubError as e:
+            if e.status != 409 or attempt == 2:
+                raise

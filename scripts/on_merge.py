@@ -19,7 +19,9 @@ def run(gh, entries, sleep=time.sleep):
     before = dict(mapping)
     repo_id, category_id = likes_category(gh)
     # A failed stats write leaves threads the mapping doesn't know; adopt them, never re-create.
-    mapping.update(list_discussions(gh, category_id))
+    # setdefault: a stored mapping always wins, so a thread retitled onto a listed name can't take it over.
+    for k, v in list_discussions(gh, category_id).items():
+        mapping.setdefault(k, v)
     todo = {}
     for e in entries:
         if e["status"] in VISIBLE and normalize_repo(e["repo"]) not in mapping:

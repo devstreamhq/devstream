@@ -55,6 +55,7 @@ class EntriesTest(unittest.TestCase):
         self.assertEqual(validate([]), [])
         self.assertTrue(validate([make(status="bogus")]))
         self.assertTrue(validate([make("bad repo")]))
+        self.assertTrue(validate([make("alice/tool\n")]))
         self.assertTrue(validate([make(submitted_at="2026-11-05")]))
         self.assertTrue(validate([make(issue=True)]))
         e = make()

@@ -12,7 +12,7 @@ from scripts.devstream.entries import (
     sort_key,
 )
 
-REPO_RE = re.compile(r"^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$")
+REPO_RE = re.compile(r"[A-Za-z0-9-]+/[A-Za-z0-9._-]+")  # fullmatch: "$" would let a trailing newline through
 TS_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$")
 
 # name -> (type, nullable)
@@ -62,7 +62,7 @@ def validate(entries: list[dict]) -> list[str]:
             errors.append(f"{at}: unknown field {name}")
         repo = e.get("repo")
         if isinstance(repo, str):
-            if not REPO_RE.match(repo):
+            if not REPO_RE.fullmatch(repo):
                 errors.append(f"{at}: bad repo format")
             key = normalize_repo(repo)
             if key in seen:

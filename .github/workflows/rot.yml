@@ -1,0 +1,94 @@
+name: Health check
+# The sweeper only counts runs named exactly "Health check" as a full check.
+run-name: ${{ inputs.repo && 'Health check (one repo)' || 'Health check' }}
+
+# Re-checks every listed repo each Monday: warns stale ones, archives them 30
+# days later, brings back the ones that recover, follows renames and removes
+# repos that are gone (only once a second run a week later agrees).
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: owner/name of one entry to re-check (blank checks them all)
+        required: false
+        type: string
+
+permissions: {}
+
+# Shared with submit.yml so rot and submission PRs never race on entries.json.
+concurrency:
+  group: list-writes
+  cancel-in-progress: false
+
+jobs:
+  rot:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: audit
+      - id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-discussions: write
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          token: ${{ steps.token.outputs.token }}
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      # Any API failure exits non-zero here, before a PR, a comment or a stats write.
+      # REPO_INPUT is validated in Python before use.
+      - id: plan
+        env:
+          GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+          REPO_INPUT: ${{ inputs.repo }}
+        run: python -m scripts.rot plan --out "$RUNNER_TEMP/plan.json" >> "$GITHUB_OUTPUT"
+      - id: pr
+        if: steps.plan.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+        run: |
+          branch="rot/$GITHUB_RUN_ID"
+          subject="chore(list): weekly health check"
+          git switch -c "$branch"
+          git add data/entries.json
+          git -c user.name='devstreamhq-bot[bot]' \
+            -c user.email='353074438+devstreamhq-bot[bot]@users.noreply.github.com' \
+            commit -m "$subject"
+          git push origin "$branch"
+          python -m scripts.rot body --plan "$RUNNER_TEMP/plan.json" > "$RUNNER_TEMP/pr-body.md"
+          url=$(gh pr create --base main --head "$branch" --title "$subject" --body-file "$RUNNER_TEMP/pr-body.md")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          # An explicit body stops GitHub adding its Co-authored-by trailer to the squash commit.
+          gh pr merge "$url" --auto --squash --subject "$subject" --body "Weekly health check."
+      # Holding the concurrency lock until the merge lands keeps the next writer off a stale entries.json.
+      # No merge means no comments and no stats writes.
+      - if: steps.plan.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          PR_URL: ${{ steps.pr.outputs.url }}
+        run: |
+          for _ in $(seq 45); do
+            [ "$(gh pr view "$PR_URL" --json state --jq .state)" = MERGED ] && exit 0
+            sleep 20
+          done
+          # Closing also disarms auto-merge, so it can't land later behind our backs.
+          # It may have merged in the meantime, so look once more.
+          gh pr close "$PR_URL" || true  # fails if it merged meanwhile; the check below decides
+          [ "$(gh pr view "$PR_URL" --json state --jq .state)" = MERGED ] && exit 0
+          echo "::error::$PR_URL did not merge within 15 minutes and is now closed"
+          exit 1
+      - if: steps.plan.outputs.changed == 'true'
+        env:
+          GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+        run: python -m scripts.rot finish --plan "$RUNNER_TEMP/plan.json"

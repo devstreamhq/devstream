@@ -12,8 +12,11 @@ on:
 
 permissions: {}
 
+# Shared with rot.yml so this waits until a rename's keys have moved and its
+# thread is retitled; otherwise it would open a second thread for the new name.
+# A run dropped from the queue is picked up by the hourly schedule.
 concurrency:
-  group: discussions
+  group: list-writes
   cancel-in-progress: false
 
 jobs:

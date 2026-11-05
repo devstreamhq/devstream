@@ -132,6 +132,17 @@ class OnMerge(unittest.TestCase):
             run(g, [entry(1)], sleep=lambda s: None)
         self.assertEqual(c.exception.status, 409)
 
+    def test_stored_mapping_wins_over_a_thread_with_the_same_title(self):
+        # A thread retitled onto a listed name must never take over that entry's Likes.
+        g = gh({"o/r1": 5}, threads=[("o/r1", 9, "devstreamhq-bot[bot]"), ("o/r2", 7, "devstreamhq-bot[bot]")])
+        run(g, [entry(1), entry(2)])
+        self.assertEqual(written(g), {"o/r1": 5, "o/r2": 7})
+
+    def test_skips_removed_threads(self):
+        g = gh({}, threads=[("Removed: o/r1", 9, "devstreamhq-bot[bot]"), ("o/r2", 7, "devstreamhq-bot[bot]")])
+        run(g, [entry(2)])
+        self.assertEqual(written(g), {"o/r2": 7})
+
     def test_no_put_when_unchanged(self):
         g = gh({"o/r1": 5})
         run(g, [entry(1)], sleep=lambda s: None)

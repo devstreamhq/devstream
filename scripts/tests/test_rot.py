@@ -7,8 +7,15 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from scripts.devstream.entries import load, save
-from scripts.devstream.gh import RateLimited
-from scripts.devstream.quality import RepoResult, Undecided, check_repo
+from scripts.devstream.gh import GitHubError, RateLimited
+from scripts.devstream.quality import (
+    MSG_LICENSE,
+    MSG_NO_README,
+    MSG_SHORT_README,
+    RepoResult,
+    Undecided,
+    check_repo,
+)
 from scripts.rot import Action, finish, plan_rot, pr_body, prepare, select
 from scripts.tests.fake_gh import FakeGitHub, Redirect
 
@@ -77,7 +84,7 @@ class PlanTest(unittest.TestCase):
     def test_404_removes(self):
         new, actions, rot = plan_rot([entry()], {"alice/tool": gone()}, NOW, {})
         self.assertEqual(new, [entry()])
-        self.assertEqual(actions, [])
+        self.assertEqual(kinds(actions), [("notice", "alice/tool")])
         self.assertEqual(rot["alice/tool"]["first_seen"], iso(NOW))
         self.assertIn("no longer exists", rot["alice/tool"]["reason"])
 
@@ -85,6 +92,17 @@ class PlanTest(unittest.TestCase):
         self.assertEqual(new, [])
         self.assertEqual(kinds(actions), [("remove", "alice/tool")])
         self.assertEqual(rot, {})
+
+    def test_first_removal_sighting_names_the_reason(self):
+        for failure in ("This repo no longer exists.", MSG_LICENSE, MSG_NO_README, MSG_SHORT_README):
+            r = RepoResult(failure != "This repo no longer exists.", "alice/tool",
+                           [failure, "This repo hasn't had a push in over a year."], "remove")
+            _, actions, _ = plan_rot([entry()], {"alice/tool": r}, NOW, {})
+            self.assertEqual(kinds(actions), [("notice", "alice/tool")])
+            msg = actions[0].message
+            self.assertIn(failure, msg)
+            self.assertNotIn("push in over a year", msg)
+            self.assertIn("11 November 2026", msg)  # NOW + 6 days, when a second look can remove it
 
     def test_remove_needs_two_runs_six_days_apart(self):
         state = {"alice/tool": {"first_seen": iso(NOW), "reason": "x"}}
@@ -240,6 +258,25 @@ class PrepareTest(unittest.TestCase):
         self.assertEqual(list(written(g, "rot.json")[0]), ["alice/tool"])
         self.assertEqual([c[1] for c in writes(g)], [f"{API}/contents/rot.json"])
 
+    def test_first_sighting_comment_posts_after_the_stats_write(self):
+        extra = {
+            "GRAPHQL EntryDiscussionId": {"repository": {"discussion": {"id": "D5"}}},
+            "GRAPHQL CommentOnEntry": {"addDiscussionComment": {"comment": {"id": "c"}}},
+        }
+        g = FakeGitHub(routes(discussions={"alice/tool": 5}, extra=extra))
+        self.run_prepare(g, lambda full, *a: gone(full) if full == "alice/tool" else ok(full))
+        self.assertEqual([c[:2] for c in writes(g)],
+                         [("PUT", f"{API}/contents/rot.json"), ("GRAPHQL", "CommentOnEntry")])
+        self.assertIn("no longer exists", writes(g)[1][2]["body"])
+
+        def refuse(_):
+            raise GitHubError(409, "sha mismatch")
+
+        g = FakeGitHub(routes(discussions={"alice/tool": 5}, extra={**extra, f"PUT {API}/contents/rot.json": refuse}))
+        with self.assertRaises(GitHubError):
+            self.run_prepare(g, lambda full, *a: gone(full) if full == "alice/tool" else ok(full))
+        self.assertEqual([c for c in writes(g) if c[0] == "GRAPHQL"], [])
+
     def test_changed_entries_defer_every_write(self):
         g = FakeGitHub(routes())
         plan = self.run_prepare(g, lambda full, *a: gone(full) if full == "alice/tool" else warn(full))
@@ -288,11 +325,12 @@ class BodyTest(unittest.TestCase):
             Action("warn", "alice/tool", "SECRET message @someone", "alice/tool"),
             Action("rename", "alice/tool-ng", "", "alice/tool"),
             Action("remove", "bob/gone", "SECRET", "bob/gone"),
+            Action("notice", "carol/soon", "SECRET", "carol/soon"),
         ]
         body = pr_body(actions)
         self.assertNotIn("SECRET", body)
         self.assertNotIn("@", body)
-        for repo in ("alice/tool", "alice/tool-ng", "bob/gone"):
+        for repo in ("alice/tool", "alice/tool-ng", "bob/gone", "carol/soon"):
             self.assertIn(f"`{repo}`", body)
 
 

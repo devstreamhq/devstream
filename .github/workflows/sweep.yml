@@ -1,8 +1,9 @@
 name: Sweep submissions
 
 # The list-writes concurrency group keeps only one pending run, so bursts drop
-# runs. This re-dispatches any submission left undecided and clears branches
-# from applies that died before opening a PR.
+# runs. This re-dispatches any submission left undecided, re-runs a health
+# check that hasn't succeeded in 8 days, clears branches from applies that
+# died before opening a PR, and closes rot PRs that never merged.
 on:
   schedule:
     - cron: "*/15 * * * *"
@@ -38,7 +39,7 @@ jobs:
           permission-actions: write
           permission-contents: write
           permission-issues: read
-          permission-pull-requests: read
+          permission-pull-requests: write
       - run: python -m scripts.sweep
         env:
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}

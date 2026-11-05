@@ -16,7 +16,14 @@ from datetime import datetime, timedelta, timezone
 
 from scripts.devstream.entries import DEFAULT_PATH, find, load, normalize_repo, save, sort_key
 from scripts.devstream.gh import GitHub
-from scripts.devstream.quality import Undecided, check_repo
+from scripts.devstream.quality import (
+    MSG_GONE,
+    MSG_LICENSE,
+    MSG_NO_README,
+    MSG_SHORT_README,
+    Undecided,
+    check_repo,
+)
 from scripts.devstream.stats import ensure_branch, read_json, write_json
 from scripts.validate_data import validate
 
@@ -24,6 +31,7 @@ CHECKED = {"live", "warned", "archived"}
 GRACE = timedelta(days=30)
 # A second sighting this much later confirms a removal, so a blip never deletes an entry.
 CONFIRM = timedelta(days=6)
+REMOVAL_REASONS = (MSG_GONE, MSG_LICENSE, MSG_NO_README, MSG_SHORT_README)
 REPO_INPUT = re.compile(r"[A-Za-z0-9-]{1,39}/[A-Za-z0-9._-]{1,100}")
 
 WARN = (
@@ -37,6 +45,10 @@ ARCHIVE = (
     "Nothing's lost, though. The moment it's active again, it comes back to the list on its own.\n"
 )
 REVIVE = "Welcome back! `{repo}` is active again, so it's back on the list.\n"
+NOTICE = (
+    "Heads up: we're about to take `{repo}` off the list. Here's what we found:\n\n{reasons}\n\n"
+    "If that's fixed by {date}, it stays listed. Otherwise it comes off at our next check after that.\n"
+)
 REMOVE = (
     "We've taken `{repo}` off the list. Here's why:\n\n{reasons}\n\n"
     "We looked twice, a week apart, before doing this. "
@@ -46,7 +58,7 @@ MERGED = (
     "`{repo}` now points to the same repo as `{kept}`, which was listed first, "
     "so we've folded this entry into that one. Likes count on that entry's thread from now on.\n"
 )
-LABELS = {"warn": "Warned", "archive": "Archived", "revive": "Back on the list", "remove": "Removed"}
+LABELS = {"notice": "Removal notice", "warn": "Warned", "archive": "Archived", "revive": "Back on the list", "remove": "Removed"}
 
 _ID = """query EntryDiscussionId($number: Int!) {
   repository(owner: "devstreamhq", name: "devstream") { discussion(number: $number) { id } }
@@ -63,7 +75,7 @@ _RETITLE = """mutation UpdateEntryDiscussion($discussionId: ID!, $title: String!
 
 @dataclass
 class Action:
-    kind: str  # warn | archive | revive | rename | remove
+    kind: str  # notice | warn | archive | revive | rename | remove
     repo: str  # the name after this run
     message: str  # Discussion comment; empty for a rename
     key: str  # stats key at the start of the run, which finds the Discussion
@@ -97,6 +109,10 @@ def _verdict(e, r, now, rot) -> tuple[dict | None, list[Action]]:
         rec = rot.get(key)
         if rec is None:
             rot[key] = {"first_seen": _iso(now), "reason": " ".join(r.failures)}
+            reasons = [f for f in r.failures if f in REMOVAL_REASONS] or r.failures
+            date = now + CONFIRM
+            msg = NOTICE.format(repo=repo, date=f"{date.day} {date:%B %Y}", reasons=_bullets(reasons))
+            acts.append(Action("notice", repo, msg, old))
         elif now - _parse(rec["first_seen"]) >= CONFIRM:
             del rot[key]
             return None, [Action("remove", repo, REMOVE.format(repo=repo, reasons=_bullets(r.failures)), old)]
@@ -194,6 +210,8 @@ def prepare(gh, now, path=DEFAULT_PATH, repo=None, check=check_repo) -> dict:
         save(new, path)
     elif rot != rot_state:
         write_json(gh, "rot.json", rot, rot_sha, "chore(stats): record failing repos")
+        # Unchanged entries means the only actions are removal notices, safe to post now rot.json is saved.
+        _post(gh, actions, read_json(gh, "discussions.json")[0] or {})
     return {"changed": changed, "actions": [asdict(a) for a in actions], "rot_state": rot}
 
 
@@ -235,6 +253,11 @@ def finish(gh, plan: dict) -> None:
         if moved != (data or {}):
             write_json(gh, path, moved, fsha, "chore(stats): follow renamed repos")
 
+    _post(gh, actions, numbers)
+
+
+def _post(gh, actions, numbers: dict) -> None:
+    """Comment on, or retitle, each action's Discussion. numbers maps stats key to Discussion number."""
     failed = 0
     for a in actions:
         n = numbers.get(a.key)

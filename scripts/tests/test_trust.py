@@ -5,7 +5,7 @@ import unittest
 from datetime import datetime, timedelta, timezone
 
 from scripts.devstream.gh import GitHubError
-from scripts.devstream.trust import TrustCache, check_user
+from scripts.devstream.trust import TrustCache, check_user, ensure_block_access
 from scripts.tests.fake_gh import FakeGitHub, Status
 
 NOW = datetime(2026, 11, 5, 12, 0, tzinfo=timezone.utc)
@@ -97,6 +97,21 @@ class CheckUserTest(unittest.TestCase):
             self.check(gh(repos=0, extra={"GRAPHQL UserActivity": boom}))
 
 
+class EnsureBlockAccessTest(unittest.TestCase):
+    def test_list_ok(self):
+        self.assertIsNone(ensure_block_access(FakeGitHub({"GET /orgs/devstreamhq/blocks": []})))
+
+    def test_404_raises(self):
+        with self.assertRaises(GitHubError) as c:
+            ensure_block_access(FakeGitHub({}))
+        self.assertEqual(c.exception.status, 404)
+
+    def test_other_error_propagates(self):
+        with self.assertRaises(GitHubError) as c:
+            ensure_block_access(FakeGitHub({"GET /orgs/devstreamhq/blocks": Status(500)}))
+        self.assertEqual(c.exception.status, 500)
+
+
 class TrustCacheTest(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.TemporaryDirectory()
@@ -109,7 +124,8 @@ class TrustCacheTest(unittest.TestCase):
         self.assertTrue(c.trusted("alice", g, NOW, set()))
         n = len(g.calls)
         self.assertTrue(c.trusted("alice", g, NOW + timedelta(days=6), set()))
-        self.assertEqual(len(g.calls), n)
+        # Only the block re-check; no user or activity lookups.
+        self.assertEqual(g.calls[n:], [("GET", "/orgs/devstreamhq/blocks/alice", None)])
 
     def test_ttl_expiry(self):
         c = TrustCache(self.path)
@@ -127,18 +143,81 @@ class TrustCacheTest(unittest.TestCase):
         c = TrustCache(self.path)
         c.put("alice", {"trusted": True, "reason": None, "created_at": "x"}, NOW)
         self.assertFalse(c.trusted("alice", gh(), NOW, {"alice"}))
-        self.assertFalse(c.get("alice", NOW)["trusted"])
+        self.assertFalse((c.get("alice", NOW) or {}).get("trusted"))
 
     def test_blocked_not_cached_as_trusted(self):
         c = TrustCache(self.path)
         self.assertFalse(c.trusted("alice", gh(blocked=True), NOW, set()))
-        self.assertFalse(c.get("alice", NOW)["trusted"])
+        self.assertFalse((c.get("alice", NOW) or {}).get("trusted"))
+
+    def test_blocked_result_not_stored(self):
+        c = TrustCache(self.path)
+        self.assertFalse(c.trusted("alice", gh(blocked=True), NOW, set()))
+        self.assertIsNone(c.get("alice", NOW))
+        self.assertTrue(c.trusted("alice", gh(), NOW, set()))
 
     def test_error_not_cached(self):
         c = TrustCache(self.path)
         with self.assertRaises(GitHubError):
             c.trusted("alice", gh(extra={"GET /users/alice": Status(500)}), NOW, set())
         self.assertIsNone(c.get("alice", NOW))
+
+    def test_cached_trusted_rechecks_block(self):
+        c = TrustCache(self.path)
+        self.assertTrue(c.trusted("alice", gh(), NOW, set()))
+        g = gh(blocked=True)
+        self.assertFalse(c.trusted("alice", g, NOW + timedelta(days=1), set()))
+        self.assertFalse((c.get("alice", NOW) or {}).get("trusted"))
+        self.assertFalse(c.trusted("alice", g, NOW + timedelta(days=2), set()))
+
+    def test_cached_trusted_block_check_error_propagates(self):
+        c = TrustCache(self.path)
+        self.assertTrue(c.trusted("alice", gh(), NOW, set()))
+        with self.assertRaises(GitHubError):
+            c.trusted("alice", gh(extra={BLOCK: Status(500)}), NOW, set())
+
+    def test_cache_hit_invalid_login_makes_no_call(self):
+        c = TrustCache(self.path)
+        c.entries["a_b"] = {"trusted": True, "reason": None, "checked_at": iso(NOW), "created_at": None}
+        g = gh()
+        self.assertFalse(c.trusted("a_b", g, NOW, set()))
+        self.assertEqual(g.calls, [])
+
+    def test_bad_file_shapes_load_empty(self):
+        for raw in (b"[]", b"3", b"\xff\xfe\x00bad", b"{nope"):
+            with open(self.path, "wb") as f:
+                f.write(raw)
+            self.assertEqual(TrustCache(self.path).entries, {}, raw)
+
+    def test_bad_entries_are_misses(self):
+        c = TrustCache(self.path)
+        good = {"trusted": True, "reason": None, "created_at": None}
+        for e in (
+            good,
+            {**good, "checked_at": "garbage"},
+            {**good, "checked_at": 5},
+            {**good, "checked_at": "2026-11-05T12:00:00"},
+            "str",
+            None,
+        ):
+            c.entries["alice"] = e
+            self.assertIsNone(c.get("alice", NOW), e)
+            self.assertIsNone(c.account_age_days("alice", NOW), e)
+
+    def test_string_false_is_not_trusted(self):
+        c = TrustCache(self.path)
+        c.entries["alice"] = {"trusted": "false", "reason": None, "checked_at": iso(NOW), "created_at": None}
+        self.assertFalse(c.trusted("alice", gh(age=timedelta(days=1)), NOW, set()))
+
+    def test_future_checked_at_is_miss(self):
+        c = TrustCache(self.path)
+        c.put("alice", {"trusted": True, "reason": None, "created_at": None}, NOW + timedelta(hours=1))
+        self.assertIsNone(c.get("alice", NOW))
+
+    def test_login_case_shares_entry(self):
+        c = TrustCache(self.path)
+        c.put("Alice", {"trusted": True, "reason": None, "created_at": None}, NOW)
+        self.assertIsNotNone(c.get("alice", NOW))
 
     def test_save_roundtrip_and_format(self):
         c = TrustCache(self.path)

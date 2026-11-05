@@ -31,7 +31,7 @@ def gh(mapping=None, fail_at=None, threads=(), ref=True, put_fails=False):
         "GRAPHQL CreateEntryDiscussion": create,
         f"PUT {FILE}": {},
         "GRAPHQL LikesDiscussions": {"repository": {"discussions": {
-            "nodes": [{"number": n, "title": t} for t, n in threads],
+            "nodes": [{"number": n, "title": t, "author": {"login": a}} for t, n, a in threads],
             "pageInfo": {"hasNextPage": False, "endCursor": None}}}},
     }
     if ref:
@@ -105,10 +105,15 @@ class OnMerge(unittest.TestCase):
         self.assertFalse([c for c in g.calls if c[0] == "GRAPHQL"])
 
     def test_reuses_existing_threads_after_failed_put(self):
-        g = gh({}, threads=[("O/R1", 55)])
+        g = gh({}, threads=[("O/R1", 55, "devstreamhq-bot")])
         run(g, [entry(1)], sleep=lambda s: None)
         self.assertEqual(written(g), {"o/r1": 55})
         self.assertFalse([c for c in g.calls if c[1] == "CreateEntryDiscussion"])
+
+    def test_ignores_threads_by_others(self):
+        g = gh({}, threads=[("o/r1", 55, "mallory"), ("o/r2", 56, "devstreamhq-bot[bot]")])
+        run(g, [entry(1), entry(2)], sleep=lambda s: None)
+        self.assertEqual(written(g), {"o/r1": 101, "o/r2": 56})
 
     def test_mixed_case_shares_one_thread(self):
         g = gh({})

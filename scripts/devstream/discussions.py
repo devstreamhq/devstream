@@ -1,6 +1,7 @@
 from scripts.devstream.entries import normalize_repo
 from scripts.devstream.gh import GitHubError
 
+BOT_LOGIN = "devstreamhq-bot"
 SITE = "https://devstream.jamesconway.dev"
 
 _CATEGORY = """query LikesCategory {
@@ -20,7 +21,7 @@ _CREATE = """mutation CreateEntryDiscussion($repositoryId: ID!, $categoryId: ID!
 _LIST = """query LikesDiscussions($cursor: String, $cat: ID!) {
   repository(owner: "devstreamhq", name: "devstream") {
     discussions(first: 100, after: $cursor, categoryId: $cat) {
-      nodes { number title }
+      nodes { number title author { login } }
       pageInfo { hasNextPage endCursor }
     }
   }
@@ -33,6 +34,9 @@ def list_discussions(gh, category_id: str) -> dict[str, int]:
     while True:
         page = gh.graphql(_LIST, {"cursor": cursor, "cat": category_id})["repository"]["discussions"]
         for n in page["nodes"]:
+            # Only the bot's own threads count; anyone else's could hijack an entry's Likes.
+            if ((n.get("author") or {}).get("login") or "").removesuffix("[bot]") != BOT_LOGIN:
+                continue
             out[normalize_repo(n["title"])] = n["number"]
         if not page["pageInfo"]["hasNextPage"]:
             return out

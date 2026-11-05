@@ -42,3 +42,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}
           EXCLUDED_USERS: ${{ vars.EXCLUDED_USERS }}
+
+  deploy:
+    needs: likes
+    permissions:
+      contents: read
+    uses: ./.github/workflows/deploy.yml
+    secrets: inherit

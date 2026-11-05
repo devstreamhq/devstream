@@ -24,11 +24,13 @@ gh api -X PUT "repos/$REPO/topics" \
 
 gh api -X PUT "repos/$REPO/private-vulnerability-reporting" >/dev/null
 
-# Issue forms silently drop labels that don't exist, which would stop submit.yml firing.
+# Issue forms silently drop labels that don't exist, which would stop submit.yml and reports.yml firing.
 gh label create submission -R "$REPO" --color 0e8a16 --description "Repo submission" --force >/dev/null
 gh label create accepted -R "$REPO" --color 1d76db --description "Submission accepted" --force >/dev/null
 gh label create rejected -R "$REPO" --color b60205 --description "Submission rejected" --force >/dev/null
-gh label create needs-review -R "$REPO" --color fbca04 --description "Submission needs a maintainer" --force >/dev/null
+gh label create needs-review -R "$REPO" --color fbca04 --description "Needs a maintainer" --force >/dev/null
+gh label create report -R "$REPO" --color d93f0b --description "Entry reported" --force >/dev/null
+gh label create superseded -R "$REPO" --color c5def5 --description "Reported as replaced by another repo" --force >/dev/null
 
 RULESET=$(cat <<'J'
 {

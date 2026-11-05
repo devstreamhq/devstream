@@ -1,7 +1,7 @@
 name: Sweep submissions
 
 # The list-writes concurrency group keeps only one pending run, so bursts drop
-# runs. This re-dispatches any submission left undecided, re-runs a health
+# runs. This re-dispatches any submission or report left undecided, re-runs a health
 # check that hasn't succeeded in 8 days, clears branches from applies that
 # died before opening a PR, and closes rot PRs that never merged.
 on:

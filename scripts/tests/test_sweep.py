@@ -16,6 +16,9 @@ ROT_QUEUED = f"GET {API}/actions/workflows/rot.yml/runs?status=queued"
 ROT_PENDING = f"GET {API}/actions/workflows/rot.yml/runs?status=pending"
 MERGE_QUEUED = f"GET {API}/actions/workflows/on-merge.yml/runs?status=queued"
 MERGE_PENDING = f"GET {API}/actions/workflows/on-merge.yml/runs?status=pending"
+REPORT_QUEUED = f"GET {API}/actions/workflows/reports.yml/runs?status=queued"
+REPORT_PENDING = f"GET {API}/actions/workflows/reports.yml/runs?status=pending"
+REPORT_DISPATCH = f"POST {API}/actions/workflows/reports.yml/dispatches"
 ROT_OK = f"GET {API}/actions/workflows/rot.yml/runs?status=success&per_page=100"
 ROT_LATEST = f"GET {API}/actions/workflows/rot.yml/runs?per_page=100"
 ROT_DISPATCH = f"POST {API}/actions/workflows/rot.yml/dispatches"
@@ -58,6 +61,7 @@ def gh(issues=(), refs=(), routes=None):
         QUEUED: {"total_count": 0}, PENDING: {"total_count": 0},
         ROT_QUEUED: {"total_count": 0}, ROT_PENDING: {"total_count": 0},
         MERGE_QUEUED: {"total_count": 0}, MERGE_PENDING: {"total_count": 0},
+        REPORT_QUEUED: {"total_count": 0}, REPORT_PENDING: {"total_count": 0}, REPORT_DISPATCH: None,
         ROT_OK: runs(timedelta(days=2)), ROT_LATEST: runs(timedelta(days=2)),
         ROT_DISPATCH: None, ROT_REFS: [], OPEN_PRS: [],
     }
@@ -71,6 +75,10 @@ def commit(sha, age):
 
 def dispatched(g):
     return [b["inputs"]["issue"] for m, p, b in g.calls if m == "POST" and "submit.yml" in p]
+
+
+def report_dispatched(g):
+    return [b["inputs"]["issue"] for m, p, b in g.calls if m == "POST" and "reports.yml" in p]
 
 
 def rot_dispatched(g):
@@ -99,6 +107,36 @@ class SweepTest(unittest.TestCase):
         self.assertEqual(dispatched(g), ["6"])
         body = [b for m, p, b in g.calls if m == "POST" and "submit.yml" in p][0]
         self.assertEqual(body, {"ref": "main", "inputs": {"issue": "6"}})
+
+    def test_sweep_redispatches_undecided_report(self):
+        carol = {"login": "carol", "type": "User"}
+        g = gh([
+            issue(2, labels=("report", "needs-review"), user=carol),
+            issue(3, labels=("report",), user={"login": BOT, "type": "Bot"}),
+            issue(4, labels=("report",), user={"login": "someapp", "type": "Bot"}),
+            issue(5, labels=("report",), age=timedelta(minutes=9), user=carol),
+            issue(6, labels=("report",), pull_request={}, user=carol),
+            issue(7, labels=("report",), age=timedelta(minutes=11), user=carol),
+        ])
+        sweep(g, NOW)
+        self.assertEqual((dispatched(g), report_dispatched(g)), ([], ["7"]))
+        body = [b for m, p, b in g.calls if m == "POST" and "reports.yml" in p][0]
+        self.assertEqual(body, {"ref": "main", "inputs": {"issue": "7"}})
+
+    def test_reports_and_submissions_share_one_dispatch(self):
+        carol = {"login": "carol", "type": "User"}
+        g = gh([issue(1, age=timedelta(hours=2)), issue(2, labels=("report",), age=timedelta(hours=3), user=carol)])
+        sweep(g, NOW)
+        self.assertEqual((dispatched(g), report_dispatched(g)), ([], ["2"]))
+        g = gh([issue(1, age=timedelta(hours=4)), issue(2, labels=("report",), age=timedelta(hours=3), user=carol)])
+        sweep(g, NOW)
+        self.assertEqual((dispatched(g), report_dispatched(g)), (["1"], []))
+
+    def test_no_dispatch_while_a_reports_run_waits(self):
+        for key in (REPORT_QUEUED, REPORT_PENDING):
+            g = gh([issue(1)], routes={key: {"total_count": 1}})
+            sweep(g, NOW)
+            self.assertEqual(dispatched(g), [], key)
 
     def test_needs_review_is_never_dispatched(self):
         g = gh([issue(7, labels=("submission", "needs-review"))])

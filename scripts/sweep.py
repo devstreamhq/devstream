@@ -1,4 +1,4 @@
-"""Re-dispatch submissions that no run finished, re-run an overdue health check, and
+"""Re-dispatch submissions and reports that no run finished, re-run an overdue health check, and
 clear abandoned submit and rot branches and rot PRs.
 
 python -m scripts.sweep   (needs GITHUB_TOKEN)
@@ -109,7 +109,7 @@ def _list_write_waiting(gh) -> bool:
     # These share the list-writes group, which holds one waiting run.
     return any(
         gh.get(f"{API}/actions/workflows/{wf}/runs?status={s}")["total_count"] > 0
-        for wf in ("submit.yml", "rot.yml", "on-merge.yml") for s in ("queued", "pending")
+        for wf in ("submit.yml", "rot.yml", "on-merge.yml", "reports.yml") for s in ("queued", "pending")
     )
 
 
@@ -128,16 +128,22 @@ def sweep(gh, now: datetime) -> None:
         print("dispatched rot.yml")
         return
     todo = []
-    for issue in gh.paginate(f"{API}/issues?state=open&labels=submission&per_page=100"):
-        labels = {lb["name"] for lb in issue["labels"]}
-        if ("pull_request" in issue or labels & {"accepted", "rejected", "needs-review"}
-                or issue["number"] in busy or now - _parse(issue["created_at"]) <= ISSUE_AGE):
-            continue
-        todo.append(issue)
+    # Submissions and reports share the one dispatch; every handled report is closed or needs-review.
+    for label, workflow, done in (("submission", "submit.yml", {"accepted", "rejected", "needs-review"}),
+                                  ("report", "reports.yml", {"needs-review"})):
+        for issue in gh.paginate(f"{API}/issues?state=open&labels={label}&per_page=100"):
+            labels = {lb["name"] for lb in issue["labels"]}
+            user = issue.get("user") or {}
+            if (label not in labels or "pull_request" in issue or labels & done
+                    or issue["number"] in busy or now - _parse(issue["created_at"]) <= ISSUE_AGE
+                    # The bot's own Like-burst reports are for a maintainer, not reports.yml.
+                    or (label == "report" and (user.get("login") == BOT or user.get("type") == "Bot"))):
+                continue
+            todo.append((issue, workflow))
     if not todo:
         return
-    oldest = min(todo, key=lambda i: _parse(i["created_at"]))
-    gh.post(f"{API}/actions/workflows/submit.yml/dispatches",
+    oldest, workflow = min(todo, key=lambda t: _parse(t[0]["created_at"]))
+    gh.post(f"{API}/actions/workflows/{workflow}/dispatches",
             {"ref": "main", "inputs": {"issue": str(oldest["number"])}})
     print(f"dispatched #{oldest['number']}")
 

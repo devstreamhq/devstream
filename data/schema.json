@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/devstreamhq/devstream/data/schema.json",
+  "title": "DevStream entries",
+  "type": "object",
+  "required": ["version", "entries"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": 1 },
+    "entries": {
+      "type": "array",
+      "description": "Sorted case-insensitively by repo, no two entries sharing a normalised repo. Sorting and uniqueness are checked by scripts/validate_data.py.",
+      "items": { "$ref": "#/$defs/entry" }
+    }
+  },
+  "$defs": {
+    "timestamp": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$"
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repo",
+        "category",
+        "description",
+        "submitted_by",
+        "submitted_at",
+        "issue",
+        "status",
+        "warned_at",
+        "superseded_by",
+        "added_by_seed"
+      ],
+      "properties": {
+        "repo": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$"
+        },
+        "category": {
+          "enum": [
+            "ai-ml",
+            "backend-apis",
+            "cli-terminal",
+            "databases-data",
+            "design-ui",
+            "devops-infra",
+            "developer-tools",
+            "frontend-web",
+            "learning-resources",
+            "mobile",
+            "security",
+            "self-hosted",
+            "testing"
+          ]
+        },
+        "description": { "type": "string" },
+        "submitted_by": { "type": "string" },
+        "submitted_at": { "$ref": "#/$defs/timestamp" },
+        "issue": { "type": "integer" },
+        "status": {
+          "enum": [
+            "live",
+            "warned",
+            "flagged",
+            "hidden",
+            "archived",
+            "superseded"
+          ]
+        },
+        "warned_at": {
+          "anyOf": [{ "$ref": "#/$defs/timestamp" }, { "type": "null" }]
+        },
+        "superseded_by": { "type": ["string", "null"] },
+        "added_by_seed": { "type": "boolean" }
+      }
+    }
+  }
+}

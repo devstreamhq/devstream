@@ -3,6 +3,13 @@ name: Submit
 on:
   issues:
     types: [opened]
+  # The sweeper re-runs submissions whose run was dropped from the concurrency queue.
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: Issue number of the submission
+        required: true
+        type: string
 
 permissions: {}
 
@@ -13,7 +20,7 @@ concurrency:
 
 jobs:
   decide:
-    if: contains(github.event.issue.labels.*.name, 'submission')
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.issue.labels.*.name, 'submission')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -25,6 +32,7 @@ jobs:
           egress-policy: audit
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: main
           persist-credentials: false
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
@@ -38,16 +46,25 @@ jobs:
           permission-organization-user-blocking: read
           permission-issues: read
       # An API failure exits non-zero with no result file, so nothing is accepted or rejected.
-      - run: python -m scripts.submit decide --event "$GITHUB_EVENT_PATH" --out result.json
-        env:
+      # A dispatched issue that is already decided exits 0 with no result file, so nothing runs.
+      - env:
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}
           EXCLUDED_USERS: ${{ vars.EXCLUDED_USERS }}
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+          ISSUE_INPUT: ${{ inputs.issue }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            python -m scripts.submit decide --issue "$ISSUE_INPUT" --out result.json
+          else
+            python -m scripts.submit decide --event "$GITHUB_EVENT_PATH" --out result.json
+          fi
+      - if: hashFiles('result.json') != ''
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: result
           path: result.json
           retention-days: 7
       - id: result
+        if: hashFiles('result.json') != ''
         run: python -c 'import json; print("ok=" + ("true" if json.load(open("result.json"))["ok"] is True else "false"))' >> "$GITHUB_OUTPUT"
 
   apply:
@@ -67,9 +84,16 @@ jobs:
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           permission-contents: write
           permission-pull-requests: write
+      # Separate token so the one that can push never carries issues: write.
+      - id: issues_token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
           permission-issues: write
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: main
           token: ${{ steps.token.outputs.token }}
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
@@ -92,17 +116,27 @@ jobs:
           print(f"repo={repo}")
           print(f"issue={issue}")
           PY
+      # Prints the branch name, or nothing when fresh main already has the repo
+      # (result.json is then rewritten as a rejection).
+      - id: apply
+        env:
+          RESULT: ${{ runner.temp }}/result/result.json
+        run: |
+          branch=$(python -m scripts.submit apply --result "$RESULT")
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
       - id: pr
+        if: steps.apply.outputs.branch != ''
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
           RESULT: ${{ runner.temp }}/result/result.json
           REPO_NAME: ${{ steps.meta.outputs.repo }}
+          BRANCH: ${{ steps.apply.outputs.branch }}
         run: |
-          branch=$(python -m scripts.submit apply --result "$RESULT")
+          branch="$BRANCH"
           git switch -c "$branch"
           git add data/entries.json
           git -c user.name='devstreamhq-bot[bot]' \
-            -c user.email='5633513+devstreamhq-bot[bot]@users.noreply.github.com' \
+            -c user.email='353074438+devstreamhq-bot[bot]@users.noreply.github.com' \
             commit -m "feat(list): add $REPO_NAME"
           git push origin "$branch"
           python -m scripts.submit comment --result "$RESULT" --kind pr > "$RUNNER_TEMP/pr-body.md"
@@ -110,7 +144,8 @@ jobs:
           echo "url=$url" >> "$GITHUB_OUTPUT"
           gh pr merge "$url" --auto --squash
       # Holding the concurrency lock until the merge lands keeps the next apply off a stale entries.json.
-      - env:
+      - if: steps.apply.outputs.branch != ''
+        env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
           PR_URL: ${{ steps.pr.outputs.url }}
         run: |
@@ -120,14 +155,25 @@ jobs:
           done
           echo "::error::$PR_URL did not merge within 15 minutes"
           exit 1
-      - env:
-          GH_TOKEN: ${{ steps.token.outputs.token }}
+      - if: steps.apply.outputs.branch != ''
+        env:
+          GH_TOKEN: ${{ steps.issues_token.outputs.token }}
           RESULT: ${{ runner.temp }}/result/result.json
           ISSUE: ${{ steps.meta.outputs.issue }}
         run: |
           python -m scripts.submit comment --result "$RESULT" --kind accepted > "$RUNNER_TEMP/comment.md"
           gh issue comment "$ISSUE" --body-file "$RUNNER_TEMP/comment.md"
           gh issue edit "$ISSUE" --add-label accepted
+      - if: steps.apply.outputs.branch == ''
+        env:
+          GH_TOKEN: ${{ steps.issues_token.outputs.token }}
+          RESULT: ${{ runner.temp }}/result/result.json
+          ISSUE: ${{ steps.meta.outputs.issue }}
+        run: |
+          python -m scripts.submit comment --result "$RESULT" --kind rejected > "$RUNNER_TEMP/comment.md"
+          gh issue comment "$ISSUE" --body-file "$RUNNER_TEMP/comment.md"
+          gh issue edit "$ISSUE" --add-label rejected
+          gh issue close "$ISSUE" --reason "not planned"
 
   reject:
     needs: decide
@@ -141,6 +187,7 @@ jobs:
           egress-policy: audit
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: main
           persist-credentials: false
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:

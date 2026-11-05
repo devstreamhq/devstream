@@ -11,6 +11,8 @@ gh api -X PATCH "repos/$REPO" \
   -F allow_squash_merge=true \
   -F allow_merge_commit=false \
   -F allow_rebase_merge=false \
+  -f squash_merge_commit_title=PR_TITLE \
+  -f squash_merge_commit_message=BLANK \
   -f homepage=https://devstream.jamesconway.dev \
   -f 'security_and_analysis[secret_scanning][status]=enabled' \
   -f 'security_and_analysis[secret_scanning_push_protection][status]=enabled' >/dev/null
@@ -44,7 +46,8 @@ RULESET=$(cat <<'J'
         "dismiss_stale_reviews_on_push": true,
         "require_code_owner_review": false,
         "require_last_push_approval": false,
-        "required_review_thread_resolution": false
+        "required_review_thread_resolution": false,
+        "require_extra_approval_for_unattributed_changes": true
       }
     },
     {

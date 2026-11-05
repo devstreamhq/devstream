@@ -4,7 +4,8 @@ name: Auto-approve
 # check out or run anything from the pull request.
 on:
   pull_request_target:
-    types: [opened, synchronize, reopened]
+    # opened only: a later push to the branch must never be re-approved.
+    types: [opened]
 
 permissions: {}
 
@@ -25,10 +26,24 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           files=$(gh pr diff "$PR" --name-only)
           if [ "$files" != "data/entries.json" ]; then
             echo "::error::Only data/entries.json may change, got: $files"
             exit 1
           fi
-          gh pr review "$PR" --approve
+          # Exactly one commit, the one this event saw, authored by the App.
+          commits=$(gh api "repos/$GH_REPO/pulls/$PR/commits" --jq '"\(length) \(.[0].sha) \(.[0].author.login)"')
+          if [ "$commits" != "1 $HEAD_SHA devstreamhq-bot[bot]" ]; then
+            echo "::error::Expected one bot commit $HEAD_SHA, got: $commits"
+            exit 1
+          fi
+          # The checked commit's own diff, so a push between checks can't slip in other files.
+          own=$(gh api "repos/$GH_REPO/commits/$HEAD_SHA" --jq '[.files[].filename] | join(",")')
+          if [ "$own" != "data/entries.json" ]; then
+            echo "::error::Commit $HEAD_SHA changes: $own"
+            exit 1
+          fi
+          # Pinned to the checked sha: GitHub refuses the review if the head has moved.
+          gh api -X POST "repos/$GH_REPO/pulls/$PR/reviews" -f event=APPROVE -f commit_id="$HEAD_SHA" >/dev/null

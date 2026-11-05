@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from scripts.devstream.gh import GitHubError
 from scripts.devstream.likes import count_likes, detect_burst, rank_entries
 from scripts.sync_likes import run
-from scripts.tests.fake_gh import FakeGitHub, GraphQLErrors
+from scripts.tests.fake_gh import FakeGitHub, GraphQLErrors, Status
 
 NOW = datetime(2026, 11, 5, 12, 0, tzinfo=timezone.utc)
 API = "/repos/devstreamhq/devstream"
@@ -55,8 +55,7 @@ class World:
             "GET /orgs/devstreamhq/blocks?per_page=1": [],
             "GRAPHQL DiscussionReactors": self._reactors,
             "GRAPHQL RepoMeta": self._meta,
-            f"GET {API}/issues": list(issues),
-            f"POST {API}/issues": {"number": 99},
+            f"POST {API}/issues": self._open_issue,
         }
         for login, created in users.items():
             routes[f"GET /users/{login}"] = {
@@ -64,8 +63,12 @@ class World:
         for path, data in self.stats.items():
             routes[f"GET {API}/contents/{path}"] = {
                 "content": base64.b64encode(json.dumps(data).encode()).decode(), "sha": f"sha-{path}"}
-        for path in ("meta.json", "likes.json", "trust-cache.json", f"snapshots/{TODAY}.json"):
+        days = [f"snapshots/{NOW + timedelta(days=d):%Y-%m-%d}.json" for d in range(12)]
+        for path in ("meta.json", "likes.json", "flags.json", "trust-cache.json", *days):
             routes[f"PUT {API}/contents/{path}"] = {}
+        self.next_issue = 100
+        for i in issues:  # issues that exist but the bot never opened
+            routes[f"GET {API}/issues/{i['number']}"] = {"state": "open", **i}
         self.routes = routes
         self.gh = FakeGitHub(routes)
 
@@ -103,8 +106,31 @@ class World:
             i += 1
         return GraphQLErrors(out, errors) if errors else out
 
-    def run(self, excluded=frozenset()):
-        run(self.gh, self.entries, NOW, excluded)
+    def _open_issue(self, body):
+        n = self.next_issue
+        self.next_issue += 1
+        self.routes[f"GET {API}/issues/{n}"] = {"number": n, "state": "open", "title": body["title"]}
+        self.routes[f"PATCH {API}/issues/{n}"] = {}
+        return {"number": n}
+
+    def close(self, n):
+        self.routes[f"GET {API}/issues/{n}"]["state"] = "closed"
+
+    def set_nodes(self, repo, nodes):
+        self.by_number[self.stats["discussions.json"][normalize(repo)]] = nodes
+        for n in nodes:
+            self.routes.setdefault(f"GET /users/{n['user']['login']}", {
+                "login": n["user"]["login"], "created_at": n["user"]["createdAt"],
+                "public_repos": 1, "type": "User"})
+
+    def persist(self):
+        """Make the files this run wrote readable by the next run, as on the stats branch."""
+        for _, p, body in self.puts():
+            self.routes[f"GET {p}"] = {"content": body["content"], "sha": f"sha-{len(self.gh.calls)}"}
+        self.gh.calls.clear()
+
+    def run(self, excluded=frozenset(), now=NOW):
+        run(self.gh, self.entries, now, excluded)
 
     def puts(self):
         return [c for c in self.gh.calls if c[0] == "PUT"]
@@ -114,6 +140,16 @@ class World:
             if p == f"{API}/contents/{path}":
                 return json.loads(base64.b64decode(body["content"]))
         return None
+
+    def current(self, path):
+        """The file as the stats branch now holds it, written this run or earlier."""
+        got = self.written(path)
+        if got is None and f"GET {API}/contents/{path}" in self.routes:
+            got = json.loads(base64.b64decode(self.routes[f"GET {API}/contents/{path}"]["content"]))
+        return got
+
+    def patches(self):
+        return [c for c in self.gh.calls if c[0] == "PATCH"]
 
     def issues_opened(self):
         return [c[2] for c in self.gh.calls if c[0] == "POST" and c[1] == f"{API}/issues"]
@@ -286,12 +322,40 @@ class Burst(unittest.TestCase):
         self.assertEqual(sorted(agg["labels"]), ["needs-review", "report"])
         self.assertTrue(all(v["flagged"] for v in w.written("likes.json").values()))
 
-    def test_aggregate_deduped_by_open_aggregate(self):
-        repos = {f"o/r{j}": burst_nodes(10, 10) for j in range(7)}
-        agg = {"number": 4, "title": "Like burst: 3 entries", "labels": [{"name": "report"}]}
-        w = World([entry(r) for r in repos], repos, issues=[agg])
+    def test_aggregate_reused_and_patched(self):
+        first = {f"o/r{j}": burst_nodes(10, 10) for j in range(6)}
+        later = {f"o/s{j}": [] for j in range(6)}
+        w = World([entry(r) for r in {**first, **later}], {**first, **later})
         w.run()
-        self.assertEqual(titles(w), [f"Like burst: o/r{j}" for j in range(5)])
+        self.assertEqual(titles(w)[-1], "Like burst: 1 entry")
+        agg = w.next_issue - 1
+        w.persist()
+        for r in later:
+            w.set_nodes(r, burst_nodes(10, 10, prefix="zqx", reacted=iso(NOW + timedelta(minutes=30))))
+        w.run(now=NOW + timedelta(hours=1))
+        self.assertEqual(titles(w), [f"Like burst: o/s{j}" for j in range(5)])
+        [(_, path, body)] = w.patches()
+        self.assertEqual(path, f"{API}/issues/{agg}")
+        self.assertEqual(body["title"], "Like burst: 2 entries")
+        self.assertIn("o/r5", body["body"])
+        self.assertIn("o/s5", body["body"])
+        self.assertNotIn("zqx", body["body"])
+        flags = w.written("flags.json")
+        self.assertEqual((flags["o/r5"]["burst"]["issue"], flags["o/s5"]["burst"]["issue"]), (agg, agg))
+
+    def test_overflow_repo_stays_flagged_while_aggregate_open(self):
+        repos = {f"o/r{j}": burst_nodes(10, 10) for j in range(6)}
+        w = World([entry(r) for r in repos], repos)
+        w.run()
+        agg = w.next_issue - 1
+        w.persist()
+        w.run(now=NOW + timedelta(hours=30))
+        self.assertTrue(w.current("likes.json")["o/r5"]["flagged"])
+        w.persist()
+        w.close(agg)
+        w.run(now=NOW + timedelta(hours=31))
+        self.assertFalse(w.current("likes.json")["o/r5"]["flagged"])
+        self.assertTrue(w.current("likes.json")["o/r0"]["flagged"])
 
     def test_drip_opens_review_issue_without_flag(self):
         days = [iso(NOW - timedelta(days=2 + i % 4)) for i in range(30)]
@@ -314,17 +378,116 @@ class Burst(unittest.TestCase):
         self.assertIn("o/z", w.issues_opened()[-1]["body"])
         self.assertNotIn("Like drip: o/z", titles(w))
 
+    def flags(self, issue=7, reviewed=None, kind="burst"):
+        rec = {"kind": kind, "issue": issue, "opened_at": iso(NOW - timedelta(days=2)), "reviewed_at": reviewed}
+        return {"flags.json": {"o/a": {kind: rec}}}
+
     def test_flag_persists_while_issue_open(self):
-        open_issue = {"number": 5, "title": "Like burst: o/a", "labels": [{"name": "report"}]}
-        w = World([entry("o/a")], {"o/a": [node("x")]}, issues=[open_issue])
+        w = World([entry("o/a")], {"o/a": [node("x")]}, stats=self.flags(), issues=[{"number": 7}])
         w.run()
         self.assertTrue(w.written("likes.json")["o/a"]["flagged"])
+        self.assertIsNone(w.written("flags.json"))
+        self.assertEqual(w.issues_opened(), [])
 
     def test_flag_clears_when_issue_closed(self):
-        prev = {"o/a": {"likes": 1, "delta_7d": 0, "rank": 1, "rank_delta_7d": 0, "flagged": True}}
-        w = World([entry("o/a")], {"o/a": [node("x")]}, stats={"likes.json": prev})
+        w = World([entry("o/a")], {"o/a": [node("x")]}, stats=self.flags(),
+                  issues=[{"number": 7, "state": "closed"}])
         w.run()
         self.assertFalse(w.written("likes.json")["o/a"]["flagged"])
+        self.assertEqual(w.written("flags.json")["o/a"]["burst"]["reviewed_at"], iso(NOW))
+
+    def test_deleted_issue_counts_as_reviewed(self):
+        for gone in (None, Status(410)):
+            w = World([entry("o/a")], {"o/a": [node("x")]}, stats=self.flags())
+            if gone is not None:
+                w.routes[f"GET {API}/issues/7"] = gone
+            w.run()
+            self.assertFalse(w.written("likes.json")["o/a"]["flagged"])
+            self.assertEqual(w.written("flags.json")["o/a"]["burst"]["reviewed_at"], iso(NOW))
+
+    def test_issue_checked_once_per_number(self):
+        stats = {"flags.json": {r: {"burst": {"kind": "burst", "issue": 7, "opened_at": iso(NOW),
+                                              "reviewed_at": None}} for r in ("o/a", "o/b")}}
+        w = World([entry("o/a"), entry("o/b")], {"o/a": [], "o/b": []}, stats=stats, issues=[{"number": 7}])
+        w.run()
+        self.assertEqual(len([c for c in w.gh.calls if c[1] == f"{API}/issues/7"]), 1)
+
+    def test_drip_record_never_flags(self):
+        w = World([entry("o/a")], {"o/a": [node("x")]}, stats=self.flags(kind="drip"), issues=[{"number": 7}])
+        w.run()
+        self.assertFalse(w.written("likes.json")["o/a"]["flagged"])
+
+    def test_forged_issue_has_no_effect(self):
+        forged = {"number": 5, "title": "Like burst: o/a"}
+        w = World([entry("o/a")], {"o/a": [node("x")]}, issues=[forged])
+        w.run()
+        self.assertFalse(w.written("likes.json")["o/a"]["flagged"])
+        w = World([entry("o/a")], {"o/a": burst_nodes(10, 10)}, issues=[forged])
+        w.run()
+        self.assertEqual(titles(w), ["Like burst: o/a"])
+        self.assertEqual(w.written("flags.json")["o/a"]["burst"]["issue"], 100)
+
+    def test_no_new_burst_issue_for_24h_after_close(self):
+        w = World([entry("o/a")], {"o/a": burst_nodes(10, 10)})
+        w.run()
+        w.persist()
+        w.close(100)
+        w.run(now=NOW + timedelta(hours=1))  # sees the close
+        self.assertEqual(w.issues_opened(), [])
+        reviewed = NOW + timedelta(hours=1)
+        w.persist()
+        w.set_nodes("o/a", burst_nodes(10, 10, reacted=iso(reviewed + timedelta(hours=20))))
+        w.run(now=reviewed + timedelta(hours=23))
+        self.assertEqual(w.issues_opened(), [])
+        w.persist()
+        w.run(now=reviewed + timedelta(hours=24))
+        self.assertEqual(titles(w), ["Like burst: o/a"])
+        self.assertEqual(w.written("flags.json")["o/a"]["burst"]["reviewed_at"], None)
+
+    def test_no_new_drip_issue_for_7_days_after_close(self):
+        def drip(at):
+            return [node(f"u{i}", MID, iso(at - timedelta(days=2 + i % 4))) for i in range(30)]
+        w = World([entry("o/a")], {"o/a": drip(NOW)})
+        w.run()
+        self.assertEqual(titles(w), ["Like drip: o/a"])
+        w.persist()
+        w.close(100)
+        w.run(now=NOW + timedelta(hours=1))
+        reviewed = NOW + timedelta(hours=1)
+        w.persist()
+        w.set_nodes("o/a", drip(reviewed + timedelta(days=6)))
+        w.run(now=reviewed + timedelta(days=6, hours=23))
+        self.assertEqual(w.issues_opened(), [])
+        w.persist()
+        w.set_nodes("o/a", drip(reviewed + timedelta(days=7)))
+        w.run(now=reviewed + timedelta(days=7))
+        self.assertEqual(titles(w), ["Like drip: o/a"])
+
+    def test_flags_round_trip(self):
+        w = World([entry("o/a")], {"o/a": burst_nodes(10, 10)})
+        w.run()
+        self.assertEqual(w.written("flags.json"), {"o/a": {"burst": {
+            "kind": "burst", "issue": 100, "opened_at": iso(NOW), "reviewed_at": None}}})
+        w.persist()
+        w.run(now=NOW + timedelta(minutes=5))
+        self.assertIsNone(w.written("flags.json"))
+        self.assertEqual(w.issues_opened(), [])
+        self.assertTrue(w.current("likes.json")["o/a"]["flagged"])
+
+    def test_failed_issue_post_keeps_flags_for_opened_ones(self):
+        repos = {f"o/r{j}": burst_nodes(10, 10) for j in range(2)}
+        w = World([entry(r) for r in repos], repos)
+        opened = w._open_issue
+
+        def second_fails(body):
+            if w.next_issue == 101:
+                raise GitHubError(502, "bad gateway")
+            return opened(body)
+        w.routes[f"POST {API}/issues"] = second_fails
+        with self.assertRaises(GitHubError):
+            w.run()
+        self.assertEqual(list(w.written("flags.json")), ["o/r0"])
+        self.assertIsNone(w.written("likes.json"))
 
     def test_burst_report_has_no_logins(self):
         w = World([entry("Owner/Tool")], {"Owner/Tool": burst_nodes(12, 8, prefix="zqx")})
@@ -337,14 +500,11 @@ class Burst(unittest.TestCase):
         self.assertIn("12", issue["body"])
 
     def test_burst_report_deduped(self):
-        open_issue = {"number": 5, "title": "Like burst: o/a", "labels": [{"name": "report"}]}
-        w = World([entry("o/a")], {"o/a": burst_nodes(10, 10)}, issues=[open_issue])
+        w = World([entry("o/a")], {"o/a": burst_nodes(10, 10)}, stats=self.flags(), issues=[{"number": 7}])
         w.run()
         self.assertEqual(w.issues_opened(), [])
         self.assertTrue(w.written("likes.json")["o/a"]["flagged"])
-        listing = [c for c in w.gh.calls if c[0] == "GET" and c[1].startswith(f"{API}/issues")]
-        self.assertIn("labels=report", listing[0][1])
-        self.assertIn("state=open", listing[0][1])
+        self.assertFalse([c for c in w.gh.calls if c[1].startswith(f"{API}/issues?")])
 
     def test_flagged_status_keeps_rank(self):
         w = World([entry("o/a", "flagged"), entry("o/b"), entry("o/h", "hidden")],

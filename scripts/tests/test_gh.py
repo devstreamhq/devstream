@@ -5,7 +5,7 @@ import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from scripts.devstream.gh import GitHub, GitHubError, RateLimited
-from scripts.tests.fake_gh import FakeGitHub, Redirect, Status
+from scripts.tests.fake_gh import FakeGitHub, GraphQLErrors, Redirect, Status
 
 LONG = int(time.time()) + 100000
 
@@ -117,6 +117,11 @@ class H(BaseHTTPRequestHandler):
         if body["variables"].get("rl"):
             hdr = [("x-ratelimit-reset", str(LONG))] if body["variables"]["rl"] == 1 else []
             self._send(200, {"errors": [{"type": "RATE_LIMITED", "message": "x"}]}, hdr)
+        elif body["variables"].get("nf"):
+            errs = [{"type": "NOT_FOUND", "path": ["r0"]}]
+            if body["variables"]["nf"] == 2:
+                errs.append({"type": "FORBIDDEN"})
+            self._send(200, {"data": {"r0": None}, "errors": errs})
         elif body["variables"].get("bad"):
             self._send(200, {"errors": [{"message": "x"}]})
         else:
@@ -196,6 +201,13 @@ class GitHubTest(unittest.TestCase):
         with self.assertRaises(GitHubError):
             self.gh.graphql("query Q { viewer }", {"bad": 1})
 
+    def test_graphql_allow_not_found(self):
+        self.assertEqual(self.gh.graphql("query Q { x }", {"nf": 1}, allow_not_found=True), {"r0": None})
+        with self.assertRaises(GitHubError):
+            self.gh.graphql("query Q { x }", {"nf": 1})
+        with self.assertRaises(GitHubError):
+            self.gh.graphql("query Q { x }", {"nf": 2}, allow_not_found=True)
+
     def test_write_success(self):
         for m in ("post", "patch", "put"):
             r = getattr(self.gh, m)("/ok", {"a": 1})
@@ -258,6 +270,15 @@ class FakeTest(unittest.TestCase):
     def test_same_public_methods(self):
         pub = lambda c: {n for n in dir(c) if not n.startswith("_") and callable(getattr(c, n))}
         self.assertEqual(pub(GitHub), pub(FakeGitHub))
+
+    def test_graphql_errors_route(self):
+        nf = GraphQLErrors({"r0": None}, [{"type": "NOT_FOUND"}])
+        f = FakeGitHub({"GRAPHQL Q": nf, "GRAPHQL B": GraphQLErrors({}, [{"type": "FORBIDDEN"}])})
+        self.assertEqual(f.graphql("query Q { x }", {}, allow_not_found=True), {"r0": None})
+        with self.assertRaises(GitHubError):
+            f.graphql("query Q { x }", {})
+        with self.assertRaises(GitHubError):
+            f.graphql("query B { x }", {}, allow_not_found=True)
 
     def test_status_routes(self):
         f = FakeGitHub({"GET /b": Status(204), "GET /x": {"a": 1}, "GET /e": Status(500)})

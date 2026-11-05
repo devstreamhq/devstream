@@ -150,7 +150,8 @@ class GitHub:
     def delete(self, path):
         return self._write("DELETE", path, None)
 
-    def graphql(self, query: str, variables: dict) -> dict:
+    def graphql(self, query: str, variables: dict, allow_not_found: bool = False) -> dict:
+        """allow_not_found returns data with nulls where only NOT_FOUND errors occurred."""
         self.last_redirect = None
         r = self._request("POST", "/graphql", body={"query": query, "variables": variables})
         if r is None:
@@ -159,6 +160,6 @@ class GitHub:
         errors = out.get("errors")
         if any(e.get("type") == "RATE_LIMITED" for e in errors or []):
             raise RateLimited(int(r[0].get("x-ratelimit-reset") or time.time() + 60))
-        if errors:
+        if errors and not (allow_not_found and all(e.get("type") == "NOT_FOUND" for e in errors)):
             raise GitHubError(200, json.dumps(out["errors"])[:500])
         return out.get("data")

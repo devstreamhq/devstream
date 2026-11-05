@@ -1,0 +1,65 @@
+---
+import "../styles/site.css";
+import { icon } from "../lib/format.ts";
+
+interface Props {
+  title: string;
+  description: string;
+}
+const { title, description } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const submit = "https://github.com/devstreamhq/devstream/issues/new?template=submit-repo.yml";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preload" href="/fonts/MonaSans.woff2" as="font" type="font/woff2" crossorigin />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="DevStream" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={new URL("/social-preview.png", Astro.site)} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <noscript><link rel="stylesheet" href="/nojs.css" /></noscript>
+    <script is:inline type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to the list</a>
+    <header class="top">
+      <div class="wrap">
+        <a class="brand" href="/" aria-label="DevStream home"><img src="/logo.svg" alt="DevStream" width="173" height="28" /></a>
+        <div class="search" role="search" data-js>
+          <label class="sr-only" for="q">Search repos</label>
+          <Fragment set:html={icon("search")} />
+          <input id="q" type="search" placeholder="Search repos" autocomplete="off" spellcheck="false" />
+          <kbd aria-hidden="true">/</kbd>
+        </div>
+        <a class="btn btn-green" href={submit}><Fragment set:html={icon("plus")} /><span>Submit<span class="full"> a repo</span></span></a>
+      </div>
+    </header>
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    <footer class="foot">
+      <div class="wrap">
+        <span>Repos ranked by the developers who like them.</span>
+        <nav aria-label="Footer">
+          <a href="/how-it-works">How it works</a>
+          <a href="/archived">Archive</a>
+          <a href="https://github.com/devstreamhq/devstream/wiki">Docs</a>
+          <a href="https://github.com/devstreamhq/devstream">GitHub</a>
+        </nav>
+      </div>
+    </footer>
+  </body>
+</html>

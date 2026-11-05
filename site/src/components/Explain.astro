@@ -1,0 +1,61 @@
+---
+import { icon } from "../lib/format.ts";
+const submit = "https://github.com/devstreamhq/devstream/issues/new?template=submit-repo.yml";
+---
+
+<section class="explain" aria-label="How DevStream works">
+  <div class="wrap">
+    <div>
+      <h2>How it works</h2>
+      <ol class="steps">
+        <li>
+          <h3>Someone submits a repo</h3>
+          <p>One GitHub issue: the repo, a category and a line on what it does. Anyone can do it, including the people who built it.</p>
+        </li>
+        <li>
+          <h3>A bot checks it</h3>
+          <p>Open source licence, a README with substance, a push in the last 90 days, at least 30 days old. Pass, and it's listed. No waiting on a person.</p>
+        </li>
+        <li>
+          <h3>Developers Like it</h3>
+          <p>Every repo gets its own Discussion. A thumbs-up there is a Like, and Likes set the order you see above.</p>
+        </li>
+      </ol>
+    </div>
+    <div class="faq">
+      <h2>Questions people ask</h2>
+      <details>
+        <summary>What counts as a Like?<Fragment set:html={icon("chevron-down")} /></summary>
+        <p>
+          A thumbs-up on the repo's Discussion, from an account that's at least 30 days old and has a public repo or a contribution in the
+          last year. A batch of brand-new accounts can react all they like. The ranking won't move.
+        </p>
+      </details>
+      <details>
+        <summary>Why not just sort by stars?<Fragment set:html={icon("chevron-down")} /></summary>
+        <p>
+          Stars pile up for years and almost never come down, so the same giants sit on top forever. A Like is a developer vouching for a
+          repo now, and the weekly arrows show who's climbing.
+        </p>
+      </details>
+      <details>
+        <summary>Where did a repo go?<Fragment set:html={icon("chevron-down")} /></summary>
+        <p>
+          A repo that goes a year without a push, gets archived or says it's unmaintained gets a 30-day warning, then moves to the <a
+            href="/archived">archive</a>. It comes back by itself if things pick up. Deleted repos, and ones that lose their licence or README,
+          come off straight away.
+        </p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="cta" aria-labelledby="cta-h">
+  <div class="wrap">
+    <div>
+      <h2 id="cta-h">Know a repo that deserves a spot?</h2>
+      <p>Submitting takes a minute. The bot does the rest, and you'll hear back on the issue.</p>
+    </div>
+    <a class="btn btn-green" href={submit}><Fragment set:html={icon("plus")} />Submit a repo</a>
+  </div>
+</section>

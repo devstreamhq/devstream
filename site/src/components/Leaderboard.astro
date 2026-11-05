@@ -1,0 +1,207 @@
+---
+import type { Category, SiteEntry } from "../lib/data.ts";
+import { isFlagged, languages } from "../lib/data.ts";
+import { ago, compact, icon, num, pct } from "../lib/format.ts";
+
+interface Props {
+  entries: SiteEntry[];
+  all: SiteEntry[];
+  categories: Category[];
+  current?: string;
+  label: string;
+}
+const { entries, all, categories, current, label } = Astro.props;
+const counts = Object.fromEntries(categories.map((c) => [c.slug, all.filter((e) => e.category === c.slug).length]));
+const langs = languages(entries);
+const max = Math.max(1, ...entries.map((e) => e.likes));
+const now = Date.now();
+const ts = (iso: string | null) => (iso ? Date.parse(iso) : 0);
+const split = (repo: string) => {
+  const i = repo.indexOf("/");
+  return [repo.slice(0, i + 1), repo.slice(i + 1)];
+};
+---
+
+<div class="wrap board">
+  <details class="side" open data-side>
+    <summary>Categories and language<Fragment set:html={icon("chevron-down")} /></summary>
+    <div class="in">
+      <nav aria-labelledby="cat-h">
+        <h2 id="cat-h">Categories</h2>
+        <ul class="cats">
+          <li>
+            <a href="/" aria-current={current ? undefined : "page"}><span>All repos</span><span class="n">{all.length}</span></a>
+          </li>
+          {
+            categories.map((c) => (
+              <li>
+                <a href={`/category/${c.slug}`} aria-current={current === c.slug ? "page" : undefined}>
+                  <span>{c.name}</span>
+                  <span class="n">{counts[c.slug]}</span>
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+      <label class="field" data-js>
+        <span>Language</span>
+        <select id="lang">
+          <option value="">All languages</option>
+          {langs.map((l) => <option value={l}>{l}</option>)}
+        </select>
+      </label>
+    </div>
+  </details>
+
+  <section aria-label={label}>
+    <div class="bar">
+      <div class="tabs" role="tablist" aria-label="Order the list by">
+        <button type="button" role="tab" id="tab-top" aria-selected="true" aria-controls="panel" data-tab="top">
+          Top
+        </button>
+        <button type="button" role="tab" id="tab-trending" aria-selected="false" aria-controls="panel" tabindex="-1" data-tab="trending" data-js>
+          Trending
+        </button>
+        <button type="button" role="tab" id="tab-new" aria-selected="false" aria-controls="panel" tabindex="-1" data-tab="new" data-js>
+          New
+        </button>
+      </div>
+      <p class="count" id="count" aria-live="polite">{entries.length} {entries.length === 1 ? "repo" : "repos"}</p>
+    </div>
+
+    <div class="table" id="panel" role="tabpanel" aria-labelledby="tab-top">
+      {
+        entries.length === 0 ? (
+          <p class="empty">Nothing listed here yet. Know a repo that belongs? Submit it and it could be first.</p>
+        ) : (
+          <table>
+            <caption class="sr-only">{label}, ranked by developer Likes</caption>
+            <thead>
+              <tr>
+                <th scope="col" class="l" aria-sort="ascending" data-sort="rank">
+                  <button type="button">Rank<Fragment set:html={icon("triangle-down")} /></button>
+                </th>
+                <th scope="col" class="l">Repository</th>
+                <th scope="col" aria-sort="none" data-sort="likes">
+                  <button type="button"><Fragment set:html={icon("triangle-down")} />Likes</button>
+                </th>
+                <th scope="col" class="stars" aria-sort="none" data-sort="stars">
+                  <button type="button"><Fragment set:html={icon("triangle-down")} />Stars</button>
+                </th>
+                <th scope="col" class="l lang">Language</th>
+                <th scope="col" class="commit" aria-sort="none" data-sort="pushed">
+                  <button type="button"><Fragment set:html={icon("triangle-down")} />Last commit</button>
+                </th>
+                <th scope="col"><span class="sr-only">Like</span></th>
+              </tr>
+            </thead>
+            <tbody id="rows">
+              {entries.map((e, i) => {
+                const [owner, name] = split(e.repo);
+                const p = pct(e.likes, e.delta_7d);
+                const flagged = isFlagged(e);
+                return (
+                  <tr
+                    class={e.rank === 1 ? "first" : undefined}
+                    data-i={i}
+                    data-likes={e.likes}
+                    data-delta={e.delta_7d}
+                    data-stars={e.stars ?? 0}
+                    data-pushed={ts(e.pushed_at)}
+                    data-new={ts(e.submitted_at)}
+                    data-trend={!flagged && e.delta_7d > 0 ? "1" : undefined}
+                    data-lang={e.language ?? ""}
+                    data-q={`${e.repo} ${e.description}`.toLowerCase()}
+                  >
+                    <td class="rank">
+                      <span class="rk">{e.rank ?? "–"}</span>
+                      {e.rank_delta_7d > 0 && (
+                        <span class="mv up">
+                          ▲{e.rank_delta_7d}
+                          <span class="sr-only"> places this week</span>
+                        </span>
+                      )}
+                      {e.rank_delta_7d < 0 && (
+                        <span class="mv down">
+                          ▼{-e.rank_delta_7d}
+                          <span class="sr-only"> places this week</span>
+                        </span>
+                      )}
+                    </td>
+                    <td class="repo">
+                      <div class="who">
+                        {e.avatar_url ? (
+                          <img class="av" src={e.avatar_url} alt="" width="36" height="36" loading={i < 8 ? "eager" : "lazy"} decoding="async" />
+                        ) : (
+                          <span class="av" aria-hidden="true">
+                            {owner.charAt(0).toUpperCase()}
+                          </span>
+                        )}
+                        <div class="txt">
+                          <a class="name" href={`https://github.com/${e.repo}`}><span class="o">{owner}</span><b>{name}</b></a>
+                          <p class="desc">
+                            <span class="dt">{e.description}</span>
+                            {flagged && <span class="tag">Under review</span>}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="likes">
+                      <span class="lk">{num(e.likes)}</span>
+                      {e.delta_7d > 0 && (
+                        <span class="dl up">
+                          ▲ {p === null ? `${num(e.delta_7d)} new` : p < 1 ? "<1%" : `${p}%`}
+                          <span class="sr-only"> this week</span>
+                        </span>
+                      )}
+                      {e.delta_7d < 0 && (
+                        <span class="dl down">
+                          ▼ {Math.max(1, Math.abs(p ?? 0))}%<span class="sr-only"> this week</span>
+                        </span>
+                      )}
+                      <span class="meter" aria-hidden="true">
+                        <span class={`w${Math.round((e.likes / max) * 20) * 5}`} />
+                      </span>
+                    </td>
+                    <td class="stars">{e.stars === null ? "–" : compact(e.stars)}</td>
+                    <td class="lang">
+                      {e.language ? (
+                        <>
+                          <svg class="ld" width="10" height="10" aria-hidden="true">
+                            <circle cx="5" cy="5" r="5" fill={e.language_color ?? "#8b949e"} />
+                          </svg>
+                          {e.language}
+                        </>
+                      ) : (
+                        "–"
+                      )}
+                    </td>
+                    <td class="commit">{e.pushed_at ? <time datetime={e.pushed_at}>{ago(e.pushed_at, now)}</time> : "–"}</td>
+                    <td class="act">
+                      {e.discussion_url ? (
+                        <a class="like" href={e.discussion_url} aria-label={`Like ${e.repo} on GitHub`}>
+                          <Fragment set:html={icon("thumbsup")} />
+                          <span class="t">Like</span>
+                        </a>
+                      ) : (
+                        <span class="like" aria-disabled="true">
+                          <Fragment set:html={icon("thumbsup")} />
+                          <span class="t">Likes open soon</span>
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )
+      }
+      <p class="empty" id="none" hidden>No repos match that. Try a shorter search, or another language.</p>
+    </div>
+    <div class="more" data-js>
+      <button type="button" class="btn btn-quiet" id="more" aria-controls="rows" hidden>Show 20 more</button>
+    </div>
+  </section>
+</div>

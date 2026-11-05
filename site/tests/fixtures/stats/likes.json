@@ -1,0 +1,44 @@
+{
+  "acme/fast-cli": {
+    "likes": 120,
+    "delta_7d": 20,
+    "rank": 1,
+    "rank_delta_7d": 1,
+    "flagged": false
+  },
+  "zz-tie/same-likes": {
+    "likes": 120,
+    "delta_7d": 0,
+    "rank": 2,
+    "rank_delta_7d": 0,
+    "flagged": false
+  },
+  "pixel-forge/shader-kit": {
+    "likes": 90,
+    "delta_7d": 5,
+    "rank": 4,
+    "rank_delta_7d": -1,
+    "flagged": false
+  },
+  "quiet-co/tiny-queue": {
+    "likes": 100,
+    "delta_7d": 40,
+    "rank": 3,
+    "rank_delta_7d": 2,
+    "flagged": true
+  },
+  "burst/likes-spike": {
+    "likes": 60,
+    "delta_7d": 55,
+    "rank": 5,
+    "rank_delta_7d": 3,
+    "flagged": true
+  },
+  "secret/hidden-thing": {
+    "likes": 999,
+    "delta_7d": 999,
+    "rank": 0,
+    "rank_delta_7d": 0,
+    "flagged": false
+  }
+}

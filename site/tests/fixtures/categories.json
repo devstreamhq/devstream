@@ -1,0 +1,54 @@
+[
+  {
+    "slug": "ai-ml",
+    "name": "AI & Machine Learning"
+  },
+  {
+    "slug": "backend-apis",
+    "name": "Backend & APIs"
+  },
+  {
+    "slug": "cli-terminal",
+    "name": "CLI & Terminal"
+  },
+  {
+    "slug": "databases-data",
+    "name": "Databases & Data"
+  },
+  {
+    "slug": "design-ui",
+    "name": "Design & UI"
+  },
+  {
+    "slug": "devops-infra",
+    "name": "DevOps & Infrastructure"
+  },
+  {
+    "slug": "developer-tools",
+    "name": "Developer Tools"
+  },
+  {
+    "slug": "frontend-web",
+    "name": "Frontend & Web"
+  },
+  {
+    "slug": "learning-resources",
+    "name": "Learning & Resources"
+  },
+  {
+    "slug": "mobile",
+    "name": "Mobile"
+  },
+  {
+    "slug": "security",
+    "name": "Security"
+  },
+  {
+    "slug": "self-hosted",
+    "name": "Self-Hosted"
+  },
+  {
+    "slug": "testing",
+    "name": "Testing"
+  }
+]

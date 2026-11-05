@@ -1,0 +1,57 @@
+---
+import Base from "../layouts/Base.astro";
+import { loadAll, archivedList } from "../lib/data.ts";
+import { compact } from "../lib/format.ts";
+
+const list = archivedList(loadAll().entries);
+---
+
+<Base title="Archive: DevStream" description="Repos that went quiet or were replaced, kept here so the links still lead somewhere.">
+  <div class="wrap page">
+    <h1>The archive</h1>
+    <p>
+      Repos that went quiet, or were replaced by something newer. They're off the main list, not gone. If an archived repo gets active again,
+      it rejoins the list on its own.
+    </p>
+    {
+      list.length === 0 ? (
+        <p>Nothing in here yet. Good sign.</p>
+      ) : (
+        <div class="table">
+          <table>
+            <caption class="sr-only">Archived repos</caption>
+            <thead>
+              <tr>
+                <th scope="col" class="l">Repository</th>
+                <th scope="col">Stars</th>
+                <th scope="col" class="l">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {list.map((e) => (
+                <tr>
+                  <td class="repo">
+                    <a class="name" href={`https://github.com/${e.repo}`}>
+                      <b>{e.repo}</b>
+                    </a>
+                    <p class="desc">{e.description}</p>
+                  </td>
+                  <td>{e.stars === null ? "–" : compact(e.stars)}</td>
+                  <td class="lang">
+                    {e.status === "superseded" && e.superseded_by ? (
+                      <>
+                        Replaced by <a href={`https://github.com/${e.superseded_by}`}>{e.superseded_by}</a>
+                      </>
+                    ) : (
+                      "Archived"
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )
+    }
+  </div>
+</Base>

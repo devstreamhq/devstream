@@ -1,13 +1,15 @@
 import base64
+import time
 import unittest
 from datetime import datetime, timedelta, timezone
 
 from scripts.devstream.gh import GitHubError
-from scripts.devstream.quality import check_repo
+from scripts.devstream.quality import Undecided, check_repo
 from scripts.tests.fake_gh import FakeGitHub, Redirect
 
 NOW = datetime(2026, 11, 5, 12, 0, tzinfo=timezone.utc)
 R = "/repos/alice/tool"
+MSG_SHORT = "Your README needs a bit more detail (at least a short paragraph about what it does)."
 README = "This tool does a useful thing for people who need it. " * 8
 
 
@@ -187,7 +189,8 @@ class SubmitTest(unittest.TestCase):
 
     def test_deprecated_marker_in_description_fails_submit(self):
         r = run(gh({"description": "Deprecated, use other"}))
-        self.assertEqual(r.failures, ["This repo says it's deprecated or unmaintained."])
+        self.assertEqual(len(r.failures), 1)
+        self.assertIn("deprecated", r.failures[0].lower())
 
     def test_deprecated_marker_in_readme_first_500(self):
         self.assertEqual(len(run(gh(readme="This project is no longer maintained. " + README)).failures), 1)
@@ -216,6 +219,54 @@ class SubmitTest(unittest.TestCase):
             run(gh(extra={f"GET {R}/readme": boom}))
         with self.assertRaises(GitHubError):
             run(gh(topics=(), contributing=False, coc=False, extra={f"GET {R}/releases?per_page=1": boom}))
+
+    def test_redos_bracket_readme_is_fast(self):
+        for text in ("[" * 100000, "![" * 50000, "<" * 100000):
+            g = gh(readme=text)
+            t = time.monotonic()
+            run(g)
+            self.assertLess(time.monotonic() - t, 1, text[:3])
+
+    def test_archived_word_in_text_is_not_deprecated(self):
+        self.assertEqual(run(gh({"description": "Supports archived chats"})).failures, [])
+        self.assertEqual(run(gh(readme="archived " + README), "rot").rot, "ok")
+
+    def test_deprecated_message_names_the_word(self):
+        r = run(gh({"description": "Deprecated, use other"}))
+        self.assertEqual(len(r.failures), 1)
+        self.assertIn('"Deprecated"', r.failures[0])
+
+    def test_readme_encoding_none_uses_size(self):
+        big = {"encoding": "none", "content": "", "size": 2_000_000}
+        self.assertEqual(run(gh(extra={f"GET {R}/readme": big})).failures, [])
+        small = {"encoding": "none", "content": "", "size": 100}
+        self.assertEqual(run(gh(extra={f"GET {R}/readme": small})).failures, [MSG_SHORT])
+
+    def test_bad_base64_is_undecided(self):
+        bad = {"encoding": "base64", "content": "abcde"}
+        for mode in ("submit", "rot"):
+            with self.assertRaises(Undecided):
+                run(gh(extra={f"GET {R}/readme": bad}), mode)
+
+    def test_null_pushed_at(self):
+        r = run(gh({"pushed_at": None}))
+        self.assertEqual(len(r.failures), 1)
+        self.assertIn("push", r.failures[0])
+        with self.assertRaises(Undecided):
+            run(gh({"pushed_at": None}), "rot")
+
+    def test_403_on_readme_and_500_on_license_raise(self):
+        def e403(_):
+            raise GitHubError(403, "forbidden")
+
+        def e500(_):
+            raise GitHubError(500, "boom")
+
+        for mode in ("submit", "rot"):
+            with self.assertRaises(GitHubError):
+                run(gh(extra={f"GET {R}/readme": e403}), mode)
+            with self.assertRaises(GitHubError):
+                run(gh({"license": {"spdx_id": "NOASSERTION"}}, extra={f"GET {R}/license": e500}), mode)
 
 
 class RotTest(unittest.TestCase):

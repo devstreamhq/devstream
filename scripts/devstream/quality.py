@@ -1,4 +1,5 @@
 import base64
+import binascii
 import json
 import re
 from dataclasses import dataclass, field
@@ -6,20 +7,27 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Literal
 
+from scripts.devstream.gh import GitHubError
+
 OSI = frozenset(json.loads((Path(__file__).parents[2] / "data" / "osi-licenses.json").read_text()))
 NO_LICENSE = {None, "NOASSERTION", "NONE"}
-DEPRECATED = re.compile(r"\b(deprecated|unmaintained|no longer maintained|archived)\b", re.I)
+DEPRECATED = re.compile(r"\b(deprecated|unmaintained|no longer maintained)\b", re.I)
 README_MIN = 300
+README_SCAN = 200_000
 
 MSG_GONE = "This repo no longer exists."
 MSG_LICENSE = "We need an open-source license GitHub can recognise (like MIT or Apache-2.0)."
 MSG_NO_README = "Add a README so people know what this is."
 MSG_SHORT_README = "Your README needs a bit more detail (at least a short paragraph about what it does)."
 MSG_FORK = "Forks need their own commits to be listed."
-MSG_DEPRECATED = "This repo says it's deprecated or unmaintained."
+MSG_DEPRECATED = "This repo says it's \"{}\". If that's not right, update the description or README and submit again."
 MSG_NO_DESC = "Add a short description to the repo so people know what it is."
 MSG_STALE = "This repo hasn't had a push in the last 90 days."
 MSG_ARCHIVED = "This repo is archived. Unarchive it to be listed."
+
+
+class Undecided(GitHubError):
+    pass
 
 
 @dataclass
@@ -32,11 +40,12 @@ class RepoResult:
 
 
 def _readme_text_length(text: str) -> int:
+    text = text[:README_SCAN]  # also bounds the regex work below
     text = re.sub(r"```.*?(```|\Z)", " ", text, flags=re.S)
     text = re.sub(r"^\s{0,3}#.*$", " ", text, flags=re.M)
-    text = re.sub(r"<[^>]*>", " ", text)
-    text = re.sub(r"!\[[^\]]*\]\([^)]*\)", " ", text)
-    text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text)
+    text = re.sub(r"<[^>]{0,2000}>", " ", text)
+    text = re.sub(r"!\[[^\]]{0,500}\]\([^)]{0,2000}\)", " ", text)
+    text = re.sub(r"\[([^\]]{0,500})\]\([^)]{0,2000}\)", r"\1", text)
     return len(re.sub(r"\s+", " ", text).strip())
 
 
@@ -47,13 +56,19 @@ def _license_ok(repo, gh, r) -> bool:
     return spdx not in NO_LICENSE and spdx in OSI
 
 
-def _readme(gh, r) -> str | None:
+def _readme(gh, r) -> tuple[str | None, int] | None:
+    """None for no README, else (text, length). text is None when GitHub withholds it (over 1 MB)."""
     data = gh.get(f"/repos/{r}/readme")
     if data is None:
         return None
-    if data.get("encoding") != "base64":
-        raise ValueError(f"unexpected README encoding: {data.get('encoding')}")
-    return base64.b64decode(data["content"]).decode("utf-8", errors="replace")
+    if data.get("encoding") == "none":
+        return None, data.get("size") or 0
+    try:
+        raw = base64.b64decode("".join((data.get("content") or "").split()), validate=False)
+    except (binascii.Error, ValueError) as e:
+        raise Undecided(0, f"README of {r} could not be decoded: {e}") from e
+    text = raw.decode("utf-8", errors="replace")[:README_SCAN]
+    return text, _readme_text_length(text)
 
 
 def _fork_diverged(repo, gh) -> bool:
@@ -114,13 +129,16 @@ def check_repo(full: str, gh, now: datetime, mode: Literal["submit", "rot"]) -> 
         "default_branch": repo.get("default_branch"),
         "html_url": repo.get("html_url"),
     }
-    age = now - datetime.fromisoformat(repo["pushed_at"])
+    pushed = repo.get("pushed_at")
+    if pushed is None and mode == "rot":
+        raise Undecided(0, f"{r} has no pushed_at")
+    age = None if pushed is None else now - datetime.fromisoformat(pushed)
     license_ok = _license_ok(repo, gh, r)
     readme = _readme(gh, r)
-    readme_len = None if readme is None else _readme_text_length(readme)
-    readme_ok = readme_len is not None and readme_len >= README_MIN
-    deprecated = bool(DEPRECATED.search(repo.get("description") or "")
-                      or DEPRECATED.search((readme or "")[:500]))
+    readme_ok = readme is not None and readme[1] >= README_MIN
+    text = (readme[0] if readme else None) or ""
+    m = DEPRECATED.search(repo.get("description") or "") or DEPRECATED.search(text[:500])
+    deprecated = m.group(0) if m else None
 
     failures = []
     if not license_ok:
@@ -134,7 +152,7 @@ def check_repo(full: str, gh, now: datetime, mode: Literal["submit", "rot"]) -> 
         if repo.get("archived"):
             failures.append(MSG_ARCHIVED)
         if deprecated:
-            failures.append(MSG_DEPRECATED)
+            failures.append(MSG_DEPRECATED.format(deprecated))
         if age > timedelta(days=365):
             failures.append("This repo hasn't had a push in over a year.")
         if not (license_ok and readme_ok):
@@ -145,7 +163,7 @@ def check_repo(full: str, gh, now: datetime, mode: Literal["submit", "rot"]) -> 
             rot = "ok"
         return RepoResult(True, r, failures, rot, meta)
 
-    if age > timedelta(days=90):
+    if age is None or age > timedelta(days=90):
         failures.append(MSG_STALE)
     if repo.get("archived"):
         failures.append(MSG_ARCHIVED)
@@ -154,7 +172,7 @@ def check_repo(full: str, gh, now: datetime, mode: Literal["submit", "rot"]) -> 
     if not (repo.get("description") or "").strip():
         failures.append(MSG_NO_DESC)
     if deprecated:
-        failures.append(MSG_DEPRECATED)
+        failures.append(MSG_DEPRECATED.format(deprecated))
     missing = _extras_missing(repo, gh, r)
     if missing:
         failures.append("Add at least two of these to the repo: " + ", ".join(missing) + ".")

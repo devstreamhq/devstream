@@ -4,11 +4,12 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from datetime import datetime, timedelta, timezone
 
 from scripts.devstream.entries import save
 from scripts.devstream.gh import GitHubError, RateLimited
-from scripts.submit import ARCHIVED_DUP, RATE_LIMIT, comment, decide
+from scripts.submit import ARCHIVED_DUP, DUPLICATE, RATE_LIMIT, comment, decide, main
 from scripts.tests.fake_gh import FakeGitHub
 from scripts.tests.test_quality import README, b64, iso, repo
 
@@ -48,7 +49,7 @@ def gh(count=1, repo_kw=None, extra=None):
 
 def entry(repo_="alice/tool", status="live"):
     return {
-        "repo": repo_, "category": "developer-tools", "description": "Old.",
+        "repo": repo_, "category": "developer-tools", "description": "An older tool that still works.",
         "submitted_by": "dave", "submitted_at": "2026-01-01T00:00:00Z", "issue": 1,
         "status": status, "warned_at": None, "superseded_by": None, "added_by_seed": False,
     }
@@ -180,7 +181,102 @@ class CommentTest(unittest.TestCase):
             self.assertNotIn("alert", text)
 
 
+class PrBodyTest(unittest.TestCase):
+    def test_pr_body_puts_description_in_code_span(self):
+        e = dict(run().entry, description="Pings @everyone when it runs.")
+        text = comment({"ok": True, "reasons": [], "entry": e, "issue": 7, "author": "carol"}, "pr")
+        self.assertIn("Closes #7\n", text)
+        self.assertIn("`Pings @everyone when it runs.`", text)
+        self.assertIn("Developer Tools", text)
+
+
+def write(path, obj):
+    with open(path, "w") as f:
+        json.dump(obj, f)
+
+
+def issue_api(number=7, labels=("submission",), state="open", **kw):
+    return dict(issue(), number=number, state=state, labels=[{"name": n} for n in labels], **kw)
+
+
+class DecideCliTest(unittest.TestCase):
+    def main(self, g, *args):
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch("scripts.submit.GitHub", lambda token: g), \
+                mock.patch("scripts.submit.load", lambda: []), \
+                mock.patch("scripts.submit.datetime") as dt, \
+                mock.patch.dict(os.environ, {"GITHUB_TOKEN": "t", "EXCLUDED_USERS": ""}):
+            dt.now.return_value = NOW
+            out = os.path.join(tmp, "result.json")
+            try:
+                code = main(["decide", *args, "--out", out])
+            finally:
+                self.wrote = os.path.exists(out)
+            if self.wrote:
+                with open(out) as f:
+                    self.result = json.load(f)
+            return code
+
+    def test_api_error_exits_nonzero_without_result(self):
+        def limited(_):
+            raise RateLimited(0)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            ev = os.path.join(tmp, "event.json")
+            write(ev, {"issue": issue()})
+            with self.assertRaises(RateLimited):
+                self.main(gh(extra={SEARCH: limited}), "--event", ev)
+        self.assertFalse(self.wrote)
+
+    def test_dispatch_fetches_issue(self):
+        g = gh(extra={"GET /repos/devstreamhq/devstream/issues/7": issue_api()})
+        self.assertEqual(self.main(g, "--issue", "7"), 0)
+        self.assertTrue(self.result["ok"], self.result)
+        self.assertEqual((self.result["issue"], self.result["author"]), (7, "carol"))
+
+    def test_dispatch_rejects_non_digit_input(self):
+        for bad in ("7; rm -rf /", "-1", "", "٧", "7\n"):
+            g = gh()
+            with self.assertRaises(SystemExit):
+                self.main(g, "--issue", bad)
+            self.assertEqual(g.calls, [], bad)
+            self.assertFalse(self.wrote)
+
+    def test_dispatch_skips_handled_or_foreign_issues(self):
+        cases = [
+            issue_api(labels=("submission", "accepted")),
+            issue_api(labels=("submission", "rejected")),
+            issue_api(state="closed"),
+            issue_api(labels=("bug",)),
+            issue_api(pull_request={}),
+        ]
+        for i in cases:
+            g = gh(extra={"GET /repos/devstreamhq/devstream/issues/7": i})
+            self.assertEqual(self.main(g, "--issue", "7"), 0)
+            self.assertFalse(self.wrote, i)
+        g = gh()
+        self.assertEqual(self.main(g, "--issue", "7"), 0)
+        self.assertFalse(self.wrote)
+
+
 class CliTest(unittest.TestCase):
+    def test_apply_duplicate_on_fresh_main_routes_to_reject(self):
+        for status, reason in (("live", DUPLICATE), ("archived", ARCHIVED_DUP)):
+            with tempfile.TemporaryDirectory() as tmp:
+                path = os.path.join(tmp, "entries.json")
+                save([entry("Alice/Tool", status=status)], path)
+                result = os.path.join(tmp, "result.json")
+                write(result, {"ok": True, "reasons": [], "entry": run().entry, "issue": 7, "author": "carol"})
+                p = subprocess.run([sys.executable, "-m", "scripts.submit", "apply", "--result", result,
+                                    "--entries", path], capture_output=True, text=True)
+                self.assertEqual(p.returncode, 0, p.stderr)
+                self.assertEqual(p.stdout.strip(), "")
+                with open(path) as f:
+                    self.assertEqual(len(json.load(f)["entries"]), 1)
+                with open(result) as f:
+                    self.assertEqual(json.load(f), {"ok": False, "reasons": [reason], "entry": None,
+                                                    "issue": 7, "author": "carol"})
+
     def test_apply_appends_and_validates(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, "entries.json")
@@ -197,10 +293,12 @@ class CliTest(unittest.TestCase):
                 repos = [e["repo"] for e in json.load(f)["entries"]]
             self.assertEqual(repos, ["alice/tool", "zed/zed"])
 
-            # Applying the same result twice duplicates the entry, which validate() rejects.
+            # A result that would break validation exits 1.
+            write(result, {"ok": True, "reasons": [], "entry": dict(d.entry, repo="bob/x", category="nope"),
+                           "issue": 8, "author": "carol"})
             p = subprocess.run(cmd, capture_output=True, text=True)
             self.assertEqual(p.returncode, 1)
-            self.assertIn("duplicate", p.stderr)
+            self.assertIn("unknown category", p.stderr)
 
     def test_apply_refuses_rejected_result(self):
         with tempfile.TemporaryDirectory() as tmp:

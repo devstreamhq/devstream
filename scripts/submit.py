@@ -1,6 +1,6 @@
 """Decide on a repo submission issue, and apply an accepted one to entries.json.
 
-python -m scripts.submit decide --event EVENT.json --out result.json
+python -m scripts.submit decide (--event EVENT.json | --issue N) --out result.json
 python -m scripts.submit apply --result result.json
 python -m scripts.submit comment --result result.json --kind {accepted,rejected,pr}
 """
@@ -8,6 +8,7 @@ python -m scripts.submit comment --result result.json --kind {accepted,rejected,
 import argparse
 import json
 import os
+import re
 import sys
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -128,11 +129,32 @@ def comment(result: dict, kind: str) -> str:
     )
 
 
+def _fetch_issue(gh, raw: str) -> dict | None:
+    """The issue for a dispatched run, or None when there's nothing to decide."""
+    # str.isdigit() accepts non-ASCII digits, so match ASCII explicitly.
+    if not re.fullmatch(r"[0-9]{1,9}", raw):
+        raise SystemExit(f"--issue must be an issue number, got {raw!r}")
+    issue = gh.get(f"/repos/{REPO}/issues/{int(raw)}")
+    if issue is None or "pull_request" in issue or issue.get("state") != "open":
+        return None
+    labels = {lb["name"] for lb in issue.get("labels") or []}
+    # Already accepted or rejected: deciding again would comment twice.
+    if "submission" not in labels or labels & {"accepted", "rejected"}:
+        return None
+    return issue
+
+
 def _decide(args) -> int:
-    with open(args.event, encoding="utf-8") as f:
-        issue = json.load(f)["issue"]
-    excluded = {u.strip() for u in os.environ.get("EXCLUDED_USERS", "").split(",") if u.strip()}
     gh = GitHub(os.environ["GITHUB_TOKEN"])
+    if args.issue is not None:
+        issue = _fetch_issue(gh, args.issue)
+        if issue is None:
+            print(f"issue {args.issue} is not an open, undecided submission", file=sys.stderr)
+            return 0
+    else:
+        with open(args.event, encoding="utf-8") as f:
+            issue = json.load(f)["issue"]
+    excluded = {u.strip() for u in os.environ.get("EXCLUDED_USERS", "").split(",") if u.strip()}
     d = decide(issue, gh, datetime.now(timezone.utc), load(), excluded)
     out = asdict(d) | {"issue": issue["number"], "author": issue["user"]["login"]}
     with open(args.out, "w", encoding="utf-8") as f:
@@ -147,6 +169,13 @@ def _apply(args) -> int:
         print("result is not an accepted submission", file=sys.stderr)
         return 1
     entries = load(args.entries)
+    # main may have moved since decide ran; a duplicate now goes down the reject path.
+    dup = find(entries, result["entry"]["repo"])
+    if dup:
+        result.update(ok=False, reasons=[_dup_reason(dup)], entry=None)
+        with open(args.result, "w", encoding="utf-8") as f:
+            json.dump(result, f, indent=2, ensure_ascii=False)
+        return 0
     entries.append(result["entry"])
     save(entries, args.entries)
     errors = validate(load(args.entries))
@@ -168,7 +197,9 @@ def main(argv: list[str]) -> int:
     p = argparse.ArgumentParser(prog="python -m scripts.submit")
     sub = p.add_subparsers(dest="cmd", required=True)
     d = sub.add_parser("decide")
-    d.add_argument("--event", required=True)
+    src = d.add_mutually_exclusive_group(required=True)
+    src.add_argument("--event")
+    src.add_argument("--issue")
     d.add_argument("--out", required=True)
     a = sub.add_parser("apply")
     a.add_argument("--result", required=True)

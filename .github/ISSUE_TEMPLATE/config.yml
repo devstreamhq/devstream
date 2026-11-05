@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions
+    url: https://github.com/devstreamhq/devstream/discussions/categories/q-a
+    about: Ask in Discussions, in the Q&A category.
+  - name: Docs
+    url: https://github.com/devstreamhq/devstream/wiki
+    about: Read the wiki.

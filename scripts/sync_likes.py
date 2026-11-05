@@ -235,9 +235,10 @@ def run(gh, entries, now: datetime, excluded: set[str]) -> None:
             raise
 
     writes = [
+        # First, so a later failed write can't lose the record of issues already opened.
+        ("flags.json", flags, prev_flags or {}, flags_sha, "chore(stats): record Like reviews"),
         ("meta.json", meta, prev_meta, meta_sha, "chore(stats): update repo meta"),
         ("likes.json", out, prev_likes, likes_sha, "chore(stats): update likes"),
-        ("flags.json", flags, prev_flags or {}, flags_sha, "chore(stats): record Like reviews"),
     ]
     if snap_sha is None:
         snap = {k: {"likes": v["likes"], "rank": v["rank"]} for k, v in out.items()}

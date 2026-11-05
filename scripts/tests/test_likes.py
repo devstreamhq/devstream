@@ -474,6 +474,22 @@ class Burst(unittest.TestCase):
         self.assertEqual(w.issues_opened(), [])
         self.assertTrue(w.current("likes.json")["o/a"]["flagged"])
 
+    def test_failed_likes_write_after_issues_opens_no_duplicates(self):
+        w = World([entry("o/a")], {"o/a": burst_nodes(10, 10)})
+
+        def boom(_):
+            raise GitHubError(409, "conflict")
+        w.routes[f"PUT {API}/contents/likes.json"] = boom
+        with self.assertRaises(GitHubError):
+            w.run()
+        self.assertEqual(titles(w), ["Like burst: o/a"])
+        w.persist()
+        w.routes.pop(f"GET {API}/contents/likes.json")  # that PUT never landed
+        w.routes[f"PUT {API}/contents/likes.json"] = {}
+        w.run(now=NOW + timedelta(minutes=5))
+        self.assertEqual(w.issues_opened(), [])
+        self.assertTrue(w.written("likes.json")["o/a"]["flagged"])
+
     def test_failed_issue_post_keeps_flags_for_opened_ones(self):
         repos = {f"o/r{j}": burst_nodes(10, 10) for j in range(2)}
         w = World([entry(r) for r in repos], repos)
@@ -567,6 +583,13 @@ class Writes(unittest.TestCase):
         w.run()
         paths = [p.removeprefix(f"{API}/contents/") for _, p, _ in w.puts()]
         self.assertEqual(paths, ["meta.json", "likes.json", f"snapshots/{TODAY}.json", "trust-cache.json"])
+
+    def test_flags_written_first(self):
+        w = World([entry("o/a")], {"o/a": burst_nodes(10, 10)})
+        w.run()
+        paths = [p.removeprefix(f"{API}/contents/") for _, p, _ in w.puts()]
+        self.assertEqual(paths, ["flags.json", "meta.json", "likes.json", f"snapshots/{TODAY}.json",
+                                 "trust-cache.json"])
         for _, _, body in w.puts():
             self.assertEqual(body["branch"], "stats")
             self.assertEqual(body["committer"]["name"], "devstreamhq-bot[bot]")

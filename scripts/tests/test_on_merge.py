@@ -13,7 +13,10 @@ def entry(i, status="live"):
     return {"repo": f"o/r{i}", "description": "d", "status": status}
 
 
-def gh(mapping=None, fail_at=None):
+REF = "/repos/devstreamhq/devstream/git/ref/heads/stats"
+
+
+def gh(mapping=None, fail_at=None, threads=(), ref=True, put_fails=False):
     n = {"n": 0}
 
     def create(v):
@@ -27,7 +30,16 @@ def gh(mapping=None, fail_at=None):
             "nodes": [{"id": "C", "slug": "likes"}]}}},
         "GRAPHQL CreateEntryDiscussion": create,
         f"PUT {FILE}": {},
+        "GRAPHQL LikesDiscussions": {"repository": {"discussions": {
+            "nodes": [{"number": n, "title": t} for t, n in threads],
+            "pageInfo": {"hasNextPage": False, "endCursor": None}}}},
     }
+    if ref:
+        routes[f"GET {REF}"] = {"ref": "refs/heads/stats"}
+    if put_fails:
+        def boom(b):
+            raise GitHubError(409, "conflict")
+        routes[f"PUT {FILE}"] = boom
     if mapping is not None:
         body = base64.b64encode(json.dumps(mapping).encode()).decode()
         routes[f"GET {FILE}"] = {"content": body + "\n", "sha": "abc"}
@@ -84,6 +96,36 @@ class OnMerge(unittest.TestCase):
         with self.assertRaises(GitHubError):
             run(g, [entry(1)], sleep=lambda s: None)
         self.assertEqual(puts(g), [])
+
+    def test_missing_stats_branch(self):
+        g = gh({}, ref=False)
+        with self.assertRaises(GitHubError) as c:
+            run(g, [entry(1)], sleep=lambda s: None)
+        self.assertEqual(c.exception.message, "stats branch is missing; run scripts/admin/setup_stats.sh")
+        self.assertFalse([c for c in g.calls if c[0] == "GRAPHQL"])
+
+    def test_reuses_existing_threads_after_failed_put(self):
+        g = gh({}, threads=[("O/R1", 55)])
+        run(g, [entry(1)], sleep=lambda s: None)
+        self.assertEqual(written(g), {"o/r1": 55})
+        self.assertFalse([c for c in g.calls if c[1] == "CreateEntryDiscussion"])
+
+    def test_mixed_case_shares_one_thread(self):
+        g = gh({})
+        run(g, [{**entry(0), "repo": "Foo/Bar"}, {**entry(0), "repo": "foo/bar"}], sleep=lambda s: None)
+        self.assertEqual(written(g), {"foo/bar": 101})
+
+    def test_create_error_survives_put_failure(self):
+        g = gh({}, fail_at=2, put_fails=True)
+        with self.assertRaises(GitHubError) as c:
+            run(g, [entry(i) for i in range(3)], sleep=lambda s: None)
+        self.assertEqual(c.exception.status, 500)
+
+    def test_put_error_raised_when_creates_fine(self):
+        g = gh({}, put_fails=True)
+        with self.assertRaises(GitHubError) as c:
+            run(g, [entry(1)], sleep=lambda s: None)
+        self.assertEqual(c.exception.status, 409)
 
     def test_no_put_when_unchanged(self):
         g = gh({"o/r1": 5})

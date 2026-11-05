@@ -33,6 +33,14 @@ class EnsureDiscussion(unittest.TestCase):
         self.assertEqual(g.calls, [])
 
 
+class Mentions(unittest.TestCase):
+    def test_body_has_no_bare_mention(self):
+        import re
+        g = gh()
+        ensure_discussion({"repo": "o/r", "description": "Thanks @user and @org/team"}, g, "R", "C", {})
+        self.assertIsNone(re.search(r"@\w", g.calls[0][2]["body"]))
+
+
 class Category(unittest.TestCase):
     def test_finds_by_slug(self):
         g = FakeGitHub({"GRAPHQL LikesCategory": {"repository": {"id": "R9", "discussionCategories": {

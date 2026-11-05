@@ -87,6 +87,8 @@ def clean_description(text: str) -> tuple[str | None, str | None]:
         return None, "Please use one alphabet per word."
     if _has_url(t):
         return None, "Descriptions can't include links."
+    if "@" in t:
+        return None, "Descriptions can't mention people or teams."
     if FORBIDDEN & set(t):
         return None, "Descriptions can't include these characters: < > [ ] ( ) ` * _ #"
     if any(w.isupper() and len(w) > 5 for w in re.findall(r"[^\W\d_]+", t)):

@@ -1,11 +1,13 @@
 import base64
 import json
 import os
+import logging
 import time
 
 from scripts.devstream import entries as entries_mod
-from scripts.devstream.discussions import ensure_discussion, likes_category
-from scripts.devstream.gh import GitHub
+from scripts.devstream.discussions import ensure_discussion, likes_category, list_discussions
+from scripts.devstream.gh import GitHub, GitHubError
+from scripts.devstream.entries import normalize_repo
 
 CAP = 40
 VISIBLE = {"live", "warned", "flagged"}
@@ -27,23 +29,41 @@ def _write(gh, mapping, sha):
 
 
 def run(gh, entries, sleep=time.sleep):
+    if gh.get("/repos/devstreamhq/devstream/git/ref/heads/stats") is None:
+        raise GitHubError(404, "stats branch is missing; run scripts/admin/setup_stats.sh")
     cur = gh.get(FILE, {"ref": "stats"})
     sha = cur["sha"] if cur else None
-    mapping = json.loads(base64.b64decode(cur["content"])) if cur else {}
-    todo = [e for e in entries if e["status"] in VISIBLE and e["repo"] not in mapping][:CAP]
-    if not todo:
-        return
-    repo_id, category_id = likes_category(gh)
+    mapping = (
+        {normalize_repo(k): v for k, v in json.loads(base64.b64decode(cur["content"])).items()}
+        if cur
+        else {}
+    )
     before = dict(mapping)
+    repo_id, category_id = likes_category(gh)
+    # A failed stats write leaves threads the mapping doesn't know; adopt them, never re-create.
+    mapping.update(list_discussions(gh, category_id))
+    todo = {}
+    for e in entries:
+        if e["status"] in VISIBLE and normalize_repo(e["repo"]) not in mapping:
+            todo.setdefault(normalize_repo(e["repo"]), e)
+    err = None
     try:
-        for i, e in enumerate(todo):
+        for i, e in enumerate(list(todo.values())[:CAP]):
             if i:
                 sleep(2)
-            mapping[e["repo"]] = ensure_discussion(e, gh, repo_id, category_id, mapping)
+            mapping[normalize_repo(e["repo"])] = ensure_discussion(e, gh, repo_id, category_id, mapping)
+    except BaseException as exc:
+        err = exc
+        raise
     finally:
         # Persist what exists even when a create failed, so no Discussion is orphaned.
         if mapping != before:
-            _write(gh, mapping, sha)
+            try:
+                _write(gh, mapping, sha)
+            except Exception:
+                if err is None:
+                    raise
+                logging.exception("could not write discussions.json")
 
 
 def main():

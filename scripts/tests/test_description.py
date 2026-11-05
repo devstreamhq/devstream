@@ -16,6 +16,10 @@ def bad(text):
 
 
 class DescriptionTest(unittest.TestCase):
+    def test_rejects_mentions(self):
+        for t in ("Thanks to @user for the idea", "Thanks to \uff20user for the idea", "Built with @org/team help"):
+            self.assertEqual(bad(t), "Descriptions can't mention people or teams.")
+
     def test_passes_plain_text(self):
         self.assertEqual(ok("A fast file watcher for Node.js projects."), "A fast file watcher for Node.js projects.")
 

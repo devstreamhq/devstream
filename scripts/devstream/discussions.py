@@ -1,3 +1,4 @@
+from scripts.devstream.entries import normalize_repo
 from scripts.devstream.gh import GitHubError
 
 SITE = "https://devstream.jamesconway.dev"
@@ -16,6 +17,28 @@ _CREATE = """mutation CreateEntryDiscussion($repositoryId: ID!, $categoryId: ID!
 }"""
 
 
+_LIST = """query LikesDiscussions($cursor: String, $cat: ID!) {
+  repository(owner: "devstreamhq", name: "devstream") {
+    discussions(first: 100, after: $cursor, categoryId: $cat) {
+      nodes { number title }
+      pageInfo { hasNextPage endCursor }
+    }
+  }
+}"""
+
+
+def list_discussions(gh, category_id: str) -> dict[str, int]:
+    """Every thread already in the category, keyed by normalised repo."""
+    out, cursor = {}, None
+    while True:
+        page = gh.graphql(_LIST, {"cursor": cursor, "cat": category_id})["repository"]["discussions"]
+        for n in page["nodes"]:
+            out[normalize_repo(n["title"])] = n["number"]
+        if not page["pageInfo"]["hasNextPage"]:
+            return out
+        cursor = page["pageInfo"]["endCursor"]
+
+
 def likes_category(gh) -> tuple[str, str]:
     """Return (repo node id, category id) for the `likes` category."""
     repo = gh.graphql(_CATEGORY, {})["repository"]
@@ -27,11 +50,12 @@ def likes_category(gh) -> tuple[str, str]:
 
 def ensure_discussion(entry, gh, repo_id: str, category_id: str, existing: dict[str, int]) -> int:
     repo = entry["repo"]
-    if repo in existing:
-        return existing[repo]
+    key = normalize_repo(repo)
+    if key in existing:
+        return existing[key]
     # The description already passed the filter in description.py.
     body = (
-        f"{entry['description']}\n\n"
+        f"{entry['description'].replace('@', '@' + chr(0x200b))}\n\n"
         f"**Repo:** https://github.com/{repo}\n\n"
         "React with 👍 to Like it. Every GitHub account counts once.\n\n"
         f"See where it ranks: {SITE}"

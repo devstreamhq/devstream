@@ -10,6 +10,24 @@ from scripts.tests.fake_gh import FakeGitHub, Redirect
 LONG = int(time.time()) + 100000
 
 
+class Other(BaseHTTPRequestHandler):
+    seen: list = []
+
+    def log_message(self, *a):
+        pass
+
+    def do_GET(self):
+        Other.seen.append((self.path, dict(self.headers)))
+        self.send_response(200)
+        self.send_header("Content-Length", "2")
+        self.end_headers()
+        self.wfile.write(b"[]")
+
+
+OTHER = ThreadingHTTPServer(("127.0.0.1", 0), Other)
+threading.Thread(target=OTHER.serve_forever, daemon=True).start()
+
+
 class H(BaseHTTPRequestHandler):
     seen: list = []
     hits = {"short": 0}
@@ -51,15 +69,53 @@ class H(BaseHTTPRequestHandler):
             self._send(200, [{"n": 1}, {"n": 2}], [("Link", nxt)])
         elif p == "/p2":
             self._send(200, [{"n": 3}])
+        elif p == "/loop":
+            self._send(301, None, [("Location", f"http://127.0.0.1:{port}/loop")])
+        elif p == "/foreign":
+            self._send(301, None, [("Location", f"http://127.0.0.1:{OTHER.server_address[1]}/stolen")])
+        elif p == "/xlink":
+            nxt = f"<http://127.0.0.1:{OTHER.server_address[1]}/p2>; rel=\"next\""
+            self._send(200, [{"n": 1}], [("Link", nxt)])
+        elif p == "/twice":
+            self._send(429, {}, [("retry-after", "1")])
+        elif p == "/q1":
+            self._send(200, [{"n": 1}], [("Link", f"<http://127.0.0.1:{port}/missing>; rel=\"next\"")])
+        elif p == "/stolen":
+            self._send(200, {"own": True})
         elif p.startswith("/search"):
             self._send(200, {"items": [{"n": 9}]})
         else:
             self._send(500, {"message": "boom"})
 
-    def do_POST(self):
+    def _write(self):
         n = int(self.headers.get("Content-Length", 0))
         body = json.loads(self.rfile.read(n))
-        if body["variables"].get("bad"):
+        H.seen.append((self.command, self.path, dict(self.headers)))
+        if self.path == "/graphql":
+            return body
+        if self.path == "/moved":
+            self._send(301, None, [("Location", "/elsewhere")])
+        elif self.path == "/gone":
+            self._send(404, {"message": "Not Found"})
+        elif self.path == "/empty":
+            self._send(204)
+        else:
+            self._send(200, {"echo": body, "method": self.command})
+
+    def do_PATCH(self):
+        self._write()
+
+    def do_PUT(self):
+        self._write()
+
+    def do_POST(self):
+        body = self._write()
+        if body is None:
+            return
+        if body["variables"].get("rl"):
+            hdr = [("x-ratelimit-reset", str(LONG))] if body["variables"]["rl"] == 1 else []
+            self._send(200, {"errors": [{"type": "RATE_LIMITED", "message": "x"}]}, hdr)
+        elif body["variables"].get("bad"):
             self._send(200, {"errors": [{"message": "x"}]})
         else:
             self._send(200, {"data": {"viewer": 1}})
@@ -81,6 +137,7 @@ class GitHubTest(unittest.TestCase):
         self.slept = []
         self.gh = GitHub("tok", self.base, sleep=self.slept.append)
         H.seen.clear()
+        Other.seen.clear()
         H.hits["short"] = 0
 
     def test_404_returns_none(self):
@@ -128,11 +185,86 @@ class GitHubTest(unittest.TestCase):
         with self.assertRaises(GitHubError):
             self.gh.graphql("query Q { viewer }", {"bad": 1})
 
+    def test_write_success(self):
+        for m in ("post", "patch", "put"):
+            r = getattr(self.gh, m)("/ok", {"a": 1})
+            self.assertEqual(r, {"echo": {"a": 1}, "method": m.upper()})
+
+    def test_write_204_is_none(self):
+        self.assertIsNone(self.gh.post("/empty", {}))
+
+    def test_write_404_raises(self):
+        with self.assertRaises(GitHubError) as c:
+            self.gh.post("/gone", {})
+        self.assertEqual(c.exception.status, 404)
+
+    def test_write_redirect_raises(self):
+        with self.assertRaises(GitHubError) as c:
+            self.gh.post("/moved", {})
+        self.assertEqual(c.exception.status, 301)
+
+    def test_last_redirect_reset(self):
+        self.gh.get("/repos/old/name")
+        self.assertIsNotNone(self.gh.last_redirect)
+        self.gh.get("/p2")
+        self.assertIsNone(self.gh.last_redirect)
+
+    def test_paginate_later_404_raises(self):
+        with self.assertRaises(GitHubError):
+            list(self.gh.paginate("/q1"))
+
+    def test_paginate_first_404_is_empty(self):
+        self.assertEqual(list(self.gh.paginate("/missing")), [])
+
+    def test_graphql_rate_limited(self):
+        with self.assertRaises(RateLimited) as c:
+            self.gh.graphql("query Q { viewer }", {"rl": 1})
+        self.assertEqual(c.exception.reset_at, LONG)
+        with self.assertRaises(RateLimited) as c:
+            self.gh.graphql("query Q { viewer }", {"rl": 2})
+        self.assertAlmostEqual(c.exception.reset_at, time.time() + 60, delta=5)
+
+    def test_cross_host_redirect_not_followed(self):
+        self.assertEqual(self.gh.get("/foreign"), {"own": True})
+        self.assertEqual(Other.seen, [])
+        self.assertEqual(self.gh.last_redirect, "/stolen")
+
+    def test_cross_host_link_not_followed(self):
+        self.assertEqual([i["n"] for i in self.gh.paginate("/xlink")], [1, 3])
+        self.assertEqual(Other.seen, [])
+
+    def test_too_many_redirects(self):
+        with self.assertRaises(GitHubError):
+            self.gh.get("/loop")
+
+    def test_second_rate_limit_raises(self):
+        with self.assertRaises(RateLimited):
+            self.gh.get("/twice")
+        self.assertEqual(len(self.slept), 1)
+
 
 class FakeTest(unittest.TestCase):
     def test_same_public_methods(self):
         pub = lambda c: {n for n in dir(c) if not n.startswith("_") and callable(getattr(c, n))}
         self.assertEqual(pub(GitHub), pub(FakeGitHub))
+
+    def test_write_missing_route_raises(self):
+        f = FakeGitHub({"PUT /empty": None})
+        for m in ("post", "patch", "put"):
+            with self.assertRaises(GitHubError) as c:
+                getattr(f, m)("/nope", {})
+            self.assertEqual(c.exception.status, 404)
+        self.assertIsNone(f.put("/empty", {}))
+
+    def test_last_redirect_reset(self):
+        f = FakeGitHub({"GET /a": Redirect("/b"), "GET /b": {}, "GET /c": {}})
+        f.get("/a")
+        self.assertEqual(f.last_redirect, "/b")
+        f.get("/c")
+        self.assertIsNone(f.last_redirect)
+
+    def test_paginate_missing_first_page_empty(self):
+        self.assertEqual(list(FakeGitHub({}).paginate("/x")), [])
 
     def test_routes(self):
         seen = []

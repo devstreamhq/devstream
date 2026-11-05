@@ -84,7 +84,8 @@ class GitHub:
                 self.sleep(max(0, reset - time.time()))
                 retried = True
                 continue
-            if status in (301, 302, 307, 308) and method == "GET":
+            # 301/302 would turn a write into a GET, so only 307/308 are safe there.
+            if status in (307, 308) or (method == "GET" and status in (301, 302)):
                 hops += 1
                 if hops > MAX_HOPS:
                     raise GitHubError(status, "too many redirects")
@@ -94,19 +95,26 @@ class GitHub:
                 continue
             if status == 404:
                 return None
-            if status >= 400:
+            if status >= 300:
                 raise GitHubError(status, raw.decode(errors="replace")[:500])
             return headers, (json.loads(raw) if raw else None)
 
     def get(self, path, params=None):
+        self.last_redirect = None
         r = self._request("GET", path, params)
         return None if r is None else r[1]
 
     def paginate(self, path, params=None) -> Iterator[dict]:
+        self.last_redirect = None
+        first = True
         while path:
             r = self._request("GET", path, params)
             if r is None:
-                return
+                if first:
+                    return
+                # A vanished page would silently truncate the results.
+                raise GitHubError(404, f"page not found: {path}")
+            first = False
             headers, page = r
             yield from page["items"] if isinstance(page, dict) and "items" in page else page
             m = re.search(r'<([^>]+)>\s*;\s*rel="next"', headers.get("Link") or "")
@@ -116,8 +124,11 @@ class GitHub:
             params = None
 
     def _write(self, method, path, body):
+        self.last_redirect = None
         r = self._request(method, path, body=body)
-        return None if r is None else r[1]
+        if r is None:
+            raise GitHubError(404, f"not found: {path}")
+        return r[1]
 
     def post(self, path, body):
         return self._write("POST", path, body)
@@ -129,10 +140,14 @@ class GitHub:
         return self._write("PUT", path, body)
 
     def graphql(self, query: str, variables: dict) -> dict:
+        self.last_redirect = None
         r = self._request("POST", "/graphql", body={"query": query, "variables": variables})
         if r is None:
             raise GitHubError(404, "graphql endpoint not found")
         out = r[1] or {}
-        if out.get("errors"):
+        errors = out.get("errors")
+        if any(e.get("type") == "RATE_LIMITED" for e in errors or []):
+            raise RateLimited(int(r[0].get("x-ratelimit-reset") or time.time() + 60))
+        if errors:
             raise GitHubError(200, json.dumps(out["errors"])[:500])
         return out.get("data")

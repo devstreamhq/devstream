@@ -24,6 +24,10 @@ MSG_DEPRECATED = "This repo says it's \"{}\". If that's not right, update the de
 MSG_NO_DESC = "Add a short description to the repo so people know what it is."
 MSG_STALE = "This repo hasn't had a push in the last 90 days."
 MSG_ARCHIVED = "This repo is archived. Unarchive it to be listed."
+MSG_NEW = (
+    "New repos need to be at least 30 days old before they can be listed. "
+    "Come back once yours is a month old."
+)
 
 
 class Undecided(GitHubError):
@@ -114,6 +118,13 @@ def _extras_missing(repo, gh, r) -> list[str]:
     return missing
 
 
+def _old_enough(created_at, now) -> bool:
+    try:
+        return now - datetime.fromisoformat(created_at) >= timedelta(days=30)
+    except (TypeError, ValueError):
+        return False
+
+
 def check_repo(full: str, gh, now: datetime, mode: Literal["submit", "rot"]) -> RepoResult:
     repo = gh.get(f"/repos/{full}")
     if repo is None:
@@ -167,6 +178,8 @@ def check_repo(full: str, gh, now: datetime, mode: Literal["submit", "rot"]) -> 
         failures.append(MSG_STALE)
     if repo.get("archived"):
         failures.append(MSG_ARCHIVED)
+    if not _old_enough(repo.get("created_at"), now):
+        failures.append(MSG_NEW)
     if repo.get("fork") and not _fork_diverged(repo, gh):
         failures.append(MSG_FORK)
     if not (repo.get("description") or "").strip():

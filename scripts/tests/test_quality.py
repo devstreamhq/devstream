@@ -10,6 +10,10 @@ from scripts.tests.fake_gh import FakeGitHub, Redirect
 NOW = datetime(2026, 11, 5, 12, 0, tzinfo=timezone.utc)
 R = "/repos/alice/tool"
 MSG_SHORT = "Your README needs a bit more detail (at least a short paragraph about what it does)."
+MSG_NEW = (
+    "New repos need to be at least 30 days old before they can be listed. "
+    "Come back once yours is a month old."
+)
 README = "This tool does a useful thing for people who need it. " * 8
 
 
@@ -28,6 +32,7 @@ def repo(**kw):
         "fork": False,
         "archived": False,
         "pushed_at": iso(NOW - timedelta(days=5)),
+        "created_at": "2020-01-01T00:00:00Z",
         "license": {"spdx_id": "MIT"},
         "stargazers_count": 42,
         "language": "Python",
@@ -92,6 +97,31 @@ class SubmitTest(unittest.TestCase):
         bad = run(gh({"pushed_at": iso(NOW - timedelta(days=90, seconds=1))}))
         self.assertEqual(len(bad.failures), 1)
         self.assertIn("90 days", bad.failures[0])
+
+    def test_repo_29_days_old_rejected(self):
+        r = run(gh({"created_at": iso(NOW - timedelta(days=29, hours=23))}))
+        self.assertEqual(r.failures, [MSG_NEW])
+
+    def test_repo_30_days_old_ok(self):
+        r = run(gh({"created_at": iso(NOW - timedelta(days=30))}))
+        self.assertEqual(r.failures, [])
+
+    def test_missing_created_at_rejected(self):
+        for bad in (None, "", "not a date", "2026-11-01T00:00:00"):
+            with self.subTest(bad=bad):
+                r = run(gh({"created_at": bad}))
+                self.assertEqual(r.failures, [MSG_NEW])
+        kw = repo()
+        del kw["created_at"]
+        g = gh()
+        g.routes[f"GET {R}"] = kw
+        self.assertEqual(run(g).failures, [MSG_NEW])
+
+    def test_rot_mode_ignores_repo_age(self):
+        r = run(gh({"created_at": iso(NOW - timedelta(days=1))}), "rot")
+        self.assertEqual((r.failures, r.rot), ([], "ok"))
+        r = run(gh({"created_at": None}), "rot")
+        self.assertEqual((r.failures, r.rot), ([], "ok"))
 
     def test_archived_fails(self):
         r = run(gh({"archived": True}))

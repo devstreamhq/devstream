@@ -22,7 +22,7 @@ class DescriptionTest(unittest.TestCase):
     def test_length_bounds(self):
         bad("too short")
         bad("x" * 141)
-        ok("y" * 140)
+        ok("y" * 139)
 
     def test_length_applies_after_cleanup(self):
         bad("   short   ")
@@ -86,6 +86,66 @@ class DescriptionTest(unittest.TestCase):
         self.assertEqual(ok("A tool that works well"), "A tool that works well.")
         self.assertEqual(ok("A tool that works well."), "A tool that works well.")
         self.assertEqual(ok("A tool that works well!"), "A tool that works well.")
+
+    def test_mixed_script_words_rejected(self):
+        for t in (
+            "Best \u0441\u0430sino around for you",
+            "Visit ex\u0430mple.com now ok",
+            "Visit example.c\u043em now ok",
+        ):
+            self.assertIn("alphabet", bad(t), t)
+
+    def test_single_script_words_allowed(self):
+        ok("\u0418\u043d\u0441\u0442\u0440\u0443\u043c\u0435\u043d\u0442 \u0434\u043b\u044f \u0440\u0430\u0431\u043e\u0442\u044b")
+        ok("\u0394\u03b5\u03bb\u03c4\u03b1 tool for the web")
+
+    def test_final_length_includes_period(self):
+        bad("y" * 140)
+        self.assertEqual(len(ok("y" * 139)), 140)
+        self.assertEqual(len(ok("y" * 139 + ".")), 140)
+
+    def test_squashed_match_is_anchored(self):
+        for t in (
+            "Specialists tooling for teams",
+            "Alphabet online docs helper",
+            "Essex chat bot for devs",
+            "Fake idea board app",
+            "Homework helper for students",
+            "Spy appender for tests",
+            "Hack accounting reports",
+            "Pump and dumper for logs",
+        ):
+            ok(t)
+        bad("Best c.a.s.i.n.o around for you")
+        bad("Get v-i-a-g-r-a here today ok")
+
+    def test_real_tlds_and_ips_rejected(self):
+        for t in (
+            "Run spam.sh/install to start",
+            "Visit evil.rs for the thing",
+            "Hosted at foo.cs/x for you",
+            "Server on 192.168.1.1 right now",
+            "Fetch 1.2.3.4/x for the thing",
+            "Node.js:8080 is the place",
+        ):
+            self.assertIn("link", bad(t), t)
+
+    def test_js_names_allowed_with_punctuation(self):
+        ok("Is this Node.js? Yes, and Vue.js too.")
+        ok("Node.js: a small helper for Vue.js apps")
+
+    def test_invisible_characters_stripped(self):
+        for ch in ("\u00ad", "\u2062", "\u034f", "\u180e", "\ufe0f"):
+            bad(f"Free po{ch}rn tool for the web")
+
+    def test_emoji_run_with_variation_selector(self):
+        bad("Stars \u2728\ufe0f\u2728\ufe0f\u2728\ufe0f everywhere here")
+        ok("Stars \u2728\ufe0f\u2728\ufe0f everywhere here")
+
+    def test_removed_terms_allowed(self):
+        ok("Work from home setup scripts for devs")
+        ok("A bulk sms sender for alert systems")
+        ok("Model passive income streams in code")
 
 
 if __name__ == "__main__":

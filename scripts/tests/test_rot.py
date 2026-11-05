@@ -87,6 +87,8 @@ class PlanTest(unittest.TestCase):
         self.assertEqual(kinds(actions), [("notice", "alice/tool")])
         self.assertEqual(rot["alice/tool"]["first_seen"], iso(NOW))
         self.assertIn("no longer exists", rot["alice/tool"]["reason"])
+        self.assertNotIn("notified", rot["alice/tool"])
+        rot["alice/tool"]["notified"] = True  # finish sets this once the notice is posted
 
         new, actions, rot = plan_rot([entry()], {"alice/tool": gone()}, NOW + timedelta(days=7), rot)
         self.assertEqual(new, [])
@@ -102,10 +104,31 @@ class PlanTest(unittest.TestCase):
             msg = actions[0].message
             self.assertIn(failure, msg)
             self.assertNotIn("push in over a year", msg)
-            self.assertIn("11 November 2026", msg)  # NOW + 6 days, when a second look can remove it
+            self.assertIn("before 11 November 2026", msg)  # NOW + 6 days, the earliest removal date
+
+    def test_stale_first_sighting_starts_over(self):
+        # One blip 90 days after an old sighting must not remove anything.
+        state = {"alice/tool": {"first_seen": iso(NOW - timedelta(days=90)), "reason": "x", "notified": True}}
+        new, actions, rot = plan_rot([entry()], {"alice/tool": gone()}, NOW, state)
+        self.assertEqual(new, [entry()])
+        self.assertEqual(kinds(actions), [("notice", "alice/tool")])
+        self.assertEqual(rot["alice/tool"]["first_seen"], iso(NOW))
+        self.assertNotIn("notified", rot["alice/tool"])
+
+        # 14 days is still the same sighting.
+        state["alice/tool"]["first_seen"] = iso(NOW - timedelta(days=14))
+        new, actions, _ = plan_rot([entry()], {"alice/tool": gone()}, NOW, state)
+        self.assertEqual((new, kinds(actions)), ([], [("remove", "alice/tool")]))
+
+    def test_unnotified_sighting_never_removes(self):
+        state = {"alice/tool": {"first_seen": iso(NOW - timedelta(days=7)), "reason": "x"}}
+        new, actions, rot = plan_rot([entry()], {"alice/tool": gone()}, NOW, state)
+        self.assertEqual(new, [entry()])
+        self.assertEqual(kinds(actions), [("notice", "alice/tool")])
+        self.assertEqual(rot["alice/tool"]["first_seen"], iso(NOW))
 
     def test_remove_needs_two_runs_six_days_apart(self):
-        state = {"alice/tool": {"first_seen": iso(NOW), "reason": "x"}}
+        state = {"alice/tool": {"first_seen": iso(NOW), "reason": "x", "notified": True}}
         licence = RepoResult(True, "alice/tool", ["We need an open-source license"], "remove")
         new, actions, rot = plan_rot([entry()], {"alice/tool": licence}, NOW + timedelta(days=5, hours=23), state)
         self.assertEqual(new, [entry()])
@@ -140,7 +163,7 @@ class PlanTest(unittest.TestCase):
         self.assertEqual([(a.kind, a.key, a.repo) for a in actions], [("rename", "alice/tool", "alice/tool-ng")])
 
     def test_rename_moves_rot_record(self):
-        state = {"alice/tool": {"first_seen": iso(NOW), "reason": "x"}}
+        state = {"alice/tool": {"first_seen": iso(NOW), "reason": "x", "notified": True}}
         licence = RepoResult(True, "alice/tool-ng", ["no license"], "remove")
         new, _, rot = plan_rot([entry()], {"alice/tool": licence}, NOW + timedelta(days=1), state)
         self.assertEqual(new[0]["repo"], "alice/tool-ng")
@@ -151,7 +174,7 @@ class PlanTest(unittest.TestCase):
         newer = entry("alice/tool", submitted_at="2026-03-01T00:00:00Z", issue=2)
         new, actions, _ = plan_rot([older, newer], {"alice/tool": ok("bob/kept"), "bob/kept": ok("bob/kept")}, NOW, {})
         self.assertEqual(new, [older])
-        self.assertEqual(kinds(actions), [("remove", "alice/tool")])
+        self.assertEqual(kinds(actions), [("drop", "alice/tool")])
 
         # Older one renamed onto the newer one's name: the older is kept and takes the name.
         older = entry("alice/tool", submitted_at="2026-01-01T00:00:00Z", issue=1)
@@ -159,7 +182,7 @@ class PlanTest(unittest.TestCase):
         new, actions, _ = plan_rot([older, newer], {"alice/tool": ok("bob/kept")}, NOW, {})
         self.assertEqual([e["issue"] for e in new], [1])
         self.assertEqual(new[0]["repo"], "bob/kept")
-        self.assertEqual(sorted(kinds(actions)), [("remove", "bob/kept"), ("rename", "bob/kept")])
+        self.assertEqual(sorted(kinds(actions)), [("drop", "bob/kept"), ("rename", "bob/kept")])
 
     def test_rename_onto_hidden_entry_changes_nothing(self):
         hidden = entry("bob/kept", status="hidden", issue=2)
@@ -190,6 +213,52 @@ def routes(rot=None, discussions=None, flags=None, extra=None):
     }
     r.update(extra or {})
     return r
+
+
+def store(files=None, extra=None, conflicts=()):
+    """Stats routes backed by a dict, so a PUT is seen by the next GET.
+
+    conflicts maps a path to how many PUTs answer 409 first; each 409 also lets
+    "another writer" add {"other/writer": 1} to the file.
+    """
+    state = dict(files or {})
+    left = dict(conflicts)
+
+    def get(path):
+        def answer(_):
+            if state.get(path) is None:
+                return None
+            return {"content": base64.b64encode(json.dumps(state[path]).encode()).decode(), "sha": f"sha-{path}"}
+        return answer
+
+    def put(path):
+        def answer(body):
+            if left.get(path):
+                left[path] -= 1
+                state[path] = {**(state.get(path) or {}), "other/writer": 1}
+                raise GitHubError(409, "sha mismatch")
+            state[path] = json.loads(base64.b64decode(body["content"]))
+        return answer
+
+    r = {f"GET {API}/git/ref/heads/stats": {"ref": "refs/heads/stats"}}
+    for path in ("rot.json", "discussions.json", "flags.json"):
+        r[f"GET {API}/contents/{path}"] = get(path)
+        r[f"PUT {API}/contents/{path}"] = put(path)
+    r.update(extra or {})
+    return r, state
+
+
+def threads(titles):
+    """GraphQL routes over a {number: title} dict that UpdateEntryDiscussion edits."""
+    def retitle(v):
+        titles[int(v["discussionId"][1:])] = v["title"]
+        return {"updateDiscussion": {"discussion": {"number": int(v["discussionId"][1:])}}}
+
+    return {
+        "GRAPHQL EntryDiscussionId": lambda v: {"repository": {"discussion": {"id": f"D{v['number']}"}}},
+        "GRAPHQL CommentOnEntry": {"addDiscussionComment": {"comment": {"id": "c"}}},
+        "GRAPHQL UpdateEntryDiscussion": retitle,
+    }
 
 
 def written(g, path):
@@ -263,10 +332,13 @@ class PrepareTest(unittest.TestCase):
             "GRAPHQL EntryDiscussionId": {"repository": {"discussion": {"id": "D5"}}},
             "GRAPHQL CommentOnEntry": {"addDiscussionComment": {"comment": {"id": "c"}}},
         }
-        g = FakeGitHub(routes(discussions={"alice/tool": 5}, extra=extra))
+        r, state = store({"discussions.json": {"alice/tool": 5}}, extra)
+        g = FakeGitHub(r)
         self.run_prepare(g, lambda full, *a: gone(full) if full == "alice/tool" else ok(full))
+        self.assertTrue(state["rot.json"]["alice/tool"]["notified"])
         self.assertEqual([c[:2] for c in writes(g)],
-                         [("PUT", f"{API}/contents/rot.json"), ("GRAPHQL", "CommentOnEntry")])
+                         [("PUT", f"{API}/contents/rot.json"), ("GRAPHQL", "CommentOnEntry"),
+                          ("PUT", f"{API}/contents/rot.json")])
         self.assertIn("no longer exists", writes(g)[1][2]["body"])
 
         def refuse(_):
@@ -276,6 +348,36 @@ class PrepareTest(unittest.TestCase):
         with self.assertRaises(GitHubError):
             self.run_prepare(g, lambda full, *a: gone(full) if full == "alice/tool" else ok(full))
         self.assertEqual([c for c in writes(g) if c[0] == "GRAPHQL"], [])
+
+    def test_notice_that_fails_to_post_stays_unnotified(self):
+        def boom(_):
+            raise GitHubError(502, "bad gateway")
+
+        r, state = store({"discussions.json": {"alice/tool": 5}},
+                         {**threads({}), "GRAPHQL CommentOnEntry": boom})
+        with self.assertRaises(SystemExit):
+            self.run_prepare(FakeGitHub(r), lambda full, *a: gone(full) if full == "alice/tool" else ok(full))
+        self.assertNotIn("notified", state["rot.json"]["alice/tool"])
+
+    def test_notice_without_a_thread_counts_as_notified(self):
+        # Otherwise an entry still waiting for its Discussion could never be removed.
+        r, state = store({"discussions.json": {}}, threads({}))
+        self.run_prepare(FakeGitHub(r), lambda full, *a: gone(full) if full == "alice/tool" else ok(full))
+        self.assertTrue(state["rot.json"]["alice/tool"]["notified"])
+
+    def test_github_error_aborts_with_no_writes(self):
+        before = Path(self.path).read_text()
+
+        def check(full, gh, now, mode):
+            if full == "bob/other":
+                raise GitHubError(502, "bad gateway")
+            return gone(full)
+
+        g = FakeGitHub(routes())
+        with self.assertRaises(GitHubError):
+            self.run_prepare(g, check)
+        self.assertEqual(Path(self.path).read_text(), before)
+        self.assertEqual(writes(g), [])
 
     def test_changed_entries_defer_every_write(self):
         g = FakeGitHub(routes())
@@ -378,6 +480,68 @@ class FinishTest(unittest.TestCase):
         self.assertEqual(self.gql(g, "CommentOnEntry"), [{"discussionId": "D5", "body": "Heads up"}])
         self.assertEqual(written(g, "discussions.json"), [])
         self.assertEqual(written(g, "rot.json"), [])
+
+
+    def test_notice_in_finish_marks_the_record_notified(self):
+        rec = {"first_seen": iso(NOW), "reason": "x"}
+        r, state = store({"rot.json": {}, "discussions.json": {"alice/tool": 5}}, threads({}))
+        finish(FakeGitHub(r), self.plan([Action("notice", "alice/tool", "Heads up", "alice/tool"),
+                                         Action("warn", "bob/other", "Hi", "bob/other")],
+                                        {"alice/tool": rec}))
+        self.assertEqual(state["rot.json"], {"alice/tool": {**rec, "notified": True}})
+
+    def test_stats_write_retries_once_after_409(self):
+        r, state = store({"discussions.json": {"alice/tool": 5}, "flags.json": {"alice/tool": {"burst": 1}}},
+                         threads({5: "alice/tool"}), conflicts={"flags.json": 1})
+        finish(FakeGitHub(r), self.plan([Action("rename", "alice/tool-ng", "", "alice/tool")]))
+        # The other writer's change survives, and the move is re-applied on top of it.
+        self.assertEqual(state["flags.json"], {"alice/tool-ng": {"burst": 1}, "other/writer": 1})
+        self.assertEqual(state["discussions.json"], {"alice/tool-ng": 5})
+
+    def test_comments_still_post_when_a_stats_write_fails(self):
+        titles = {5: "alice/tool"}
+        r, state = store({"discussions.json": {"alice/tool": 5, "bob/other": 6}, "flags.json": {"alice/tool": {}}},
+                         threads(titles), conflicts={"flags.json": 2})
+        g = FakeGitHub(r)
+        with self.assertRaises(SystemExit):
+            finish(g, self.plan([Action("rename", "alice/tool-ng", "", "alice/tool"),
+                                 Action("warn", "bob/other", "Heads up", "bob/other")]))
+        self.assertEqual(self.gql(g, "CommentOnEntry"), [{"discussionId": "D6", "body": "Heads up"}])
+        self.assertEqual(titles[5], "alice/tool-ng")
+
+    def test_collision_keeps_the_older_entrys_thread_through_on_merge(self):
+        from scripts.devstream.entries import normalize_repo
+        from scripts.on_merge import run as on_merge
+        from scripts.validate_data import REPO_RE
+
+        older = entry("alice/tool", submitted_at="2026-01-01T00:00:00Z", issue=1)
+        newer = entry("bob/kept", submitted_at="2026-03-01T00:00:00Z", issue=2)
+        new, actions, rot = plan_rot([older, newer], {"alice/tool": ok("bob/kept")}, NOW, {})
+        titles = {5: "alice/tool", 6: "bob/kept"}
+        listing = {"repository": {"discussions": {"nodes": [], "pageInfo": {"hasNextPage": False, "endCursor": None}}}}
+
+        def list_threads(_):
+            nodes = [{"number": n, "title": t, "author": {"login": "devstreamhq-bot[bot]"}}
+                     for n, t in sorted(titles.items())]
+            return {"repository": {"discussions": {**listing["repository"]["discussions"], "nodes": nodes}}}
+
+        r, state = store({"discussions.json": {"alice/tool": 5, "bob/kept": 6}}, {
+            **threads(titles),
+            "GRAPHQL LikesCategory": {"repository": {"id": "R", "discussionCategories": {
+                "nodes": [{"id": "C", "slug": "likes"}]}}},
+            "GRAPHQL LikesDiscussions": list_threads,
+        })
+        g = FakeGitHub(r)
+        finish(g, {"changed": True, "actions": [a.__dict__ for a in actions], "rot_state": rot})
+        self.assertEqual(titles, {5: "bob/kept", 6: "Removed: bob/kept"})
+        self.assertEqual(state["discussions.json"], {"bob/kept": 5})
+        dropped = normalize_repo(titles[6])
+        self.assertNotIn(dropped, {normalize_repo(e["repo"]) for e in new + [older, newer]})
+        self.assertIsNone(REPO_RE.fullmatch(dropped))
+
+        on_merge(g, new, sleep=lambda s: None)
+        self.assertEqual(state["discussions.json"]["bob/kept"], 5)
+        self.assertEqual(self.gql(g, "CreateEntryDiscussion"), [])
 
 
 if __name__ == "__main__":

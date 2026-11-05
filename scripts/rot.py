@@ -24,13 +24,15 @@ from scripts.devstream.quality import (
     Undecided,
     check_repo,
 )
-from scripts.devstream.stats import ensure_branch, read_json, write_json
+from scripts.devstream.stats import ensure_branch, read_json, update_json, write_json
 from scripts.validate_data import validate
 
 CHECKED = {"live", "warned", "archived"}
 GRACE = timedelta(days=30)
 # A second sighting this much later confirms a removal, so a blip never deletes an entry.
 CONFIRM = timedelta(days=6)
+# An older sighting is a different episode, so it starts the week of grace again.
+STALE = timedelta(days=14)
 REMOVAL_REASONS = (MSG_GONE, MSG_LICENSE, MSG_NO_README, MSG_SHORT_README)
 REPO_INPUT = re.compile(r"[A-Za-z0-9-]{1,39}/[A-Za-z0-9._-]{1,100}")
 
@@ -47,7 +49,7 @@ ARCHIVE = (
 REVIVE = "Welcome back! `{repo}` is active again, so it's back on the list.\n"
 NOTICE = (
     "Heads up: we're about to take `{repo}` off the list. Here's what we found:\n\n{reasons}\n\n"
-    "If that's fixed by {date}, it stays listed. Otherwise it comes off at our next check after that.\n"
+    "If that's fixed before {date}, it stays listed. Otherwise it comes off at our first check from then on.\n"
 )
 REMOVE = (
     "We've taken `{repo}` off the list. Here's why:\n\n{reasons}\n\n"
@@ -58,7 +60,7 @@ MERGED = (
     "`{repo}` now points to the same repo as `{kept}`, which was listed first, "
     "so we've folded this entry into that one. Likes count on that entry's thread from now on.\n"
 )
-LABELS = {"notice": "Removal notice", "warn": "Warned", "archive": "Archived", "revive": "Back on the list", "remove": "Removed"}
+LABELS = {"drop": "Removed as a duplicate", "notice": "Removal notice", "warn": "Warned", "archive": "Archived", "revive": "Back on the list", "remove": "Removed"}
 
 _ID = """query EntryDiscussionId($number: Int!) {
   repository(owner: "devstreamhq", name: "devstream") { discussion(number: $number) { id } }
@@ -75,7 +77,7 @@ _RETITLE = """mutation UpdateEntryDiscussion($discussionId: ID!, $title: String!
 
 @dataclass
 class Action:
-    kind: str  # notice | warn | archive | revive | rename | remove
+    kind: str  # notice | warn | archive | revive | rename | remove | drop (lost a rename collision)
     repo: str  # the name after this run
     message: str  # Discussion comment; empty for a rename
     key: str  # stats key at the start of the run, which finds the Discussion
@@ -107,7 +109,8 @@ def _verdict(e, r, now, rot) -> tuple[dict | None, list[Action]]:
 
     if r.rot == "remove":
         rec = rot.get(key)
-        if rec is None:
+        # The clock only runs once the owner has been told, and only for a recent sighting.
+        if rec is None or not rec.get("notified") or now - _parse(rec["first_seen"]) > STALE:
             rot[key] = {"first_seen": _iso(now), "reason": " ".join(r.failures)}
             reasons = [f for f in r.failures if f in REMOVAL_REASONS] or r.failures
             date = now + CONFIRM
@@ -162,7 +165,7 @@ def plan_rot(entries, results, now, rot_state):
                 if g is not keep:
                     k = normalize_repo(g["repo"])
                     rot.pop(k, None)
-                    actions.append(Action("remove", g["repo"], MERGED.format(repo=g["repo"], kept=kept), k))
+                    actions.append(Action("drop", g["repo"], MERGED.format(repo=g["repo"], kept=kept), k))
             group = [keep]
         e = group[0]
         r = res.get(normalize_repo(e["repo"]))
@@ -211,7 +214,10 @@ def prepare(gh, now, path=DEFAULT_PATH, repo=None, check=check_repo) -> dict:
     elif rot != rot_state:
         write_json(gh, "rot.json", rot, rot_sha, "chore(stats): record failing repos")
         # Unchanged entries means the only actions are removal notices, safe to post now rot.json is saved.
-        _post(gh, actions, read_json(gh, "discussions.json")[0] or {})
+        failed, notified = _post(gh, actions, read_json(gh, "discussions.json")[0] or {})
+        failed += _mark_notified(gh, notified)
+        if failed:
+            raise SystemExit(f"{failed} Discussion or stats update(s) failed")
     return {"changed": changed, "actions": [asdict(a) for a in actions], "rot_state": rot}
 
 
@@ -238,45 +244,84 @@ def _move(data: dict, moves: dict[str, str]) -> dict:
 
 
 def finish(gh, plan: dict) -> None:
-    """Write stats, then comment and retitle. Run only once the entries PR has merged."""
+    """Write stats, then comment and retitle. Run only once the entries PR has merged.
+
+    A failed stats write doesn't hold back the comments; the run fails at the end instead.
+    """
     actions = [Action(**a) for a in plan["actions"]]
     moves = {a.key: normalize_repo(a.repo) for a in actions
              if a.kind == "rename" and a.key != normalize_repo(a.repo)}
+    dropped = {a.key for a in actions if a.kind == "drop"}
 
-    cur, sha = read_json(gh, "rot.json")
-    if plan["rot_state"] != (cur or {}):
-        write_json(gh, "rot.json", plan["rot_state"], sha, "chore(stats): record failing repos")
-    discussions, dsha = read_json(gh, "discussions.json")
-    numbers = dict(discussions or {})  # before the move, so a removed entry still finds its thread
-    for path, data, fsha in (("discussions.json", discussions, dsha), ("flags.json", *read_json(gh, "flags.json"))):
-        moved = _move(data or {}, moves)
-        if moved != (data or {}):
-            write_json(gh, path, moved, fsha, "chore(stats): follow renamed repos")
+    def rekey(data):
+        # Drop first: the kept entry may be moving onto the dropped one's key.
+        for k in dropped:
+            data.pop(k, None)
+        return _move(data, moves)
 
-    _post(gh, actions, numbers)
-
-
-def _post(gh, actions, numbers: dict) -> None:
-    """Comment on, or retitle, each action's Discussion. numbers maps stats key to Discussion number."""
+    numbers = dict(read_json(gh, "discussions.json")[0] or {})  # before the move, so dropped entries find their thread
     failed = 0
+    for path, mutate, message in (
+        ("rot.json", lambda _: plan["rot_state"], "chore(stats): record failing repos"),
+        ("discussions.json", rekey, "chore(stats): follow renamed repos"),
+        ("flags.json", rekey, "chore(stats): follow renamed repos"),
+    ):
+        try:
+            update_json(gh, path, mutate, message)
+        except Exception:
+            logging.exception("could not write %s", path)
+            failed += 1
+    posted, notified = _post(gh, actions, numbers)
+    failed += posted + _mark_notified(gh, notified)
+    if failed:
+        raise SystemExit(f"{failed} Discussion or stats update(s) failed")
+
+
+def _mark_notified(gh, keys: set[str]) -> int:
+    """Start the removal clock for the records whose owner has now been told. Returns 1 on failure."""
+    if not keys:
+        return 0
+
+    def mark(data):
+        for k in keys & data.keys():
+            data[k]["notified"] = True
+        return data
+
+    try:
+        update_json(gh, "rot.json", mark, "chore(stats): record removal notices")
+    except Exception:
+        logging.exception("could not mark removal notices in rot.json")
+        return 1
+    return 0
+
+
+def _post(gh, actions, numbers: dict) -> tuple[int, set[str]]:
+    """Comment on, or retitle, each action's Discussion.
+
+    numbers maps stats key to Discussion number. Returns (failures, rot keys whose notice is done).
+    An entry with no thread yet counts as told, or it could never be removed.
+    """
+    failed, notified = 0, set()
     for a in actions:
         n = numbers.get(a.key)
-        if n is None or (a.kind != "rename" and not a.message):
+        if a.kind != "rename" and not a.message:
             continue
         try:
-            d = gh.graphql(_ID, {"number": n}, allow_not_found=True)["repository"]["discussion"]
-            if d is None:
-                continue
-            if a.kind == "rename":
-                gh.graphql(_RETITLE, {"discussionId": d["id"], "title": a.repo})
-            else:
-                gh.graphql(_COMMENT, {"discussionId": d["id"], "body": a.message})
+            d = None if n is None else gh.graphql(_ID, {"number": n}, allow_not_found=True)["repository"]["discussion"]
+            if d is not None:
+                if a.kind != "rename":
+                    gh.graphql(_COMMENT, {"discussionId": d["id"], "body": a.message})
+                if a.kind in ("rename", "drop"):
+                    # "Removed: " can never normalise to a listed repo, so on_merge won't adopt the thread.
+                    title = a.repo if a.kind == "rename" else f"Removed: {a.repo}"
+                    gh.graphql(_RETITLE, {"discussionId": d["id"], "title": title})
+            if a.kind == "notice":
+                notified.add(normalize_repo(a.repo))
         except Exception:
-            # One thread failing mustn't silence the rest; the run still fails below.
+            # One thread failing mustn't silence the rest; the run still fails at the end.
             logging.exception("could not update Discussion #%s for %s", n, a.repo)
             failed += 1
-    if failed:
-        raise SystemExit(f"{failed} Discussion update(s) failed")
+    return failed, notified
 
 
 def main(argv: list[str]) -> int:

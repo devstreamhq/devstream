@@ -20,6 +20,8 @@ ROT_DUE = timedelta(days=8)
 # Each failed rot run can leave a PR behind, so a failing check is retried at most daily.
 ROT_RETRY = timedelta(days=1)
 ROT_BRANCH = re.compile(r"rot/[0-9]{1,20}")
+# rot.yml's run-name for a full run; a one-repo re-check doesn't cover the list.
+FULL_ROT = "Health check"
 
 
 def _parse(s: str) -> datetime:
@@ -89,13 +91,18 @@ def _close_rot_prs(gh, now) -> None:
         _delete_branch(gh, head["ref"])
 
 
+def _latest_full_run(gh, query) -> datetime | None:
+    # shortcut: looks at the newest 100 runs only; fine while one-repo re-checks stay rare.
+    page = gh.get(f"{API}/actions/workflows/rot.yml/runs?{query}per_page=100")["workflow_runs"]
+    return max((_parse(r["created_at"]) for r in page if r.get("display_title") == FULL_ROT), default=None)
+
+
 def _rot_overdue(gh, now) -> bool:
-    runs = f"{API}/actions/workflows/rot.yml/runs"
-    ok = gh.get(f"{runs}?status=success&per_page=1")["workflow_runs"]
-    if ok and now - _parse(ok[0]["created_at"]) <= ROT_DUE:
+    ok = _latest_full_run(gh, "status=success&")
+    if ok is not None and now - ok <= ROT_DUE:
         return False
-    latest = gh.get(f"{runs}?per_page=1")["workflow_runs"]
-    return not latest or now - _parse(latest[0]["created_at"]) > ROT_RETRY
+    latest = _latest_full_run(gh, "")
+    return latest is None or now - latest > ROT_RETRY
 
 
 def _list_write_waiting(gh) -> bool:
@@ -115,6 +122,11 @@ def sweep(gh, now: datetime) -> None:
     if _list_write_waiting(gh):
         print("a list-writes run is already waiting")
         return
+    # One dispatch per sweep, and an overdue health check goes first.
+    if _rot_overdue(gh, now):
+        gh.post(f"{API}/actions/workflows/rot.yml/dispatches", {"ref": "main"})
+        print("dispatched rot.yml")
+        return
     todo = []
     for issue in gh.paginate(f"{API}/issues?state=open&labels=submission&per_page=100"):
         labels = {lb["name"] for lb in issue["labels"]}
@@ -122,11 +134,7 @@ def sweep(gh, now: datetime) -> None:
                 or issue["number"] in busy or now - _parse(issue["created_at"]) <= ISSUE_AGE):
             continue
         todo.append(issue)
-    # One dispatch per sweep, submissions first.
     if not todo:
-        if _rot_overdue(gh, now):
-            gh.post(f"{API}/actions/workflows/rot.yml/dispatches", {"ref": "main"})
-            print("dispatched rot.yml")
         return
     oldest = min(todo, key=lambda i: _parse(i["created_at"]))
     gh.post(f"{API}/actions/workflows/submit.yml/dispatches",

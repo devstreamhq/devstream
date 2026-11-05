@@ -156,7 +156,11 @@ jobs:
             [ "$(gh pr view "$PR_URL" --json state --jq .state)" = MERGED ] && exit 0
             sleep 20
           done
-          echo "::error::$PR_URL did not merge within 15 minutes"
+          # Closing also disarms auto-merge, so it can't land later behind our backs.
+          # It may have merged in the meantime, so look once more.
+          gh pr close "$PR_URL" || true  # fails if it merged meanwhile; the check below decides
+          [ "$(gh pr view "$PR_URL" --json state --jq .state)" = MERGED ] && exit 0
+          echo "::error::$PR_URL did not merge within 15 minutes and is now closed"
           exit 1
       - if: steps.apply.outputs.branch != ''
         env:

@@ -16,8 +16,8 @@ ROT_QUEUED = f"GET {API}/actions/workflows/rot.yml/runs?status=queued"
 ROT_PENDING = f"GET {API}/actions/workflows/rot.yml/runs?status=pending"
 MERGE_QUEUED = f"GET {API}/actions/workflows/on-merge.yml/runs?status=queued"
 MERGE_PENDING = f"GET {API}/actions/workflows/on-merge.yml/runs?status=pending"
-ROT_OK = f"GET {API}/actions/workflows/rot.yml/runs?status=success&per_page=1"
-ROT_LATEST = f"GET {API}/actions/workflows/rot.yml/runs?per_page=1"
+ROT_OK = f"GET {API}/actions/workflows/rot.yml/runs?status=success&per_page=100"
+ROT_LATEST = f"GET {API}/actions/workflows/rot.yml/runs?per_page=100"
 ROT_DISPATCH = f"POST {API}/actions/workflows/rot.yml/dispatches"
 ROT_REFS = f"GET {API}/git/matching-refs/heads/rot/"
 OPEN_PRS = f"GET {API}/pulls?state=open&per_page=100"
@@ -32,8 +32,15 @@ def issue(n, age=timedelta(hours=1), labels=("submission",), **kw):
     return {"number": n, "created_at": iso(NOW - age), "labels": [{"name": x} for x in labels], **kw}
 
 
-def runs(*ages):
-    return {"total_count": len(ages), "workflow_runs": [{"created_at": iso(NOW - a)} for a in ages]}
+def runs(*ages, title="Health check"):
+    return {"total_count": len(ages),
+            "workflow_runs": [{"created_at": iso(NOW - a), "display_title": title} for a in ages]}
+
+
+def mixed(*runs_):
+    """runs_ is (age, title) pairs, newest first like the API."""
+    return {"total_count": len(runs_),
+            "workflow_runs": [{"created_at": iso(NOW - a), "display_title": t} for a, t in runs_]}
 
 
 def pr(n, ref_, age=timedelta(days=2), login=BOT, repo="devstreamhq/devstream"):
@@ -144,10 +151,30 @@ class SweepTest(unittest.TestCase):
         sweep(g, NOW)
         self.assertEqual(rot_dispatched(g), [])
 
-    def test_submissions_go_before_rot(self):
+    def test_overdue_rot_goes_before_submissions(self):
         g = gh([issue(1)], routes={ROT_OK: runs(), ROT_LATEST: runs()})
         sweep(g, NOW)
+        self.assertEqual((dispatched(g), rot_dispatched(g)), ([], [{"ref": "main"}]))
+
+    def test_submissions_go_first_when_rot_is_not_overdue(self):
+        g = gh([issue(1)])
+        sweep(g, NOW)
         self.assertEqual((dispatched(g), rot_dispatched(g)), (["1"], []))
+
+    def test_only_full_runs_count_as_a_health_check(self):
+        # A one-repo re-check doesn't cover the rest of the list.
+        oks = mixed((timedelta(hours=3), "Health check (one repo)"), (timedelta(days=9), "Health check"))
+        latest = mixed((timedelta(hours=3), "Health check (one repo)"), (timedelta(days=2), "Health check"))
+        g = gh(routes={ROT_OK: oks, ROT_LATEST: latest})
+        sweep(g, NOW)
+        self.assertEqual(rot_dispatched(g), [{"ref": "main"}])
+
+        # Names that only start or end the same way don't count either.
+        oks = mixed((timedelta(days=1), "Health check (one repo)"), (timedelta(days=1), "Health check "),
+                    (timedelta(days=1), "health check"))
+        g = gh(routes={ROT_OK: oks, ROT_LATEST: runs(timedelta(days=2))})
+        sweep(g, NOW)
+        self.assertEqual(rot_dispatched(g), [{"ref": "main"}])
 
     def test_no_rot_dispatch_while_list_writes_waits(self):
         for key in (QUEUED, PENDING, ROT_QUEUED, ROT_PENDING, MERGE_QUEUED, MERGE_PENDING):

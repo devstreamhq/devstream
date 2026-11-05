@@ -130,19 +130,22 @@ jobs:
           GH_TOKEN: ${{ steps.token.outputs.token }}
           RESULT: ${{ runner.temp }}/result/result.json
           REPO_NAME: ${{ steps.meta.outputs.repo }}
+          ISSUE: ${{ steps.meta.outputs.issue }}
           BRANCH: ${{ steps.apply.outputs.branch }}
         run: |
           branch="$BRANCH"
+          subject="feat(list): add $REPO_NAME"
           git switch -c "$branch"
           git add data/entries.json
           git -c user.name='devstreamhq-bot[bot]' \
             -c user.email='353074438+devstreamhq-bot[bot]@users.noreply.github.com' \
-            commit -m "feat(list): add $REPO_NAME"
+            commit -m "$subject"
           git push origin "$branch"
           python -m scripts.submit comment --result "$RESULT" --kind pr > "$RUNNER_TEMP/pr-body.md"
-          url=$(gh pr create --base main --head "$branch" --title "Add $REPO_NAME" --body-file "$RUNNER_TEMP/pr-body.md")
+          url=$(gh pr create --base main --head "$branch" --title "$subject" --body-file "$RUNNER_TEMP/pr-body.md")
           echo "url=$url" >> "$GITHUB_OUTPUT"
-          gh pr merge "$url" --auto --squash
+          # An explicit body stops GitHub adding its Co-authored-by trailer to the squash commit.
+          gh pr merge "$url" --auto --squash --subject "$subject" --body "Submitted in #$ISSUE."
       # Holding the concurrency lock until the merge lands keeps the next apply off a stale entries.json.
       - if: steps.apply.outputs.branch != ''
         env:

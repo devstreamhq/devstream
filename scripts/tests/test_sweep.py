@@ -1,6 +1,7 @@
 import unittest
 from datetime import datetime, timedelta, timezone
 
+from scripts.devstream.gh import GitHubError
 from scripts.sweep import sweep
 from scripts.tests.fake_gh import FakeGitHub
 
@@ -9,6 +10,8 @@ API = "/repos/devstreamhq/devstream"
 ISSUES = f"GET {API}/issues"
 REFS = f"GET {API}/git/matching-refs/heads/submit/"
 DISPATCH = f"POST {API}/actions/workflows/submit.yml/dispatches"
+QUEUED = f"GET {API}/actions/workflows/submit.yml/runs?status=queued"
+PENDING = f"GET {API}/actions/workflows/submit.yml/runs?status=pending"
 
 
 def iso(d):
@@ -24,7 +27,10 @@ def ref(n, sha=None):
 
 
 def gh(issues=(), refs=(), routes=None):
-    r = {ISSUES: list(issues), REFS: list(refs), DISPATCH: None, f"DELETE {API}/git/refs/heads/submit/9": None}
+    r = {
+        ISSUES: list(issues), REFS: list(refs), DISPATCH: None, f"DELETE {API}/git/refs/heads/submit/9": None,
+        QUEUED: {"total_count": 0}, PENDING: {"total_count": 0},
+    }
     r.update(routes or {})
     return FakeGitHub(r)
 
@@ -42,24 +48,55 @@ def deleted(g):
 
 
 class SweepTest(unittest.TestCase):
-    def test_dispatches_only_stale_unhandled_submissions(self):
+    def test_skips_handled_young_and_pr_issues(self):
         g = gh([
-            issue(1),
             issue(2, labels=("submission", "accepted")),
             issue(3, labels=("submission", "rejected")),
             issue(4, age=timedelta(minutes=9)),
             issue(5, pull_request={}),
+            issue(7, labels=("submission", "needs-review"), age=timedelta(days=2)),
             issue(6, age=timedelta(minutes=11)),
         ])
         sweep(g, NOW)
-        self.assertEqual(dispatched(g), ["1", "6"])
+        self.assertEqual(dispatched(g), ["6"])
         body = [b for m, p, b in g.calls if m == "POST"][0]
-        self.assertEqual(body, {"ref": "main", "inputs": {"issue": "1"}})
+        self.assertEqual(body, {"ref": "main", "inputs": {"issue": "6"}})
 
-    def test_caps_at_five_per_run(self):
-        g = gh([issue(n) for n in range(1, 9)])
+    def test_needs_review_is_never_dispatched(self):
+        g = gh([issue(7, labels=("submission", "needs-review"))])
         sweep(g, NOW)
-        self.assertEqual(dispatched(g), ["1", "2", "3", "4", "5"])
+        self.assertEqual(dispatched(g), [])
+
+    def test_caps_at_one_per_run(self):
+        g = gh([issue(n, age=timedelta(hours=10 - n)) for n in range(1, 9)])
+        sweep(g, NOW)
+        self.assertEqual(dispatched(g), ["1"])
+
+    def test_dispatches_oldest_first(self):
+        g = gh([issue(3, age=timedelta(hours=1)), issue(1, age=timedelta(hours=5)), issue(2, age=timedelta(hours=3))])
+        sweep(g, NOW)
+        self.assertEqual(dispatched(g), ["1"])
+
+    def test_no_dispatch_while_a_submit_run_waits(self):
+        for key in (QUEUED, PENDING):
+            g = gh([issue(1)], routes={key: {"total_count": 1}})
+            sweep(g, NOW)
+            self.assertEqual(dispatched(g), [], key)
+
+    def test_failed_delete_does_not_stop_the_sweep(self):
+        def gone(_):
+            raise GitHubError(422, "Reference does not exist")
+
+        routes = {
+            **commit("sha8", timedelta(hours=1)), **commit("sha9", timedelta(hours=1)),
+            f"GET {API}/pulls?state=open&head=devstreamhq:submit/8": [],
+            f"GET {API}/pulls?state=open&head=devstreamhq:submit/9": [],
+            f"DELETE {API}/git/refs/heads/submit/8": gone,
+        }
+        g = gh([issue(1)], refs=[ref(8), ref(9)], routes=routes)
+        sweep(g, NOW)
+        self.assertEqual(deleted(g), [f"{API}/git/refs/heads/submit/8", f"{API}/git/refs/heads/submit/9"])
+        self.assertEqual(dispatched(g), ["1"])
 
     def test_deletes_old_branch_without_open_pr(self):
         routes = {**commit("sha9", timedelta(minutes=31)), f"GET {API}/pulls?state=open&head=devstreamhq:submit/9": []}

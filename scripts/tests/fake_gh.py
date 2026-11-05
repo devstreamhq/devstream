@@ -9,6 +9,17 @@ class Redirect:
         self.path = path
 
 
+class Status:
+    """Route value for an answer with a bare status code and no body.
+
+    Status(204) or Status(404) as a GET route: .get returns None and .status
+    returns the code. Any other code of 300+ raises GitHubError from both.
+    """
+
+    def __init__(self, code: int):
+        self.code = code
+
+
 class FakeGitHub:
     """In-memory stand-in for GitHub, same public methods.
 
@@ -20,6 +31,9 @@ class FakeGitHub:
     GraphQL routes: "GRAPHQL <OperationName>", where the name is the word
     after `query` or `mutation` in the document, or plain "GRAPHQL" as a
     catch-all. A missing route raises GitHubError(404).
+
+    .status(path) returns the code of a Status route, 200 for any other
+    routed value, and 404 for a missing route.
 
     Only .get returns None on a missing route; post, patch and put raise
     GitHubError(404). A route whose value is None answers a write like a
@@ -55,7 +69,22 @@ class FakeGitHub:
 
     def get(self, path, params=None):
         self.last_redirect = None
-        return self._find("GET", path, params, None)
+        v = self._find("GET", path, params, None)
+        return None if isinstance(v, Status) and self._ok(v) else v
+
+    @staticmethod
+    def _ok(v):
+        if v.code >= 300 and v.code != 404:
+            raise GitHubError(v.code, "status route")
+        return True
+
+    def status(self, path) -> int:
+        self.last_redirect = None
+        v = self._find("GET", path, None, None)
+        if isinstance(v, Status):
+            self._ok(v)
+            return v.code
+        return 404 if v is None else 200
 
     def paginate(self, path, params=None):
         self.last_redirect = None

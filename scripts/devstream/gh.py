@@ -104,6 +104,14 @@ class GitHub:
         r = self._request("GET", path, params)
         return None if r is None else r[1]
 
+    def status(self, path) -> int:
+        """HTTP status of a GET: 204 and 404 are answers here, not failures."""
+        self.last_redirect = None
+        r = self._request("GET", path)
+        if r is None:
+            return 404
+        return 200 if r[1] is not None else 204
+
     def paginate(self, path, params=None) -> Iterator[dict]:
         self.last_redirect = None
         first = True

@@ -43,34 +43,44 @@ def entry(repo="alice/tool", status="live"):
     }
 
 
-# login -> (account age in days, public repos, contributions in the last year)
+# login -> (account age in days, owned non-fork repos, contributions in the last year, forks)
 USERS = {
-    "carol": (400, 3, 0),
-    "dave": (800, 0, 50),
-    "erin": (366, 10, 0),
-    "frank": (100, 20, 500),   # trusted, but under a year old
-    "gina": (400, 2, 49),      # trusted and old, but too little activity
-    "newbie": (10, 5, 100),    # untrusted: under 30 days
+    "carol": (400, 3, 0, 0),
+    "dave": (800, 0, 50, 0),
+    "erin": (366, 10, 0, 0),
+    "frank": (100, 20, 500, 0),  # trusted, but under a year old
+    "gina": (400, 2, 49, 0),     # trusted and old, but too little activity
+    "hank": (400, 0, 0, 5),      # trusted and old, but every repo is a fork
+    "newbie": (10, 5, 100, 0),   # untrusted: under 30 days
 }
 
 
 def search_key(login):
     return (f"GET /search/issues?q=repo:devstreamhq/devstream+label:report+author:{login}"
-            "+created:>=2026-11-04T12:00:00Z")
+            "+created:>=2026-11-04T12:00:00Z&per_page=100")
 
 
-def gh(counts=None, extra=None):
+def gh(counts=None, extra=None, edited=(), current=7):
+    """counts: login -> number of the reporter's OTHER reports in the last 24h (search also returns current)."""
     routes = {"GET /orgs/devstreamhq/blocks": []}
-    for login, (age, repos, _) in USERS.items():
+    for login, (age, repos, _, forks) in USERS.items():
         routes[f"GET /users/{login}"] = {"created_at": iso(NOW - timedelta(days=age)),
-                                         "public_repos": repos, "type": "User"}
-        routes[search_key(login)] = {"total_count": (counts or {}).get(login, 1), "items": []}
+                                         "public_repos": repos + forks, "type": "User"}
+        routes[f"GET /users/{login}/repos?type=owner&per_page=100"] = (
+            [{"fork": False}] * repos + [{"fork": True}] * forks)
+        items = [{"number": current}] + [{"number": 100 + k} for k in range((counts or {}).get(login, 0))]
+        routes[search_key(login)] = {"total_count": len(items), "items": items}
 
     def activity(v):
         total = USERS[v["login"]][2]
         return {"user": {"contributionsCollection": {"contributionCalendar": {"totalContributions": total}}}}
 
+    def edits(v):
+        return {"repository": {f"i{k}": {"lastEditedAt": iso(NOW) if n in edited else None}
+                               for k, n in ((k, v[f"n{k}"]) for k in range(len(v)))}}
+
     routes["GRAPHQL UserActivity"] = activity
+    routes["GRAPHQL ReportEdits"] = edits
     routes.update(extra or {})
     return FakeGitHub(routes)
 
@@ -131,6 +141,35 @@ class ThresholdTest(unittest.TestCase):
         self.assertNotIn("hide", kinds(actions))
         self.assertEqual(labels(actions), {"needs-review"})
 
+    def test_only_spam_and_other_reports_count(self):
+        for reason in ("Wrong category", "Dead or abandoned", "Replaced by something better",
+                       "Malicious (malware, phishing, stolen code)"):
+            others = [report(8, "dave", reason=reason), report(9, "erin")]
+            self.assertNotIn("hide", kinds(run(open_reports=others)), reason)
+        others = [report(8, "dave", reason="Something else"), report(9, "erin")]
+        self.assertIn("hide", kinds(run(open_reports=others)))
+
+    def test_edited_report_does_not_count(self):
+        others = [report(8, "dave"), report(9, "erin")]
+        for edited in ((8,), (9,), (7,)):
+            self.assertNotIn("hide", kinds(run(g=gh(edited=edited), open_reports=others)), edited)
+
+    def test_category_report_edited_to_spam_does_not_count(self):
+        # Issue 8 was decided as "Wrong category"; its body now says spam, but it was edited.
+        others = [report(8, "dave", reason="Spam or SEO"), report(9, "erin")]
+        actions = run(g=gh(edited=(8,)), open_reports=others)
+        self.assertNotIn("hide", kinds(actions))
+        self.assertEqual(labels(actions), {"needs-review"})
+
+    def test_edit_check_is_one_query(self):
+        g = gh()
+        run(g=g, open_reports=[report(8, "dave"), report(9, "erin")])
+        self.assertEqual(sum(1 for c in g.calls if c[:2] == ("GRAPHQL", "ReportEdits")), 1)
+
+    def test_forks_do_not_make_a_reporter_established(self):
+        self.assertNotIn("hide", kinds(run(open_reports=[report(8, "dave"), report(9, "hank")])))
+        self.assertNotIn("hide", kinds(run(report(login="hank", reason="Malicious (malware, phishing, stolen code)"))))
+
     def test_untrusted_and_bot_reports_do_not_count(self):
         others = [report(8, "dave"), report(9, "newbie"), report(10, BOT, "Bot")]
         self.assertNotIn("hide", kinds(run(open_reports=others)))
@@ -147,7 +186,7 @@ class MaliciousTest(unittest.TestCase):
         self.assertEqual(labels(actions), {"needs-review"})
 
     def test_malicious_needs_established_reporter(self):
-        for login in ("frank", "gina"):
+        for login in ("frank", "gina", "hank"):
             actions = run(report(login=login, reason="Malicious (malware, phishing, stolen code)"))
             self.assertNotIn("hide", kinds(actions), login)
             self.assertEqual(labels(actions), {"needs-review"}, login)
@@ -173,11 +212,40 @@ class TrustTest(unittest.TestCase):
         self.assertIn("github.event.issue.user.login != 'devstreamhq-bot[bot]'", text)
 
     def test_report_rate_limit(self):
-        actions = run(g=gh(counts={"carol": 6}))
+        actions = run(g=gh(counts={"carol": 5}))
         self.assertEqual(kinds(actions), ["comment", "close"])
-        self.assertIn("5 reports", comments(actions)[0])
-        self.assertNotIn("hide", kinds(run(g=gh(counts={"carol": 5}))))
-        self.assertIn("label", kinds(run(g=gh(counts={"carol": 5}))))
+        self.assertEqual(comments(actions)[0], "You've hit the daily limit of 5 reports. Try again tomorrow.")
+        self.assertIn("label", kinds(run(g=gh(counts={"carol": 4}))))
+
+    def test_rate_limit_excludes_current_issue(self):
+        # Search shows the current issue plus 4 others: 4 counts, so it goes through.
+        g = gh(counts={"carol": 4})
+        self.assertNotIn("close", kinds(run(g=g)))
+        # Search lag: the current issue isn't indexed yet, and 5 others still hit the limit.
+        g = gh(counts={"carol": 5}, current=999)
+        self.assertEqual(kinds(run(g=g)), ["comment", "close"])
+
+    def test_untrusted_flooder_hits_limit(self):
+        g = gh(counts={"newbie": 5})
+        actions = run(report(login="newbie"), g)
+        self.assertEqual(kinds(actions), ["comment", "close"])
+        self.assertIn("daily limit", comments(actions)[0])
+        # The limit runs before any trust lookups.
+        self.assertNotIn(("GET", "/users/newbie", None), g.calls)
+
+    def test_bad_login_never_reaches_search(self):
+        g = gh()
+        actions = run(report(login="bad login+label:x"), g)
+        self.assertEqual(labels(actions), {"needs-review"})
+        self.assertFalse(any("/search/" in c[1] for c in g.calls))
+
+    def test_workflow_holds_list_writes_only_while_hiding(self):
+        text = WORKFLOW.read_text()
+        self.assertEqual(text.count("concurrency:"), 1)
+        hide = text.index("\n  hide:\n")
+        respond = text.index("\n  respond:\n")
+        self.assertTrue(hide < text.index("concurrency:") < respond)
+        self.assertIn("group: list-writes", text)
 
     def test_block_access_checked(self):
         g = gh(extra={"GET /orgs/devstreamhq/blocks": None})
@@ -210,7 +278,7 @@ class ReasonTest(unittest.TestCase):
         self.assertIn(("dispatch_rot", "alice/tool"), [(a.kind, a.value) for a in actions])
         self.assertEqual(labels(actions), {"needs-review"})
         self.assertNotIn("close", kinds(actions))
-        self.assertIn("health check", comments(actions)[0])
+        self.assertEqual(comments(actions)[0], "A health check on `alice/tool` has been queued.")
 
     def test_superseded_labels_and_validates(self):
         actions = run(report(reason="Replaced by something better", superseded_by="https://github.com/Bob/New"))

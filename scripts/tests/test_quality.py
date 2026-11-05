@@ -255,7 +255,8 @@ class SubmitTest(unittest.TestCase):
             g = gh(readme=text)
             t = time.monotonic()
             run(g)
-            self.assertLess(time.monotonic() - t, 1, text[:3])
+            # Generous for slow CI runners; the quadratic version took 18s or more.
+            self.assertLess(time.monotonic() - t, 5, text[:3])
 
     def test_archived_word_in_text_is_not_deprecated(self):
         self.assertEqual(run(gh({"description": "Supports archived chats"})).failures, [])

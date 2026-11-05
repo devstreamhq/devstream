@@ -13,11 +13,6 @@ on:
 
 permissions: {}
 
-# Shared with submit.yml and rot.yml: one run at a time edits entries.json, and each PR merges before the next starts.
-concurrency:
-  group: list-writes
-  cancel-in-progress: false
-
 jobs:
   decide:
     # The bot opens report issues itself for Like bursts; those are left for a maintainer.
@@ -43,7 +38,7 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
-      # Org block reads need an App token; GITHUB_TOKEN can't see them. actions: write dispatches rot.yml.
+      # Org block reads need an App token; GITHUB_TOKEN can't see them.
       - id: token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
@@ -51,7 +46,6 @@ jobs:
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           permission-organization-user-blocking: read
           permission-issues: read
-          permission-actions: write
       # An API failure exits non-zero with no result file, so nothing is acted on.
       # A dispatched issue that is already handled, or a bot's issue, exits 0 with no result file.
       - env:
@@ -64,10 +58,18 @@ jobs:
           else
             python -m scripts.reports decide --event "$GITHUB_EVENT_PATH" --out result.json
           fi
+      # Its own token, so the one that reads issue text never carries actions: write.
+      - id: dispatch_token
+        if: hashFiles('result.json') != ''
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-actions: write
       # A failed dispatch fails the run before any comment, so the sweeper tries again.
       - if: hashFiles('result.json') != ''
         env:
-          GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.dispatch_token.outputs.token }}
         run: python -m scripts.reports dispatch --result result.json
       - if: hashFiles('result.json') != ''
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -88,6 +90,11 @@ jobs:
   hide:
     needs: decide
     if: needs.decide.outputs.hide == 'true'
+    # Only this job writes entries.json, so only it queues behind submit.yml and rot.yml.
+    # A report flood then can't fill the one pending slot those share.
+    concurrency:
+      group: list-writes
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -135,7 +142,8 @@ jobs:
           print(f"repo={repo}")
           print(f"issue={issue}")
           PY
-      # Prints the branch name, or nothing when fresh main already has the entry hidden.
+      # Re-checks against fresh main, which may have moved while this job queued: prints the branch
+      # name, nothing when the entry is already hidden, and fails when it's gone from the list.
       - id: apply
         env:
           RESULT: ${{ runner.temp }}/result/result.json

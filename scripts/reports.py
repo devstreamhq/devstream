@@ -18,7 +18,7 @@ from datetime import datetime, timedelta, timezone
 from scripts.devstream.entries import DEFAULT_PATH, find, load, normalize_repo, save
 from scripts.devstream.gh import GitHub
 from scripts.devstream.issue_form import FormError, _repo, parse_report
-from scripts.devstream.trust import ACTIVITY_QUERY, check_user, ensure_block_access
+from scripts.devstream.trust import ACTIVITY_QUERY, LOGIN_RE, check_user, ensure_block_access
 from scripts.validate_data import validate
 
 REPO = "devstreamhq/devstream"
@@ -36,10 +36,8 @@ UNTRUSTED = (
     "Thanks for flagging this. We can't act on reports from this account automatically, "
     "so it's waiting for a maintainer to read instead."
 )
-RATE_LIMIT = (
-    "Thanks for keeping an eye on the list. You've filed 5 reports in the last 24 hours, "
-    "which is the daily limit, so we've closed this one. Still worried about it tomorrow? Send it again then."
-)
+RATE_LIMIT = "You've hit the daily limit of 5 reports. Try again tomorrow."
+COUNTED = ("spam", "other")
 ERROR = "Something went wrong on our side while handling this report. We've been pinged and will sort it out.\n"
 
 
@@ -67,23 +65,42 @@ def _established(login: str, gh, now: datetime) -> bool:
     user = gh.get(f"/users/{login}")
     if user is None or now - datetime.fromisoformat(user["created_at"].replace("Z", "+00:00")) < ESTABLISHED_AGE:
         return False
-    if user["public_repos"] >= ESTABLISHED_REPOS:
-        return True
     since = (now - timedelta(days=365)).strftime("%Y-%m-%dT%H:%M:%SZ")
     data = gh.graphql(ACTIVITY_QUERY, {"login": login, "from": since})
-    total = data["user"]["contributionsCollection"]["contributionCalendar"]["totalContributions"]
-    return total >= ESTABLISHED_CONTRIBUTIONS
+    if data["user"]["contributionsCollection"]["contributionCalendar"]["totalContributions"] >= ESTABLISHED_CONTRIBUTIONS:
+        return True
+    # Forks cost one click each, so only repos the account made itself count.
+    owned = 0
+    for r in gh.paginate(f"/users/{login}/repos?type=owner&per_page=100"):
+        owned += r.get("fork") is False
+        if owned >= ESTABLISHED_REPOS:
+            return True
+    return False
 
 
-def _recent_reports(login: str, gh, now: datetime) -> int:
+def _other_recent_reports(login: str, number: int, gh, now: datetime) -> int:
+    """Excludes the current issue, so search lag can't let an extra one through."""
     since = (now - timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%SZ")
     q = f"repo:{REPO}+label:report+author:{login}+created:>={since}"
-    return gh.get(f"/search/issues?q={q}")["total_count"]
+    # shortcut: one page of 100 is plenty to see 5.
+    return sum(1 for i in gh.get(f"/search/issues?q={q}&per_page=100")["items"] if i["number"] != number)
 
 
-def _reporters(repo: str, open_reports: list[dict]) -> set[str]:
-    """Distinct human logins with an open report on repo."""
-    out = set()
+def _unedited(gh, numbers: list[int]) -> set[int]:
+    """The issues whose body is still as filed: an edited report could have been decided as something else."""
+    if not numbers:
+        return set()
+    fields = " ".join(f"i{k}: issue(number: $n{k}) {{ lastEditedAt }}" for k in range(len(numbers)))
+    params = ", ".join(f"$n{k}: Int!" for k in range(len(numbers)))
+    owner, name = REPO.split("/")
+    query = f'query ReportEdits({params}) {{ repository(owner: "{owner}", name: "{name}") {{ {fields} }} }}'
+    data = gh.graphql(query, {f"n{k}": n for k, n in enumerate(numbers)})["repository"]
+    return {n for k, n in enumerate(numbers) if (data.get(f"i{k}") or {"lastEditedAt": "gone"})["lastEditedAt"] is None}
+
+
+def _reporters(repo: str, open_reports: list[dict], gh) -> set[str]:
+    """Distinct human logins with an open, unedited spam or other report on repo."""
+    found = {}
     for r in open_reports:
         if _is_bot(r) or "pull_request" in r:
             continue
@@ -91,9 +108,10 @@ def _reporters(repo: str, open_reports: list[dict]) -> set[str]:
             form = parse_report(r.get("body") or "")
         except FormError:
             continue
-        if normalize_repo(form["entry"]) == normalize_repo(repo):
-            out.add(r["user"]["login"].lower())
-    return out
+        if form["reason"] in COUNTED and normalize_repo(form["entry"]) == normalize_repo(repo):
+            found[r["number"]] = r["user"]["login"].lower()
+    keep = _unedited(gh, sorted(found))
+    return {who for n, who in found.items() if n in keep}
 
 
 def handle_report(issue: dict, gh, entries: list, open_reports: list[dict],
@@ -113,12 +131,15 @@ def handle_report(issue: dict, gh, entries: list, open_reports: list[dict],
     repo = entry["repo"]
     login = issue["user"]["login"]
 
+    # The login goes into a search query, so it has to be a plain GitHub login first.
+    if not LOGIN_RE.match(login):
+        return _reply(UNTRUSTED, "needs-review")
+    # Before the trust lookups, so a flood costs one search per report.
+    if _other_recent_reports(login, issue["number"], gh, now) >= DAILY_LIMIT:
+        return _close(RATE_LIMIT)
     ensure_block_access(gh)
     if check_user(login, gh, now, excluded):
         return _reply(UNTRUSTED, "needs-review")
-    # check_user has already rejected logins outside [A-Za-z0-9-], so the query is safe.
-    if _recent_reports(login, gh, now) > DAILY_LIMIT:
-        return _close(RATE_LIMIT)
 
     queued = f"Thanks for reporting `{repo}`. It's in the queue, and a maintainer will take a look."
     if entry["status"] == "hidden":
@@ -129,7 +150,7 @@ def handle_report(issue: dict, gh, entries: list, open_reports: list[dict],
 
     if reason == "dead":
         return [Action("dispatch_rot", repo)] + _reply(
-            f"Thanks. A health check on `{repo}` is running now, and a maintainer will look at what it finds.",
+            f"A health check on `{repo}` has been queued.",
             "needs-review")
     if reason == "malicious":
         if _established(login, gh, now):
@@ -137,7 +158,8 @@ def handle_report(issue: dict, gh, entries: list, open_reports: list[dict],
         return _reply(queued, "needs-review")
     if reason in ("spam", "other"):
         counted = 0
-        for who in sorted(_reporters(repo, [issue, *open_reports])):
+        others = [r for r in open_reports if r.get("number") != issue["number"]]
+        for who in sorted(_reporters(repo, [issue, *others], gh)):
             if check_user(who, gh, now, excluded) is None and _established(who, gh, now):
                 counted += 1
                 if counted >= HIDE_AT:

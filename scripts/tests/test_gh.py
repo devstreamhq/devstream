@@ -5,7 +5,7 @@ import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from scripts.devstream.gh import GitHub, GitHubError, RateLimited
-from scripts.tests.fake_gh import FakeGitHub, Redirect
+from scripts.tests.fake_gh import FakeGitHub, Redirect, Status
 
 LONG = int(time.time()) + 100000
 
@@ -82,6 +82,8 @@ class H(BaseHTTPRequestHandler):
             self._send(200, [{"n": 1}], [("Link", f"<http://127.0.0.1:{port}/missing>; rel=\"next\"")])
         elif p == "/stolen":
             self._send(200, {"own": True})
+        elif p == "/nocontent":
+            self._send(204)
         elif p.startswith("/search"):
             self._send(200, {"items": [{"n": 9}]})
         else:
@@ -142,6 +144,15 @@ class GitHubTest(unittest.TestCase):
 
     def test_404_returns_none(self):
         self.assertIsNone(self.gh.get("/missing"))
+
+    def test_status_204_404_and_errors(self):
+        self.assertEqual(self.gh.status("/nocontent"), 204)
+        self.assertEqual(self.gh.status("/missing"), 404)
+        self.assertEqual(self.gh.status("/short"), 200)
+        with self.assertRaises(GitHubError):
+            self.gh.status("/boom")
+        with self.assertRaises(RateLimited):
+            self.gh.status("/limited")
 
     def test_redirect_followed_and_recorded(self):
         self.assertEqual(self.gh.get("/repos/old/name"), {"full_name": "new/name"})
@@ -247,6 +258,14 @@ class FakeTest(unittest.TestCase):
     def test_same_public_methods(self):
         pub = lambda c: {n for n in dir(c) if not n.startswith("_") and callable(getattr(c, n))}
         self.assertEqual(pub(GitHub), pub(FakeGitHub))
+
+    def test_status_routes(self):
+        f = FakeGitHub({"GET /b": Status(204), "GET /x": {"a": 1}, "GET /e": Status(500)})
+        self.assertEqual(f.status("/b"), 204)
+        self.assertEqual(f.status("/x"), 200)
+        self.assertEqual(f.status("/none"), 404)
+        with self.assertRaises(GitHubError):
+            f.status("/e")
 
     def test_write_missing_route_raises(self):
         f = FakeGitHub({"PUT /empty": None})

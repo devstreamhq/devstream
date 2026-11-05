@@ -61,6 +61,16 @@ class EntriesTest(unittest.TestCase):
         del e["description"]
         self.assertTrue(validate([e]))
 
+    def test_validate_rejects_description_the_filter_would_change(self):
+        self.assertEqual(validate([make()]), [])
+        for bad in ("<b>Bold</b> claims here.", "No closing period", "Visit spam.example today.", "x."):
+            errors = validate([make(description=bad)])
+            self.assertTrue(any("description" in e for e in errors), bad)
+
+    def test_shipped_data_passes(self):
+        doc = json.loads((Path(E.DEFAULT_PATH)).read_text(encoding="utf-8"))
+        self.assertEqual(validate(doc["entries"]), [])
+
 
 if __name__ == "__main__":
     unittest.main()

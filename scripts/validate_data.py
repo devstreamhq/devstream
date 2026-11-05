@@ -3,6 +3,7 @@ import re
 import sys
 from datetime import datetime
 
+from scripts.devstream.description import clean_description
 from scripts.devstream.entries import (
     CATEGORIES,
     DEFAULT_PATH,
@@ -67,6 +68,10 @@ def validate(entries: list[dict]) -> list[str]:
             if key in seen:
                 errors.append(f"{at}: duplicate of entry {seen[key]}")
             seen.setdefault(key, i)
+        desc = e.get("description")
+        # Backstop for anything that reaches main without passing the submission filter.
+        if isinstance(desc, str) and clean_description(desc) != (desc, None):
+            errors.append(f"{at}: description fails the description filter")
         if e.get("status") not in STATUSES:
             errors.append(f"{at}: unknown status {e.get('status')!r}")
         if e.get("category") not in CATEGORIES:

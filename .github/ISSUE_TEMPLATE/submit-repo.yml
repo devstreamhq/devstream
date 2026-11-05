@@ -1,0 +1,53 @@
+name: Submit a repo
+description: Suggest a GitHub repo for DevStream.
+title: "Submit: "
+labels: ["submission"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Got a repo people should know about? Tell us about it. First, check it against the [quality bar](https://github.com/devstreamhq/devstream/wiki/Quality-Bar).
+  - type: input
+    id: repository
+    attributes:
+      label: Repository
+      description: The GitHub link, or just owner/name.
+      placeholder: https://github.com/owner/name
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - AI & Machine Learning
+        - Backend & APIs
+        - CLI & Terminal
+        - Databases & Data
+        - Design & UI
+        - DevOps & Infrastructure
+        - Developer Tools
+        - Frontend & Web
+        - Learning & Resources
+        - Mobile
+        - Security
+        - Self-Hosted
+        - Testing
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: One plain sentence, 10 to 140 characters. No links.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I read the quality bar
+          required: true
+        - label: This repo is open source
+          required: true

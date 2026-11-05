@@ -28,6 +28,7 @@ gh api -X PUT "repos/$REPO/private-vulnerability-reporting" >/dev/null
 gh label create submission -R "$REPO" --color 0e8a16 --description "Repo submission" --force >/dev/null
 gh label create accepted -R "$REPO" --color 1d76db --description "Submission accepted" --force >/dev/null
 gh label create rejected -R "$REPO" --color b60205 --description "Submission rejected" --force >/dev/null
+gh label create needs-review -R "$REPO" --color fbca04 --description "Submission needs a maintainer" --force >/dev/null
 
 RULESET=$(cat <<'J'
 {

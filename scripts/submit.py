@@ -2,7 +2,7 @@
 
 python -m scripts.submit decide (--event EVENT.json | --issue N) --out result.json
 python -m scripts.submit apply --result result.json
-python -m scripts.submit comment --result result.json --kind {accepted,rejected,pr}
+python -m scripts.submit comment --result result.json --kind {accepted,rejected,pr,error}
 """
 
 import argparse
@@ -112,6 +112,8 @@ def comment(result: dict, kind: str) -> str:
             f"🎉 `{result['entry']['repo']}` is on the list. It's live at {SITE}, "
             "and Likes start counting as soon as its Discussion opens.\n"
         )
+    if kind == "error":
+        return "Something went wrong on our side while adding this. We've been pinged and will sort it out.\n"
     if kind == "pr":
         e = result["entry"]
         # Code span so an @name in the description can't ping anyone.
@@ -206,7 +208,7 @@ def main(argv: list[str]) -> int:
     a.add_argument("--entries", default=DEFAULT_PATH)
     c = sub.add_parser("comment")
     c.add_argument("--result", required=True)
-    c.add_argument("--kind", required=True, choices=("accepted", "rejected", "pr"))
+    c.add_argument("--kind", required=True, choices=("accepted", "rejected", "pr", "error"))
     args = p.parse_args(argv)
     return {"decide": _decide, "apply": _apply, "comment": _comment}[args.cmd](args)
 

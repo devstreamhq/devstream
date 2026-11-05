@@ -45,5 +45,6 @@ jobs:
             echo "::error::Commit $HEAD_SHA changes: $own"
             exit 1
           fi
-          # Pinned to the checked sha: GitHub refuses the review if the head has moved.
+          # The review is pinned to the checked sha. A later push is covered by
+          # dismiss_stale_reviews_on_push plus the opened-only trigger, not by this call.
           gh api -X POST "repos/$GH_REPO/pulls/$PR/reviews" -f event=APPROVE -f commit_id="$HEAD_SHA" >/dev/null

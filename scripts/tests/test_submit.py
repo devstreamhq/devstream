@@ -190,6 +190,15 @@ class PrBodyTest(unittest.TestCase):
         self.assertIn("Developer Tools", text)
 
 
+class ErrorCommentTest(unittest.TestCase):
+    def test_error_comment_text(self):
+        text = comment({"ok": True, "reasons": [], "entry": run().entry, "issue": 7, "author": "carol"}, "error")
+        self.assertEqual(
+            text.strip(),
+            "Something went wrong on our side while adding this. We've been pinged and will sort it out.",
+        )
+
+
 def write(path, obj):
     with open(path, "w") as f:
         json.dump(obj, f)

@@ -138,6 +138,11 @@ class OnMerge(unittest.TestCase):
         run(g, [entry(1), entry(2)])
         self.assertEqual(written(g), {"o/r1": 5, "o/r2": 7})
 
+    def test_skips_removed_threads(self):
+        g = gh({}, threads=[("Removed: o/r1", 9, "devstreamhq-bot[bot]"), ("o/r2", 7, "devstreamhq-bot[bot]")])
+        run(g, [entry(2)])
+        self.assertEqual(written(g), {"o/r2": 7})
+
     def test_no_put_when_unchanged(self):
         g = gh({"o/r1": 5})
         run(g, [entry(1)], sleep=lambda s: None)

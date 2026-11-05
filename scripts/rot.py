@@ -14,6 +14,7 @@ import sys
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 
+from scripts.devstream.discussions import REMOVED_PREFIX
 from scripts.devstream.entries import DEFAULT_PATH, find, load, normalize_repo, save, sort_key
 from scripts.devstream.gh import GitHub
 from scripts.devstream.quality import (
@@ -215,7 +216,7 @@ def prepare(gh, now, path=DEFAULT_PATH, repo=None, check=check_repo) -> dict:
         write_json(gh, "rot.json", rot, rot_sha, "chore(stats): record failing repos")
         # Unchanged entries means the only actions are removal notices, safe to post now rot.json is saved.
         failed, notified = _post(gh, actions, read_json(gh, "discussions.json")[0] or {})
-        failed += _mark_notified(gh, notified)
+        failed += _mark_notified(gh, notified, rot)
         if failed:
             raise SystemExit(f"{failed} Discussion or stats update(s) failed")
     return {"changed": changed, "actions": [asdict(a) for a in actions], "rot_state": rot}
@@ -261,6 +262,7 @@ def finish(gh, plan: dict) -> None:
 
     numbers = dict(read_json(gh, "discussions.json")[0] or {})  # before the move, so dropped entries find their thread
     failed = 0
+    moved = True
     for path, mutate, message in (
         ("rot.json", lambda _: plan["rot_state"], "chore(stats): record failing repos"),
         ("discussions.json", rekey, "chore(stats): follow renamed repos"),
@@ -271,20 +273,27 @@ def finish(gh, plan: dict) -> None:
         except Exception:
             logging.exception("could not write %s", path)
             failed += 1
-    posted, notified = _post(gh, actions, numbers)
-    failed += posted + _mark_notified(gh, notified)
+            moved = moved and path != "discussions.json"
+    # A retitle without its key move would leave the thread named for a key it isn't stored under.
+    posted, notified = _post(gh, actions, numbers, retitle=moved)
+    failed += posted + _mark_notified(gh, notified, plan["rot_state"])
     if failed:
         raise SystemExit(f"{failed} Discussion or stats update(s) failed")
 
 
-def _mark_notified(gh, keys: set[str]) -> int:
-    """Start the removal clock for the records whose owner has now been told. Returns 1 on failure."""
+def _mark_notified(gh, keys: set[str], planned: dict) -> int:
+    """Start the removal clock for the records whose owner has now been told. Returns 1 on failure.
+
+    Only a stored record from this plan is marked: if the plan's write failed, the stored one is
+    an older sighting, and marking it would start the clock days early.
+    """
     if not keys:
         return 0
 
     def mark(data):
         for k in keys & data.keys():
-            data[k]["notified"] = True
+            if isinstance(data[k], dict) and data[k].get("first_seen") == (planned.get(k) or {}).get("first_seen"):
+                data[k]["notified"] = True
         return data
 
     try:
@@ -295,7 +304,7 @@ def _mark_notified(gh, keys: set[str]) -> int:
     return 0
 
 
-def _post(gh, actions, numbers: dict) -> tuple[int, set[str]]:
+def _post(gh, actions, numbers: dict, retitle: bool = True) -> tuple[int, set[str]]:
     """Comment on, or retitle, each action's Discussion.
 
     numbers maps stats key to Discussion number. Returns (failures, rot keys whose notice is done).
@@ -311,9 +320,9 @@ def _post(gh, actions, numbers: dict) -> tuple[int, set[str]]:
             if d is not None:
                 if a.kind != "rename":
                     gh.graphql(_COMMENT, {"discussionId": d["id"], "body": a.message})
-                if a.kind in ("rename", "drop"):
+                if a.kind in ("rename", "drop") and retitle:
                     # "Removed: " can never normalise to a listed repo, so on_merge won't adopt the thread.
-                    title = a.repo if a.kind == "rename" else f"Removed: {a.repo}"
+                    title = a.repo if a.kind == "rename" else f"{REMOVED_PREFIX}{a.repo}"
                     gh.graphql(_RETITLE, {"discussionId": d["id"], "title": title})
             if a.kind == "notice":
                 notified.add(normalize_repo(a.repo))

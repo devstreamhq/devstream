@@ -3,6 +3,7 @@ from scripts.devstream.gh import GitHubError
 
 BOT_LOGIN = "devstreamhq-bot"
 SITE = "https://devstream.jamesconway.dev"
+REMOVED_PREFIX = "Removed: "
 
 _CATEGORY = """query LikesCategory {
   repository(owner: "devstreamhq", name: "devstream") {
@@ -36,6 +37,9 @@ def list_discussions(gh, category_id: str) -> dict[str, int]:
         for n in page["nodes"]:
             # Only the bot's own threads count; anyone else's could hijack an entry's Likes.
             if ((n.get("author") or {}).get("login") or "").removesuffix("[bot]") != BOT_LOGIN:
+                continue
+            # Retitled by the health check when its entry lost a rename collision.
+            if n["title"].startswith(REMOVED_PREFIX):
                 continue
             out[normalize_repo(n["title"])] = n["number"]
         if not page["pageInfo"]["hasNextPage"]:

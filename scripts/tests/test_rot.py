@@ -509,6 +509,35 @@ class FinishTest(unittest.TestCase):
         self.assertEqual(self.gql(g, "CommentOnEntry"), [{"discussionId": "D6", "body": "Heads up"}])
         self.assertEqual(titles[5], "alice/tool-ng")
 
+    def test_failed_rot_write_never_starts_the_clock_on_an_old_record(self):
+        # An unnotified sighting from a week ago is replanned as a fresh one; that write fails.
+        old_rec = {"first_seen": iso(NOW - timedelta(days=7)), "reason": "x"}
+        _, actions, rot = plan_rot([entry()], {"alice/tool": gone()}, NOW, {"alice/tool": old_rec})
+        self.assertEqual(kinds(actions), [("notice", "alice/tool")])
+        r, state = store({"rot.json": {"alice/tool": old_rec}, "discussions.json": {"alice/tool": 5}},
+                         threads({5: "alice/tool"}), conflicts={"rot.json": 2})
+        g = FakeGitHub(r)
+        with self.assertRaises(SystemExit):
+            finish(g, {"changed": True, "actions": [a.__dict__ for a in actions], "rot_state": rot})
+        self.assertEqual(len(self.gql(g, "CommentOnEntry")), 1)
+        self.assertNotIn("notified", state["rot.json"]["alice/tool"])
+
+        new, actions, _ = plan_rot([entry()], {"alice/tool": gone()}, NOW + timedelta(days=1), state["rot.json"])
+        self.assertEqual((new, kinds(actions)), ([entry()], [("notice", "alice/tool")]))
+
+    def test_no_retitle_when_the_key_move_fails(self):
+        titles = {5: "alice/tool", 6: "bob/kept"}
+        r, state = store({"discussions.json": {"alice/tool": 5, "bob/kept": 6}}, threads(titles),
+                         conflicts={"discussions.json": 2})
+        g = FakeGitHub(r)
+        with self.assertRaises(SystemExit):
+            finish(g, self.plan([Action("rename", "alice/tool-ng", "", "alice/tool"),
+                                 Action("drop", "bob/kept", "Merged", "bob/kept"),
+                                 Action("warn", "alice/tool-ng", "Heads up", "alice/tool")]))
+        self.assertEqual(self.gql(g, "UpdateEntryDiscussion"), [])
+        self.assertEqual(titles, {5: "alice/tool", 6: "bob/kept"})
+        self.assertEqual(sorted(c["body"] for c in self.gql(g, "CommentOnEntry")), ["Heads up", "Merged"])
+
     def test_collision_keeps_the_older_entrys_thread_through_on_merge(self):
         from scripts.devstream.entries import normalize_repo
         from scripts.on_merge import run as on_merge

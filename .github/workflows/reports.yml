@@ -22,6 +22,7 @@ jobs:
       github.event.issue.user.type != 'Bot' &&
       github.event.issue.user.login != 'devstreamhq-bot[bot]')
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     outputs:
@@ -96,6 +97,7 @@ jobs:
       group: list-writes
       cancel-in-progress: false
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     permissions:
       contents: read
     steps:
@@ -188,16 +190,39 @@ jobs:
           [ "$(gh pr view "$PR_URL" --json state --jq .state)" = MERGED ] && exit 0
           echo "::error::$PR_URL did not merge within 15 minutes and is now closed"
           exit 1
+      # Minted after the merge wait, so no later step runs on a token that expired during it.
+      - id: late_token
+        if: always() && steps.pr.outputs.url != ''
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+      - id: late_issues_token
+        if: always() && steps.issues_token.outputs.token != ''
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-issues: write
       # Only now is "hidden" true, so the comment waits for the merge.
       - env:
-          GITHUB_TOKEN: ${{ steps.issues_token.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.late_issues_token.outputs.token || steps.issues_token.outputs.token }}
           RESULT: ${{ runner.temp }}/result/result.json
         run: python -m scripts.reports issue --result "$RESULT"
-      # A genuine failure (apply error, push, PR, merge timeout) is parked for a maintainer:
-      # needs-review stops the sweeper retrying it. The issue stays open.
-      - if: failure() && steps.issues_token.outputs.token != '' && steps.meta.outputs.issue != ''
+      # A cancel or job timeout releases the lock, so the armed PR must not merge behind the next writer.
+      # Timeouts reach this step too: the runner re-evaluates later steps' if: on any job cancellation.
+      - if: cancelled() && steps.pr.outputs.url != ''
         env:
-          GITHUB_TOKEN: ${{ steps.issues_token.outputs.token }}
+          GH_TOKEN: ${{ steps.late_token.outputs.token || steps.token.outputs.token }}
+          PR_URL: ${{ steps.pr.outputs.url }}
+        run: gh pr close "$PR_URL" || true # fails if it merged meanwhile
+      # A genuine failure (apply error, push, PR, merge timeout, cancel) is parked for a maintainer:
+      # needs-review stops the sweeper retrying it. The issue stays open.
+      - if: (failure() || cancelled()) && steps.issues_token.outputs.token != '' && steps.meta.outputs.issue != ''
+        env:
+          GITHUB_TOKEN: ${{ steps.late_issues_token.outputs.token || steps.issues_token.outputs.token }}
           RESULT: ${{ runner.temp }}/result/result.json
         run: python -m scripts.reports issue --result "$RESULT" --error
 
@@ -205,6 +230,7 @@ jobs:
     needs: decide
     if: needs.decide.outputs.has == 'true' && needs.decide.outputs.hide != 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:

@@ -15,6 +15,7 @@ jobs:
   # containers, and only its approved actions as steps.
   analysis:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       # Upload the results to code scanning.
       security-events: write

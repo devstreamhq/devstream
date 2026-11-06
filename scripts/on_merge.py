@@ -6,7 +6,7 @@ from scripts.devstream import entries as entries_mod
 from scripts.devstream.discussions import ensure_discussion, likes_category, list_discussions
 from scripts.devstream.gh import GitHub
 from scripts.devstream.entries import normalize_repo
-from scripts.devstream.stats import ensure_branch, read_json, write_json
+from scripts.devstream.stats import ensure_branch, read_json, update_json
 
 CAP = 40
 VISIBLE = {"live", "warned", "flagged"}
@@ -14,7 +14,7 @@ VISIBLE = {"live", "warned", "flagged"}
 
 def run(gh, entries, sleep=time.sleep):
     ensure_branch(gh)
-    cur, sha = read_json(gh, "discussions.json")
+    cur = read_json(gh, "discussions.json")[0]
     mapping = {normalize_repo(k): v for k, v in (cur or {}).items()}
     before = dict(mapping)
     repo_id, category_id = likes_category(gh)
@@ -37,9 +37,14 @@ def run(gh, entries, sleep=time.sleep):
         raise
     finally:
         # Persist what exists even when a create failed, so no Discussion is orphaned.
+        added = {k: v for k, v in mapping.items() if before.get(k) != v}
+
+        def merge(stored):
+            # Re-applied onto a fresh read after a 409; a stored mapping still wins.
+            return {**added, **{normalize_repo(k): v for k, v in stored.items()}}
         if mapping != before:
             try:
-                write_json(gh, "discussions.json", mapping, sha, "chore(stats): map entry discussions")
+                update_json(gh, "discussions.json", merge, "chore(stats): map entry discussions")
             except Exception:
                 if err is None:
                     raise

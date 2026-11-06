@@ -26,7 +26,7 @@ from scripts.devstream.quality import (
     Undecided,
     check_repo,
 )
-from scripts.devstream.stats import ensure_branch, read_json, update_json, write_json
+from scripts.devstream.stats import ensure_branch, read_json, update_json
 from scripts.validate_data import validate
 
 CHECKED = {"live", "warned", "archived"}
@@ -197,7 +197,7 @@ def prepare(gh, now, path=DEFAULT_PATH, repo=None, check=check_repo) -> dict:
     entries = load(path)
     targets = [e for e in select(entries, repo) if e["status"] in CHECKED]
     ensure_branch(gh)
-    rot_state, rot_sha = read_json(gh, "rot.json")
+    rot_state = read_json(gh, "rot.json")[0]
     rot_state = rot_state or {}
     results = {}
     for e in targets:
@@ -215,7 +215,7 @@ def prepare(gh, now, path=DEFAULT_PATH, repo=None, check=check_repo) -> dict:
             raise SystemExit(1)
         save(new, path)
     elif rot != rot_state:
-        write_json(gh, "rot.json", rot, rot_sha, "chore(stats): record failing repos")
+        update_json(gh, "rot.json", lambda _: rot, "chore(stats): record failing repos")
         # Unchanged entries means the only actions are removal notices, safe to post now rot.json is saved.
         failed, notified = _post(gh, actions, read_json(gh, "discussions.json")[0] or {})
         failed += _mark_notified(gh, notified, rot)
@@ -267,6 +267,7 @@ def finish(gh, plan: dict, now: datetime | None = None) -> None:
     def record(data):
         # sync_likes replays these over snapshots taken before the rename; past its 7-day baseline they're unused.
         kept = {k: v for k, v in data.items() if isinstance(v, dict) and now - _parse(v["at"]) < RENAME_KEEP}
+        # renames.json keeps one record per old name; a repeat rename replaces it, fine on a weekly schedule.
         return {**kept, **{old: {"to": new, "at": _iso(now)} for old, new in moves.items()}}
 
     numbers = dict(read_json(gh, "discussions.json")[0] or {})  # before the move, so dropped entries find their thread

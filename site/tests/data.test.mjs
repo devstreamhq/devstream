@@ -53,6 +53,7 @@ test("sort by likes then stars then name", () => {
     "quiet-co/tiny-queue",
     "Pixel-Forge/shader-kit",
     "burst/likes-spike",
+    "future/fresh-entry",
     "evil/hostile-stats",
     "fresh/no-stats-yet",
   ]);
@@ -78,7 +79,10 @@ test("archived and superseded appear only in the archive list", () => {
 });
 
 test("new sorts by submission time, newest first", () => {
-  assert.equal(newest(all().entries)[0].repo, "fresh/no-stats-yet");
+  assert.deepEqual(names(newest(all().entries)).slice(0, 2), [
+    "future/fresh-entry",
+    "fresh/no-stats-yet",
+  ]);
 });
 
 test("stats are merged by lowercased repo key", () => {
@@ -110,7 +114,7 @@ test("missing stats files are treated as empty", () => {
     dataDir: fixtures,
     statsDir: `${fixtures}/does-not-exist`,
   });
-  assert.equal(liveList(entries).length, 7);
+  assert.equal(liveList(entries).length, 8);
   assert.ok(entries.every((e) => e.likes === 0 && e.rank === null));
 });
 

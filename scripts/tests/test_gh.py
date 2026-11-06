@@ -1,5 +1,7 @@
 import json
+import socket
 import threading
+import urllib.error
 import time
 import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -264,6 +266,121 @@ class GitHubTest(unittest.TestCase):
         with self.assertRaises(RateLimited):
             self.gh.get("/twice")
         self.assertEqual(len(self.slept), 1)
+
+
+class Retries(unittest.TestCase):
+    """_send is scripted: each item is a status code or an exception to raise."""
+
+    def gh(self, *script):
+        slept = []
+        gh = GitHub("tok", "http://x", sleep=slept.append)
+        sent = []
+
+        def send(method, url, body):
+            sent.append(method)
+            r = script[len(sent) - 1]
+            if isinstance(r, BaseException):
+                raise r
+            return r, {}, b'{"ok": true}' if r < 300 else b"{}"
+        gh._send = send
+        return gh, sent, slept
+
+    def test_get_502_then_200_succeeds(self):
+        gh, sent, slept = self.gh(502, 200)
+        self.assertEqual(gh.get("/a"), {"ok": True})
+        self.assertEqual((len(sent), len(slept)), (2, 1))
+
+    def test_three_503s_raise(self):
+        gh, sent, slept = self.gh(503, 503, 503, 200)
+        with self.assertRaises(GitHubError) as c:
+            gh.get("/a")
+        self.assertEqual((c.exception.status, len(sent), len(slept)), (503, 3, 2))
+        self.assertLess(slept[0], slept[1])
+
+    def test_404_not_retried(self):
+        gh, sent, _ = self.gh(404, 200)
+        self.assertIsNone(gh.get("/a"))
+        self.assertEqual(len(sent), 1)
+
+    def test_422_not_retried(self):
+        gh, sent, _ = self.gh(422, 200)
+        with self.assertRaises(GitHubError):
+            gh.post("/a", {})
+        self.assertEqual(len(sent), 1)
+
+    def test_post_500_not_retried(self):
+        gh, sent, _ = self.gh(500, 200)
+        with self.assertRaises(GitHubError):
+            gh.post("/a", {})
+        self.assertEqual(len(sent), 1)
+
+    def test_post_502_not_retried(self):
+        # The issue or comment may already exist; a second POST would duplicate it.
+        gh, sent, _ = self.gh(502, 200)
+        with self.assertRaises(GitHubError):
+            gh.post("/a", {})
+        self.assertEqual(len(sent), 1)
+
+    def test_put_patch_delete_502_retried(self):
+        for m, args in (("put", ({},)), ("patch", ({},)), ("delete", ())):
+            gh, sent, _ = self.gh(502, 200)
+            self.assertEqual(getattr(gh, m)("/a", *args), {"ok": True})
+            self.assertEqual(len(sent), 2, m)
+
+    def test_graphql_query_502_retried(self):
+        gh, sent, _ = self.gh(502, 200)
+        gh.graphql("query Q { x }", {})
+        self.assertEqual(len(sent), 2)
+
+    def test_graphql_query_timeout_retried(self):
+        gh, sent, _ = self.gh(TimeoutError(), 200)
+        gh.graphql("  query Q { x }", {})
+        self.assertEqual(len(sent), 2)
+
+    def test_graphql_mutation_502_not_retried(self):
+        for err in (502, TimeoutError()):
+            gh, sent, _ = self.gh(err, 200)
+            with self.assertRaises((GitHubError, TimeoutError)):
+                gh.graphql("mutation M { x }", {})
+            self.assertEqual(len(sent), 1)
+
+    def test_graphql_mutation_retried_when_never_sent(self):
+        gh, sent, _ = self.gh(urllib.error.URLError(ConnectionRefusedError()), 200)
+        gh.graphql("\n  mutation M { x }", {})
+        self.assertEqual(len(sent), 2)
+
+    def test_get_network_error_retried(self):
+        for err in (urllib.error.URLError("down"), TimeoutError(), ConnectionResetError()):
+            gh, sent, _ = self.gh(err, 200)
+            self.assertEqual(gh.get("/a"), {"ok": True})
+            self.assertEqual(len(sent), 2)
+
+    def test_three_network_errors_raise(self):
+        gh, sent, _ = self.gh(TimeoutError(), TimeoutError(), TimeoutError(), 200)
+        with self.assertRaises(TimeoutError):
+            gh.get("/a")
+        self.assertEqual(len(sent), 3)
+
+    def test_write_retried_only_when_never_sent(self):
+        refused = urllib.error.URLError(ConnectionRefusedError())
+        dns = urllib.error.URLError(socket.gaierror())
+        for err in (refused, dns):
+            gh, sent, _ = self.gh(err, 200)
+            self.assertEqual(gh.post("/a", {}), {"ok": True})
+            self.assertEqual(len(sent), 2)
+        for err in (TimeoutError(), ConnectionResetError(), urllib.error.URLError("reset")):
+            gh, sent, _ = self.gh(err, 200)
+            with self.assertRaises(OSError):
+                gh.patch("/a", {})
+            self.assertEqual(len(sent), 1)
+
+    def test_rate_limit_rules_unchanged(self):
+        gh, sent, _ = self.gh(200)
+        gh._send = lambda m, u, b: (sent.append(m), (403, {"x-ratelimit-remaining": "0",
+                                                            "x-ratelimit-reset": str(LONG)}, b"{}"))[1]
+        with self.assertRaises(RateLimited):
+            gh.get("/a")
+        self.assertEqual(len(sent), 1)
 
 
 class FakeTest(unittest.TestCase):

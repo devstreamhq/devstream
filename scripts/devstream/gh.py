@@ -1,5 +1,7 @@
 import json
+import random
 import re
+import socket
 import time
 import urllib.error
 import urllib.parse
@@ -9,6 +11,9 @@ from typing import Iterator
 MAX_SLEEP = 600
 MAX_HOPS = 5
 TIMEOUT = 30
+ATTEMPTS = 3
+TRANSIENT = (502, 503, 504)
+NETWORK = (urllib.error.URLError, TimeoutError, ConnectionError)
 
 
 class GitHubError(Exception):
@@ -69,14 +74,40 @@ class GitHub:
             return int(time.time()) + int(retry)
         return int(headers.get("x-ratelimit-reset") or time.time() + 60)
 
-    def _request(self, method, path, params=None, body=None):
+    @staticmethod
+    def _retryable(method, read, status=None, exc=None) -> bool:
+        """read: a GET or a GraphQL query. PUT, PATCH and DELETE give the same result twice (contents PUTs are sha-guarded)."""
+        if exc is None:
+            return (method != "POST" or read) and (status in TRANSIENT or (read and status == 500))
+        if read:
+            return True
+        # Anything else may have reached GitHub; a POST or mutation sent twice duplicates an issue, thread or comment.
+        return isinstance(getattr(exc, "reason", None), (ConnectionRefusedError, socket.gaierror))
+
+    def _backoff(self, fails):
+        self.sleep(2 ** (fails - 1) * (1 + random.random() / 2))
+
+    def _request(self, method, path, params=None, body=None, read=None):
         """Return (headers, parsed json) or None on 404."""
+        read = method == "GET" if read is None else read
         if params:
             path += ("&" if "?" in path else "?") + urllib.parse.urlencode(params)
         retried = False
         hops = 0
+        fails = 0
         while True:
-            status, headers, raw = self._send(method, self.base + path, body)
+            try:
+                status, headers, raw = self._send(method, self.base + path, body)
+            except NETWORK as e:
+                fails += 1
+                if fails >= ATTEMPTS or not self._retryable(method, read, exc=e):
+                    raise
+                self._backoff(fails)
+                continue
+            if self._retryable(method, read, status) and fails + 1 < ATTEMPTS:
+                fails += 1
+                self._backoff(fails)
+                continue
             reset = self._rate_limit_reset(status, headers)
             if reset is not None:
                 if reset - time.time() > MAX_SLEEP or retried:
@@ -147,13 +178,14 @@ class GitHub:
     def put(self, path, body):
         return self._write("PUT", path, body)
 
-    def delete(self, path):
-        return self._write("DELETE", path, None)
+    def delete(self, path, body=None):
+        return self._write("DELETE", path, body)
 
     def graphql(self, query: str, variables: dict, allow_not_found: bool = False) -> dict:
         """allow_not_found returns data with nulls where only NOT_FOUND errors occurred."""
         self.last_redirect = None
-        r = self._request("POST", "/graphql", body={"query": query, "variables": variables})
+        r = self._request("POST", "/graphql", body={"query": query, "variables": variables},
+                          read=not query.lstrip().startswith("mutation"))
         if r is None:
             raise GitHubError(404, "graphql endpoint not found")
         out = r[1] or {}

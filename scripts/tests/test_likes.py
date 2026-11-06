@@ -65,7 +65,8 @@ class World:
                 "content": base64.b64encode(json.dumps(data).encode()).decode(), "sha": f"sha-{path}"}
         snaps = sorted(p for p in self.stats if p.startswith("snapshots/"))
         if snaps:
-            routes[f"GET {API}/contents/snapshots"] = [{"name": p.split("/")[1], "type": "file"} for p in snaps]
+            routes[f"GET {API}/contents/snapshots"] = [
+                {"name": p.split("/")[1], "type": "file", "sha": f"sha-{p}"} for p in snaps]
         days = [f"snapshots/{NOW + timedelta(days=d):%Y-%m-%d}.json" for d in range(12)]
         for path in ("meta.json", "likes.json", "flags.json", "trust-cache.json", *days):
             routes[f"PUT {API}/contents/{path}"] = {}
@@ -754,6 +755,129 @@ class Writes(unittest.TestCase):
             w.run()
         self.assertEqual(w.puts(), [])
 
+
+class Conflicts(unittest.TestCase):
+    """A 409 on the stats branch means another writer got there first: re-read, re-apply, write again."""
+
+    def conflict_once(self, w, path, then=None):
+        n = []
+
+        def put(_):
+            n.append(1)
+            if len(n) == 1:
+                if then:
+                    then()
+                raise GitHubError(409, "conflict")
+            return {}
+        w.routes[f"PUT {API}/contents/{path}"] = put
+        return n
+
+    def test_flags_409_then_success_keeps_both_records(self):
+        w = World([entry("o/a")], {"o/a": burst_nodes(10, 10)})
+        other = {"o/z": {"burst": {"kind": "burst", "issue": 5, "opened_at": iso(NOW), "reviewed_at": None}}}
+
+        def someone_wrote():
+            w.routes[f"GET {API}/contents/flags.json"] = {
+                "content": base64.b64encode(json.dumps(other).encode()).decode(), "sha": "sha-new"}
+        n = self.conflict_once(w, "flags.json", someone_wrote)
+        w.run()
+        self.assertEqual(len(n), 2)
+        self.assertEqual(titles(w), ["Like burst: o/a"])
+        got = w.written("flags.json")
+        self.assertEqual((got["o/a"]["burst"]["issue"], got["o/z"]["burst"]["issue"]), (100, 5))
+        self.assertEqual(w.puts()[-5][2]["sha"], "sha-new")
+
+    def test_flags_409_then_success_opens_no_duplicate_next_run(self):
+        w = World([entry("o/a")], {"o/a": burst_nodes(10, 10)})
+        self.conflict_once(w, "flags.json")
+        w.run()
+        w.persist()
+        w.run(now=NOW + timedelta(minutes=5))
+        self.assertEqual(w.issues_opened(), [])
+
+    def test_likes_and_meta_409_after_someone_else_wrote_skips_this_hour(self):
+        w = World([entry("o/a")], {"o/a": [node("x"), node("y")]})
+        theirs = {"o/a": {"likes": 9}}
+        for path in ("likes.json", "meta.json"):
+            def someone_wrote(path=path):
+                w.routes[f"GET {API}/contents/{path}"] = {
+                    "content": base64.b64encode(json.dumps(theirs).encode()).decode(), "sha": "sha-theirs"}
+            n = self.conflict_once(w, path, someone_wrote)
+            w.run()
+            self.assertEqual(len(n), 1, path)
+            w.gh.calls.clear()
+
+    def test_likes_409_then_success(self):
+        w = World([entry("o/a")], {"o/a": [node("x"), node("y")]})
+        n = self.conflict_once(w, "likes.json")
+        w.run()
+        self.assertEqual(len(n), 2)
+        self.assertEqual(w.written("likes.json")["o/a"]["likes"], 2)
+
+
+class Size(unittest.TestCase):
+    def test_trust_cache_pruned_past_ttl_and_compact(self):
+        stale = {"checked_at": iso(NOW - timedelta(days=8)), "trusted": True, "reason": None, "created_at": OLD}
+        w = World([entry("o/a")], {"o/a": [node("x")]}, stats={"trust-cache.json": {"gone": stale}})
+        w.run()
+        self.assertEqual(list(w.written("trust-cache.json")), ["x"])
+        put = [b for _, p, b in w.puts() if p.endswith("trust-cache.json")][0]
+        self.assertNotIn("\n ", base64.b64decode(put["content"]).decode())
+
+    def test_only_the_last_30_snapshots_are_kept(self):
+        stats = {f"snapshots/{NOW - timedelta(days=d):%Y-%m-%d}.json": {} for d in range(1, 33)}
+        w = World([entry("o/a")], {"o/a": [node("x")]}, stats=stats)
+        for p in stats:
+            w.routes[f"DELETE {API}/contents/{p}"] = None
+        w.run()
+        deletes = [(i, c) for i, c in enumerate(w.gh.calls) if c[0] == "DELETE"]
+        old = [f"{API}/contents/snapshots/{NOW - timedelta(days=d):%Y-%m-%d}.json" for d in (32, 31, 30)]
+        self.assertEqual([c[1] for _, c in deletes], old)
+        self.assertEqual(deletes[0][1][2]["sha"], f"sha-snapshots/{NOW - timedelta(days=32):%Y-%m-%d}.json")
+        snap_put = max(i for i, c in enumerate(w.gh.calls) if c[0] == "PUT" and c[1].endswith(f"{TODAY}.json"))
+        self.assertGreater(deletes[0][0], snap_put)
+
+    def test_30_or_fewer_snapshots_deletes_nothing(self):
+        stats = {f"snapshots/{NOW - timedelta(days=d):%Y-%m-%d}.json": {} for d in range(1, 30)}
+        w = World([entry("o/a")], {"o/a": [node("x")]}, stats=stats)
+        w.run()
+        self.assertFalse([c for c in w.gh.calls if c[0] == "DELETE"])
+
+
+class HalfDoneRename(unittest.TestCase):
+    ROW = {"likes": 2, "delta_7d": 0, "rank": 1, "rank_delta_7d": 0, "flagged": False}
+
+    def world(self, likes_age):
+        # The rename PR merged but rot's finish hasn't moved discussions.json yet.
+        w = World([entry("o/new")], {"o/old": [node("x"), node("y")]}, stats={"likes.json": {"o/old": self.ROW}})
+        w.routes[f"GET {API}/commits"] = [{"commit": {"committer": {"date": iso(NOW - likes_age)}}}]
+        return w
+
+    def writes(self, w):
+        return [c for c in w.gh.calls if c[0] in ("PUT", "POST", "PATCH", "DELETE")]
+
+    def test_rename_within_3_hours_writes_nothing(self):
+        w = self.world(timedelta(hours=2))
+        w.run()
+        self.assertEqual(self.writes(w), [])
+
+    def test_rename_after_3_hours_syncs_anyway(self):
+        w = self.world(timedelta(hours=4))
+        with self.assertLogs(level="ERROR"):
+            w.run()
+        self.assertIn("o/new", w.written("likes.json"))
+
+    def test_removed_entry_and_new_entry_still_sync(self):
+        # o/gone was removed long ago: it isn't in likes.json, so it's no rename in flight.
+        w = World([entry("o/a"), entry("o/b")], {"o/a": [node("x")], "o/gone": [node("y")]},
+                  stats={"likes.json": {"o/a": self.ROW}})
+        w.run()
+        self.assertEqual(sorted(w.written("likes.json")), ["o/a", "o/b"])
+
+    def test_new_entry_without_thread_still_syncs(self):
+        w = World([entry("o/a"), entry("o/b")], {"o/a": [node("x")]})
+        w.run()
+        self.assertEqual(w.written("likes.json")["o/b"]["likes"], 0)
 
 if __name__ == "__main__":
     unittest.main()

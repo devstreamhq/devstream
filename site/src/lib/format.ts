@@ -49,3 +49,10 @@ export const pct = (likes: number, delta: number) => {
   const before = likes - delta;
   return before > 0 ? Math.round((delta / before) * 100) : null;
 };
+
+// When Likes were last counted: deploy passes the last successful Sync Likes run.
+// Without it (local and PR builds) the build time stands in.
+export function lastCount(v: string | undefined, now = new Date()): Date {
+  const ok = v && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(v);
+  return ok ? new Date(v) : now;
+}

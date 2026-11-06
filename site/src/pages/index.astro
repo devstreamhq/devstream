@@ -3,12 +3,12 @@ import Base from "../layouts/Base.astro";
 import Leaderboard from "../components/Leaderboard.astro";
 import Explain from "../components/Explain.astro";
 import { loadAll, liveList, trending } from "../lib/data.ts";
-import { centralStamp, icon, num } from "../lib/format.ts";
+import { centralStamp, icon, lastCount, num } from "../lib/format.ts";
 
 const { entries, categories } = loadAll();
 const live = liveList(entries);
 const climber = trending(entries)[0];
-const built = new Date();
+const built = lastCount(process.env.LIKES_AT);
 const stamp = centralStamp(built);
 ---
 

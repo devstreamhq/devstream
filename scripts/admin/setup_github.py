@@ -97,19 +97,24 @@ LABELS = {
 }
 
 
+# The only labels this script ever deletes. Anything else not in LABELS is someone's, so it stays.
+DEFAULT_DELETE = {"duplicate", "invalid", "question", "wontfix"}
+
+
 def label_plan(have: dict, want: dict, in_use: set):
     """Return (create, update, delete, kept) label names. Colours compare case-blind."""
     create = [n for n in want if n not in have]
     update = [n for n in want if n in have and (have[n][0].lower(), have[n][1]) != want[n]]
-    extras = [n for n in have if n not in want]
-    return create, update, [n for n in extras if n not in in_use], [n for n in extras if n in in_use]
+    doomed = [n for n in have if n in DEFAULT_DELETE]
+    return create, update, [n for n in doomed if n not in in_use], [n for n in doomed if n in in_use]
 
 
 def labels():
     print("labels")
     have = {x["name"]: (x["color"], x["description"] or "") for x in paginate(f"repos/{REPO}/labels?per_page=100")}
-    # An open issue or PR still wearing a label keeps it; deleting would strip it from them.
-    in_use = {n for n in have if n not in LABELS and api("GET", f"repos/{REPO}/issues?state=open&per_page=1&labels={urllib.parse.quote(n)}")}
+    # Any issue or PR, open or closed, still wearing a label keeps it; deleting would strip it from them.
+    in_use = {n for n in have if n in DEFAULT_DELETE
+              and api("GET", f"repos/{REPO}/issues?state=all&per_page=1&labels={urllib.parse.quote(n)}")}
     create, update, delete, kept = label_plan(have, LABELS, in_use)
     for n in create:
         api("POST", f"repos/{REPO}/labels", {"name": n, "color": LABELS[n][0], "description": LABELS[n][1]})
@@ -121,7 +126,7 @@ def labels():
         api("DELETE", f"repos/{REPO}/labels/{urllib.parse.quote(n, safe='')}")
         changed(f"label {n} deleted")
     for n in kept:
-        print(f"  kept {n}: an open issue or PR uses it")
+        print(f"  kept {n}: an issue or PR uses it")
 
 
 # ----------------------------------------------------------- issue types
@@ -323,7 +328,7 @@ Done when every sub-issue is closed and v0.1.0 is tagged.
     issue(SEED, "Task", "data", "high", "M", epic=EPIC_LAUNCH, milestone=V1, body="""
 The list has a single entry. Visit the site today and you'd reasonably think it's abandoned.
 
-We have a seed list of about 470 repos. Each one goes through the same checks a normal submission does (`python -m scripts.submit seed --file seeds.csv`), and anything that fails gets a human decision before it's added. The ones that pass land in one bot PR.
+We have a seed list of about 470 repos. Once the seed subcommand lands, each one goes through the same checks a normal submission does, and anything that fails gets a human decision before it's added. The ones that pass land in one bot PR.
 
 Why it takes a while: on-merge creates at most 40 Likes Discussions per run to stay under GitHub's content limits, and it runs hourly, so expect around 12 hours before every seed has its thread.
 
@@ -637,6 +642,7 @@ SECURITY_CONFIG = {
     "dependabot_security_updates": "enabled",
     "secret_scanning": "enabled",
     "secret_scanning_push_protection": "enabled",
+    "private_vulnerability_reporting": "enabled",
     # Our repos run CodeQL from their own workflow; default setup would clash with it.
     "code_scanning_default_setup": "disabled",
 }
@@ -709,11 +715,20 @@ def main():
     org()
     optional("security defaults for new repos", security_defaults)
     optional("org ruleset", org_ruleset)
-    skipped.append("verified domain: GitHub has no API to start domain verification; do it in org settings")
+    print("note: verified domain has no API; start it in org settings")
+    return summary()
+
+
+def summary() -> int:
+    """Print the run's outcome; 2 if any optional step was skipped, so a partial run can't pass for a clean one."""
     print(f"\n{len(changes)} change(s)")
+    if not skipped:
+        return 0
+    print(f"\n!!! NOT DONE: {len(skipped)} step(s) skipped !!!")
     for s in skipped:
-        print(f"not done: {s}")
+        print(f"!!! NOT DONE: {s}")
+    return 2
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

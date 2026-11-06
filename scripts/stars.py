@@ -6,7 +6,7 @@ python -m scripts.stars   (needs GITHUB_TOKEN)
 import os
 import urllib.parse
 
-from scripts.devstream.gh import GitHub
+from scripts.devstream.gh import GitHub, GitHubError
 
 REPO = "devstreamhq/devstream"
 API = f"/repos/{REPO}"
@@ -33,7 +33,10 @@ def _exists(gh) -> bool:
     # Any state: once it's closed, it stays closed. Only the bot's own issue counts.
     q = f'repo:{REPO} is:issue in:title "{TITLE}" author:app/devstreamhq-bot'
     found = gh.get("/search/issues?" + urllib.parse.urlencode({"q": q}))
-    return any(i["title"] == TITLE for i in (found or {}).get("items", []))
+    if found is None:
+        # Reading "no answer" as "no issue" would open a duplicate every day.
+        raise GitHubError(404, "issue search returned nothing")
+    return any(i["title"] == TITLE for i in found["items"])
 
 
 def check(gh) -> int | None:

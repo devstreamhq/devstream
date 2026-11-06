@@ -1,6 +1,7 @@
 import unittest
 import urllib.parse
 
+from scripts.devstream.gh import GitHubError
 from scripts.stars import TITLE, check
 from scripts.tests.fake_gh import FakeGitHub
 
@@ -46,6 +47,13 @@ class StarsTest(unittest.TestCase):
     def test_search_hit_with_a_different_title_still_opens(self):
         gh = fake(100, found=["Turn on GitHub Sponsors later"])
         self.assertEqual(check(gh), 42)
+
+    def test_a_failed_search_raises_instead_of_opening(self):
+        gh = fake(100)
+        del gh.routes[SEARCH]
+        with self.assertRaises(GitHubError):
+            check(gh)
+        self.assertEqual(creates(gh), [])
 
     def test_search_only_counts_bot_issues_in_any_state(self):
         gh = fake(100)

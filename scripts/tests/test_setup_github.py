@@ -1,4 +1,6 @@
+import contextlib
 import importlib.util
+import io
 import unittest
 from pathlib import Path
 
@@ -23,12 +25,15 @@ class LabelPlanTest(unittest.TestCase):
         have = {"bug": ("D73A4A", "Something's broken"), "report": ("d93f0b", "Entry reported")}
         self.assertEqual(label_plan(have, WANT, in_use=set()), ([], [], [], []))
 
-    def test_extras_in_use_are_kept(self):
-        have = dict(WANT, wontfix=("ffffff", ""), javascript=("168700", ""))
-        _, _, delete, kept = label_plan(have, WANT, in_use={"javascript"})
+    def test_only_the_four_github_defaults_are_deleted(self):
+        have = dict(WANT, wontfix=("ffffff", ""), duplicate=("cfd3d7", ""))
+        _, _, delete, kept = label_plan(have, WANT, in_use={"duplicate"})
         self.assertEqual(delete, ["wontfix"])
-        self.assertEqual(kept, ["javascript"])
+        self.assertEqual(kept, ["duplicate"])
 
+    def test_unknown_labels_are_never_deleted(self):
+        have = dict(WANT, wip=("ededed", ""), javascript=("168700", ""))
+        self.assertEqual(label_plan(have, WANT, in_use=set()), ([], [], [], []))
 
 class FieldOptionsTest(unittest.TestCase):
     HAVE = [
@@ -48,6 +53,24 @@ class FieldOptionsTest(unittest.TestCase):
     def test_alias_renames_an_option_in_place(self):
         got = field_options(self.HAVE, [("L", "red")], alias={"L": "High"})
         self.assertEqual(got, [{"id": 2, "name": "L", "color": "red", "priority": 1}])
+
+
+class SummaryTest(unittest.TestCase):
+    def setUp(self):
+        self.addCleanup(sg.skipped.clear)
+        sg.skipped.clear()
+
+    def test_clean_run_exits_0(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(sg.summary(), 0)
+
+    def test_a_skipped_step_exits_2_and_says_so(self):
+        sg.skipped.append("org ruleset: HTTP 403")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(sg.summary(), 2)
+        self.assertIn("NOT DONE", out.getvalue())
+        self.assertIn("org ruleset: HTTP 403", out.getvalue())
 
 
 if __name__ == "__main__":

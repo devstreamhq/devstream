@@ -141,13 +141,17 @@ class SubmitTest(unittest.TestCase):
         self.assertEqual(r.failures, [])
 
     def test_license_missing_or_not_osi(self):
-        for lic in (None, {"spdx_id": "NONE"}, {"spdx_id": "LicenseRef-custom"}, {"spdx_id": "NOASSERTION"}):
+        for lic in ({"spdx_id": "NONE"}, {"spdx_id": "LicenseRef-custom"}):
             r = run(gh({"license": lic}))
             self.assertEqual(
                 r.failures,
                 ["We need an open-source license GitHub can recognise (like MIT or Apache-2.0)."],
                 lic,
             )
+
+    def test_null_or_noassertion_with_nothing_found(self):
+        for lic in (None, {"spdx_id": "NOASSERTION"}):
+            self.assertIn("We couldn't find an open-source license.", run(gh({"license": lic})).failures[0])
 
     def test_noassertion_falls_back_to_license_endpoint(self):
         g = gh({"license": {"spdx_id": "NOASSERTION"}}, extra={f"GET {R}/license": {"license": {"spdx_id": "Apache-2.0"}}})

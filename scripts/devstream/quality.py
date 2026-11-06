@@ -8,8 +8,8 @@ from pathlib import Path
 from typing import Literal
 
 from scripts.devstream.gh import GitHubError
+from scripts.devstream.license_detect import OSI, Undecided, find_license
 
-OSI = frozenset(json.loads((Path(__file__).parents[2] / "data" / "osi-licenses.json").read_text()))
 NO_LICENSE = {None, "NOASSERTION", "NONE"}
 DEPRECATED = re.compile(r"\b(deprecated|unmaintained|no longer maintained)\b", re.I)
 README_MIN = 300
@@ -17,6 +17,11 @@ README_SCAN = 200_000
 
 MSG_GONE = "This repo no longer exists."
 MSG_LICENSE = "We need an open-source license GitHub can recognise (like MIT or Apache-2.0)."
+MSG_NON_OSI = "This repo's license ({}) isn't an open-source license, so it can't be listed."
+MSG_NOT_FOUND = (
+    "We couldn't find an open-source license. If this is your repo, add a standard LICENSE file "
+    "(choosealicense.com has them) so GitHub can detect it, then submit again."
+)
 MSG_NO_README = "Add a README so people know what this is."
 MSG_SHORT_README = "Your README needs a bit more detail (at least a short paragraph about what it does)."
 MSG_FORK = "Forks need their own commits to be listed."
@@ -28,10 +33,6 @@ MSG_NEW = (
     "New repos need to be at least 30 days old before they can be listed. "
     "Come back once yours is a month old."
 )
-
-
-class Undecided(GitHubError):
-    pass
 
 
 @dataclass
@@ -53,11 +54,19 @@ def _readme_text_length(text: str) -> int:
     return len(re.sub(r"\s+", " ", text).strip())
 
 
-def _license_ok(repo, gh, r) -> bool:
+def _license(repo, gh, r, readme_text) -> str | None:
+    """None when fine, else the failure message."""
     spdx = (repo.get("license") or {}).get("spdx_id")
     if spdx == "NOASSERTION":
         spdx = ((gh.get(f"/repos/{r}/license") or {}).get("license") or {}).get("spdx_id")
-    return spdx not in NO_LICENSE and spdx in OSI
+    if spdx not in NO_LICENSE:
+        return None if spdx in OSI else MSG_LICENSE
+    if spdx == "NONE":
+        return MSG_LICENSE
+    found, bad = find_license(gh, r, readme_text)
+    if found:
+        return None
+    return MSG_NON_OSI.format(bad) if bad else MSG_NOT_FOUND
 
 
 def _readme(gh, r) -> tuple[str | None, int] | None:
@@ -144,8 +153,9 @@ def check_repo(full: str, gh, now: datetime, mode: Literal["submit", "rot"]) -> 
     if pushed is None and mode == "rot":
         raise Undecided(0, f"{r} has no pushed_at")
     age = None if pushed is None else now - datetime.fromisoformat(pushed)
-    license_ok = _license_ok(repo, gh, r)
     readme = _readme(gh, r)
+    license_msg = _license(repo, gh, r, readme[0] if readme else None)
+    license_ok = license_msg is None
     readme_ok = readme is not None and readme[1] >= README_MIN
     text = (readme[0] if readme else None) or ""
     m = DEPRECATED.search(repo.get("description") or "") or DEPRECATED.search(text[:500])
@@ -153,7 +163,7 @@ def check_repo(full: str, gh, now: datetime, mode: Literal["submit", "rot"]) -> 
 
     failures = []
     if not license_ok:
-        failures.append(MSG_LICENSE)
+        failures.append(license_msg)
     if readme is None:
         failures.append(MSG_NO_README)
     elif not readme_ok:

@@ -268,9 +268,31 @@ class GitHubTest(unittest.TestCase):
         with self.assertRaises(RateLimited) as c:
             self.gh.graphql("query Q { viewer }", {"rl": 1})
         self.assertEqual(c.exception.reset_at, LONG)
+        self.assertEqual(self.slept, [])
         with self.assertRaises(RateLimited) as c:
             self.gh.graphql("query Q { viewer }", {"rl": 2})
         self.assertAlmostEqual(c.exception.reset_at, time.time() + 60, delta=5)
+        # A near reset is waited out once, then the still-limited answer raises.
+        self.assertEqual(len(self.slept), 1)
+        self.assertAlmostEqual(self.slept[0], 60, delta=5)
+
+    def test_graphql_rate_limit_waits_then_retries(self):
+        reset = str(int(time.time()) + 30)
+        answers = [({"x-ratelimit-reset": reset}, {"errors": [{"type": "RATE_LIMITED"}]}),
+                   ({}, {"data": {"viewer": 1}})]
+        sent = []
+
+        def request(method, path, params=None, body=None, read=None):
+            sent.append(read)
+            return answers[len(sent) - 1]
+        for q, read in (("query Q { viewer }", True), ("mutation M { x }", False)):
+            sent.clear()
+            self.slept.clear()
+            self.gh._request = request
+            self.assertEqual(self.gh.graphql(q, {}), {"viewer": 1})
+            self.assertEqual(sent, [read, read])
+            self.assertEqual(len(self.slept), 1)
+            self.assertAlmostEqual(self.slept[0], 30, delta=5)
 
     def test_cross_host_redirect_not_followed(self):
         self.assertEqual(self.gh.get("/foreign"), {"own": True})

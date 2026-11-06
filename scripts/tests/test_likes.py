@@ -101,9 +101,9 @@ class World:
         while f"o{i}" in v:
             key = f"{v[f'o{i}']}/{v[f'n{i}']}"
             stars = self.stars.get(key, 0)
-            if stars is None:
-                errors.append({"type": "NOT_FOUND", "path": [f"r{i}"]})
-            out[f"r{i}"] = None if stars is None else {
+            if stars is None or stars == "forbidden":
+                errors.append({"type": "NOT_FOUND" if stars is None else "FORBIDDEN", "path": [f"r{i}"]})
+            out[f"r{i}"] = None if stars is None or stars == "forbidden" else {
                 "nameWithOwner": key, "stargazerCount": stars,
                 "primaryLanguage": {"name": "Go", "color": "#00ADD8"},
                 "pushedAt": "2026-11-01T00:00:00Z", "owner": {"avatarUrl": "https://a/x.png"}}
@@ -724,6 +724,17 @@ class Writes(unittest.TestCase):
         self.assertIn("o/gone", w.written("likes.json"))
 
     test_meta_skips_deleted_repo = test_meta_shape_and_skips_deleted_repo
+
+    def test_meta_forbidden_repo_keeps_last_card(self):
+        # An org IP allow list hides one repo from the App token; the rest of the run goes on.
+        old = {"stars": 9, "language": "Go", "language_color": "#00ADD8",
+               "pushed_at": "2026-10-01T00:00:00Z", "avatar_url": "https://a/old.png"}
+        w = World([entry("o/a"), entry("o/ip")], {"o/a": [node("x")], "o/ip": [node("y")]},
+                  stars={"o/a": 3, "o/ip": "forbidden"}, stats={"meta.json": {"o/ip": old}})
+        w.run()
+        meta = w.written("meta.json")
+        self.assertEqual((meta["o/a"]["stars"], meta["o/ip"]), (3, old))
+        self.assertEqual(w.written("likes.json")["o/ip"]["likes"], 1)
 
     def test_meta_batched_per_50(self):
         repos = {f"o/r{i:03}": [] for i in range(51)}

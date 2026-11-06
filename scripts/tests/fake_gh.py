@@ -1,7 +1,7 @@
 import re
 import urllib.parse
 
-from scripts.devstream.gh import GitHubError
+from scripts.devstream.gh import GitHubError, _allowed
 
 
 class Redirect:
@@ -121,7 +121,8 @@ class FakeGitHub:
     def delete(self, path, body=None):
         return self._write("DELETE", path, body)
 
-    def graphql(self, query: str, variables: dict, allow_not_found: bool = False) -> dict:
+    def graphql(self, query: str, variables: dict, allow_not_found: bool = False,
+                allow_forbidden: bool = False) -> dict:
         self.last_redirect = None
         m = re.search(r"\b(?:query|mutation)\s+(\w+)", query)
         self.calls.append(("GRAPHQL", m.group(1) if m else "", variables))
@@ -130,7 +131,7 @@ class FakeGitHub:
                 v = self.routes[key]
                 v = v(variables) if callable(v) else v
                 if isinstance(v, GraphQLErrors):
-                    if not (allow_not_found and all(e.get("type") == "NOT_FOUND" for e in v.errors)):
+                    if not all(_allowed(e, allow_not_found, allow_forbidden) for e in v.errors):
                         raise GitHubError(200, str(v.errors))
                     return v.data
                 return v

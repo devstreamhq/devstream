@@ -227,7 +227,10 @@ def run(gh, entries, now: datetime, excluded: set[str]) -> None:
     if _rename_in_flight(gh, now, entries, keys, mapping, prev_likes or {}):
         return
 
-    meta = fetch_meta(gh, keys)
+    prev_meta = read_json(gh, "meta.json")[0]
+    # A repo GitHub hides from us this hour keeps its last card rather than losing stars and avatar.
+    listed = set(keys)
+    meta = {k: v for k, v in (prev_meta or {}).items() if k in listed} | fetch_meta(gh, keys)
     reactors = fetch_reactors(gh, sorted({mapping[k] for k in keys if k in mapping}))
     prev_flags = read_json(gh, "flags.json")[0]
     flags = copy.deepcopy(prev_flags or {})
@@ -283,7 +286,6 @@ def run(gh, entries, now: datetime, excluded: set[str]) -> None:
             "flagged": ranked[k]["status"] == "flagged" or k in bursts or _under_review(flags, k),
         }
 
-    prev_meta = read_json(gh, "meta.json")[0]
     snap_path = f"snapshots/{now:%Y-%m-%d}.json"
     flags_write = ("flags.json", _merge_flags(flags, prev_flags or {}), "chore(stats): record Like reviews")
 

@@ -20,7 +20,7 @@ ROT_DUE = timedelta(days=8)
 # Each failed rot run can leave a PR behind, so a failing check is retried at most daily.
 ROT_RETRY = timedelta(days=1)
 ROT_BRANCH = re.compile(r"rot/[0-9]{1,20}")
-# rot.yml's run-name for a full run; a one-repo re-check doesn't cover the list.
+# rot.yml's run-name for a full run; a one-repo re-check ("Health check: owner/name") doesn't cover the list.
 FULL_ROT = "Health check"
 
 

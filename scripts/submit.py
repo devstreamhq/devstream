@@ -2,6 +2,8 @@
 
 python -m scripts.submit decide (--event EVENT.json | --issue N) --out result.json
 python -m scripts.submit apply --result result.json
+python -m scripts.submit decide ... --undecided undecided.json   (exits 3 when the run reached no decision)
+python -m scripts.submit undecided --file undecided.json   (counts it, and parks the issue after 3)
 python -m scripts.submit comment --result result.json --kind {accepted,rejected,pr,error}
 python -m scripts.submit seed --file seeds.csv --out report.json [--apply]
 """
@@ -12,9 +14,11 @@ import json
 import os
 import re
 import sys
+import traceback
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta, timezone
 
+from scripts.devstream.attempts import note_failure, record_from_file, spends_attempt
 from scripts.devstream.description import clean_description
 from scripts.devstream.entries import CATEGORIES, DEFAULT_PATH, Entry, find, load, normalize_repo, save
 from scripts.devstream.gh import GitHub, GitHubError, RateLimited
@@ -165,7 +169,29 @@ def _fetch_issue(gh, raw: str) -> dict | None:
     return issue
 
 
+def _undecided(args) -> int:
+    record_from_file(GitHub(os.environ["GITHUB_TOKEN"]), args.file, comment({}, "error"))
+    return 0
+
+
 def _decide(args) -> int:
+    """Exit 3 with undecided.json on any failure, so the issue can be parked after a few."""
+    try:
+        return _decide_issue(args)
+    except Exception as e:
+        if args.undecided is None or not spends_attempt(e):
+            raise
+        traceback.print_exc()
+        if args.issue is not None:
+            n = int(args.issue)
+        else:
+            with open(args.event, encoding="utf-8") as f:
+                n = json.load(f)["issue"]["number"]
+        note_failure(args.undecided, n, e)
+        return 3
+
+
+def _decide_issue(args) -> int:
     gh = GitHub(os.environ["GITHUB_TOKEN"])
     if args.issue is not None:
         issue = _fetch_issue(gh, args.issue)
@@ -278,6 +304,9 @@ def main(argv: list[str]) -> int:
     src.add_argument("--event")
     src.add_argument("--issue")
     d.add_argument("--out", required=True)
+    d.add_argument("--undecided")
+    u = sub.add_parser("undecided")
+    u.add_argument("--file", required=True)
     a = sub.add_parser("apply")
     a.add_argument("--result", required=True)
     a.add_argument("--entries", default=DEFAULT_PATH)
@@ -290,7 +319,8 @@ def main(argv: list[str]) -> int:
     c.add_argument("--result", required=True)
     c.add_argument("--kind", required=True, choices=("accepted", "rejected", "pr", "error"))
     args = p.parse_args(argv)
-    return {"decide": _decide, "apply": _apply, "comment": _comment, "seed": _seed}[args.cmd](args)
+    return {"decide": _decide, "apply": _apply, "comment": _comment, "seed": _seed,
+            "undecided": _undecided}[args.cmd](args)
 
 
 if __name__ == "__main__":

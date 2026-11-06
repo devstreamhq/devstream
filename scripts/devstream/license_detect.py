@@ -25,6 +25,8 @@ class _FileRe:
 FILE_RE = _FileRe()
 MAX_FILES = 5
 MAX_BYTES = 100_000
+# The blob comes down whole before any cap, so nothing larger is fetched at all.
+MAX_BLOB = 5_000_000
 
 NON_OSI = [
     ("Server Side Public License", "Server Side Public License"),
@@ -103,6 +105,10 @@ def extra_licenses_for(category: str) -> frozenset:
 
 
 class Undecided(GitHubError):
+    pass
+
+
+class TooLarge(Undecided):
     pass
 
 
@@ -258,16 +264,32 @@ def _readme_license(readme: str, allowed: frozenset = frozenset()) -> tuple[str 
     return None, None
 
 
+def file_bytes(gh, r, data: dict, what: str) -> bytes:
+    """The bytes of a contents-API file. Undecided only when the content can't be decoded."""
+    if data.get("encoding") == "none" and data.get("sha"):
+        if (data.get("size") or 0) > MAX_BLOB:
+            raise TooLarge(0, f"{what} of {r} is over {MAX_BLOB // 1_000_000} MB")
+        # Over 1 MB the contents API leaves content empty; the blobs API serves up to 100 MB.
+        data = gh.get(f"/repos/{r}/git/blobs/{data['sha']}")
+        if data is None:
+            raise GitHubError(404, f"blob for {what} of {r} not found")
+    if data.get("encoding") != "base64":
+        raise Undecided(0, f"{what} of {r} has no readable content")
+    try:
+        return base64.b64decode("".join((data.get("content") or "").split()), validate=False)
+    except (binascii.Error, ValueError) as e:
+        raise Undecided(0, f"{what} of {r} could not be decoded: {e}") from e
+
+
 def _read_file(gh, r, path) -> str:
     data = gh.get(f"/repos/{r}/contents/{path}")
     if not data:
         return ""
-    if data.get("encoding") != "base64":
-        raise Undecided(0, f"{path} of {r} is too large to read")
     try:
-        raw = base64.b64decode("".join((data.get("content") or "").split()), validate=False)
-    except (binascii.Error, ValueError) as e:
-        raise Undecided(0, f"{path} of {r} could not be decoded: {e}") from e
+        raw = file_bytes(gh, r, data, path)
+    except TooLarge:
+        # No license text, so the rule fails closed; rot's second sighting still guards a removal.
+        return ""
     return raw[:MAX_BYTES].decode("utf-8", errors="replace")
 
 

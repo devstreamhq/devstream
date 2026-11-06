@@ -1,14 +1,16 @@
+import io
 import json
 import os
 import tempfile
+import time
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
 from scripts.devstream.entries import load, save
-from scripts.devstream.gh import RateLimited
-from scripts.reports import handle_report, main
+from scripts.devstream.gh import GitHubError, RateLimited
+from scripts.reports import ERROR, handle_report, main
 from scripts.tests.fake_gh import FakeGitHub
 
 NOW = datetime(2026, 11, 5, 12, 0, tzinfo=timezone.utc)
@@ -55,6 +57,15 @@ USERS = {
 }
 
 
+ROT_RUNS = f"GET {API}/actions/workflows/rot.yml/runs"
+
+
+def rot_runs(*runs_):
+    """runs_ is (age, title) pairs."""
+    return {ROT_RUNS: {"total_count": len(runs_), "workflow_runs": [
+        {"created_at": iso(NOW - a), "display_title": t, "status": "completed"} for a, t in runs_]}}
+
+
 def search_key(login):
     return (f"GET /search/issues?q=repo:devstreamhq/devstream+label:report+author:{login}"
             "+created:>=2026-11-04T12:00:00Z&per_page=100")
@@ -79,6 +90,7 @@ def gh(counts=None, extra=None, edited=(), current=7):
         return {"repository": {f"i{k}": {"lastEditedAt": iso(NOW) if n in edited else None}
                                for k, n in ((k, v[f"n{k}"]) for k in range(len(v)))}}
 
+    routes[ROT_RUNS] = {"total_count": 0, "workflow_runs": []}
     routes["GRAPHQL UserActivity"] = activity
     routes["GRAPHQL ReportEdits"] = edits
     routes.update(extra or {})
@@ -280,6 +292,32 @@ class ReasonTest(unittest.TestCase):
         self.assertNotIn("close", kinds(actions))
         self.assertEqual(comments(actions)[0], "A health check on `alice/tool` has been queued.")
 
+    def test_second_dead_report_within_a_day_does_not_dispatch(self):
+        dead = report(entry="https://github.com/Alice/Tool", reason="Dead or abandoned")
+        for title in ("Health check: alice/tool", "Health check: Alice/Tool"):
+            g = gh(extra=rot_runs((timedelta(hours=23), title)))
+            actions = run(dead, g)
+            self.assertNotIn("dispatch_rot", kinds(actions), title)
+            self.assertEqual(labels(actions), {"needs-review"})
+            self.assertIn("in the last day", comments(actions)[0])
+        # Checks of other repos, and full runs, don't count.
+        g = gh(extra=rot_runs((timedelta(hours=2), "Health check: alice/tool-ng"), (timedelta(hours=1), "Health check")))
+        self.assertIn("dispatch_rot", kinds(run(dead, g)))
+        call = next(c for c in g.calls if c[1].startswith(f"{API}/actions/workflows/rot.yml/runs"))
+        self.assertIn("created=%3E%3D2026-11-04T12%3A00%3A00Z", call[1])
+
+    def test_fourth_dead_report_within_an_hour_is_parked(self):
+        dead = report(reason="Dead or abandoned")
+        three = [(timedelta(minutes=15 * k + 5), f"Health check: x/r{k}") for k in range(3)]
+        g = gh(extra=rot_runs(*three))
+        actions = run(dead, g)
+        self.assertNotIn("dispatch_rot", kinds(actions))
+        self.assertEqual(labels(actions), {"needs-review"})
+        self.assertIn("a maintainer", comments(actions)[0])
+        # Two in the hour (the third is older) still dispatches.
+        g = gh(extra=rot_runs(*three[:2], (timedelta(minutes=61), "Health check: x/r2")))
+        self.assertIn("dispatch_rot", kinds(run(dead, g)))
+
     def test_superseded_labels_and_validates(self):
         actions = run(report(reason="Replaced by something better", superseded_by="https://github.com/Bob/New"))
         self.assertEqual(labels(actions), {"superseded", "needs-review"})
@@ -324,6 +362,66 @@ class ReasonTest(unittest.TestCase):
 def write(path, obj):
     with open(path, "w") as f:
         json.dump(obj, f)
+
+
+class FailedDecideTest(unittest.TestCase):
+    def decide(self, exc, tmp):
+        def stuck(*a, **kw):
+            raise exc
+
+        with mock.patch("scripts.reports.GitHub", lambda token: gh()), \
+                mock.patch("scripts.reports.handle_report", stuck), \
+                mock.patch("scripts.reports.load", lambda: [entry()]), \
+                mock.patch.dict(os.environ, {"GITHUB_TOKEN": "t"}), \
+                mock.patch("sys.stderr", io.StringIO()):
+            ev, out, und = (os.path.join(tmp, f) for f in ("event.json", "result.json", "undecided.json"))
+            write(ev, {"issue": report()})
+            code = main(["decide", "--event", ev, "--out", out, "--undecided", und])
+            self.assertFalse(os.path.exists(out))
+            return code, und
+
+    def test_failed_decide_is_counted_and_parked_after_three(self):
+        comments, labels = [], []
+
+        def post(b):
+            comments.append({"id": 100 + len(comments), "user": {"login": BOT}, "body": b["body"]})
+
+        def patch(b):
+            comments[0]["body"] = b["body"]
+
+        g = FakeGitHub({f"GET {API}/issues/7/comments": lambda _: list(comments),
+                        f"POST {API}/issues/7/comments": post,
+                        f"PATCH {API}/issues/comments/100": patch,
+                        f"POST {API}/issues/7/labels": lambda b: labels.extend(b["labels"])})
+        for k in (1, 2, 3):
+            with tempfile.TemporaryDirectory() as tmp:
+                self.assertEqual(self.decide(GitHubError(502, "bad gateway"), tmp)[0], 3)
+                with mock.patch("scripts.reports.GitHub", lambda token: g), \
+                        mock.patch.dict(os.environ, {"GITHUB_TOKEN": "t"}):
+                    self.assertEqual(main(["undecided", "--file", os.path.join(tmp, "undecided.json")]), 0)
+        self.assertEqual(labels, ["needs-review"])
+        self.assertTrue(comments[1]["body"].startswith(ERROR))
+
+    def test_failed_rot_dispatch_is_counted_too(self):
+        def boom(_):
+            raise GitHubError(502, "bad gateway")
+
+        g = FakeGitHub({f"POST {API}/actions/workflows/rot.yml/dispatches": boom})
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch("scripts.reports.GitHub", lambda token: g), \
+                mock.patch.dict(os.environ, {"GITHUB_TOKEN": "t"}), \
+                mock.patch("sys.stderr", io.StringIO()):
+            res, und = os.path.join(tmp, "result.json"), os.path.join(tmp, "undecided.json")
+            write(res, {"issue": 7, "actions": [{"kind": "dispatch_rot", "value": "alice/tool"}]})
+            self.assertEqual(main(["dispatch", "--result", res, "--undecided", und]), 3)
+            with open(und) as f:
+                self.assertEqual(json.load(f), {"issue": 7, "error": "GitHub API 502: bad gateway"})
+
+    def test_rate_limit_still_in_force_spends_no_attempt(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(RateLimited):
+                self.decide(RateLimited(int(time.time()) + 600), tmp)
+            self.assertFalse(os.path.exists(os.path.join(tmp, "undecided.json")))
 
 
 class CliTest(unittest.TestCase):

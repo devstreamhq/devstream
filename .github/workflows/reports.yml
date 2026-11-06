@@ -40,6 +40,7 @@ jobs:
         with:
           python-version: "3.12"
       # Org block reads need an App token; GITHUB_TOKEN can't see them.
+      # actions: read lists recent health checks, so a dead report doesn't queue a repeat.
       - id: token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
@@ -47,7 +48,9 @@ jobs:
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           permission-organization-user-blocking: read
           permission-issues: read
+          permission-actions: read
       # An API failure exits non-zero with no result file, so nothing is acted on.
+      # It also writes undecided.json, counted below; a rate limit that hasn't reset yet writes nothing.
       # A dispatched issue that is already handled, or a bot's issue, exits 0 with no result file.
       - env:
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}
@@ -55,9 +58,9 @@ jobs:
           ISSUE_INPUT: ${{ inputs.issue }}
         run: |
           if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
-            python -m scripts.reports decide --issue "$ISSUE_INPUT" --out result.json
+            python -m scripts.reports decide --issue "$ISSUE_INPUT" --out result.json --undecided undecided.json
           else
-            python -m scripts.reports decide --event "$GITHUB_EVENT_PATH" --out result.json
+            python -m scripts.reports decide --event "$GITHUB_EVENT_PATH" --out result.json --undecided undecided.json
           fi
       # Its own token, so the one that reads issue text never carries actions: write.
       - id: dispatch_token
@@ -71,7 +74,7 @@ jobs:
       - if: hashFiles('result.json') != ''
         env:
           GITHUB_TOKEN: ${{ steps.dispatch_token.outputs.token }}
-        run: python -m scripts.reports dispatch --result result.json
+        run: python -m scripts.reports dispatch --result result.json --undecided undecided.json
       - if: hashFiles('result.json') != ''
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -87,6 +90,18 @@ jobs:
           print("has=" + ("true" if r["actions"] else "false"))
           print("hide=" + ("true" if any(a["kind"] == "hide" for a in r["actions"]) else "false"))
           PY
+      # After 3 runs without a decision the report is parked as needs-review, so the sweeper moves on.
+      - id: undecided_token
+        if: failure() && hashFiles('undecided.json') != ''
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-issues: write
+      - if: failure() && steps.undecided_token.outputs.token != ''
+        env:
+          GITHUB_TOKEN: ${{ steps.undecided_token.outputs.token }}
+        run: python -m scripts.reports undecided --file undecided.json
 
   hide:
     needs: decide

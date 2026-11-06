@@ -4,15 +4,20 @@ import os
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from unittest import mock
 from datetime import datetime, timedelta, timezone
 
 from scripts.devstream.entries import save
 from scripts.devstream.gh import GitHubError, RateLimited
+from scripts.devstream.quality import Undecided
+from scripts.devstream.attempts import record_failure
 from scripts.submit import (
     ARCHIVED_DUP, DUPLICATE, NOT_FOUND, RATE_LIMIT, SEED_DUP, comment, decide, main,
 )
+from scripts.sweep import sweep
+from scripts.tests import test_sweep
 from scripts.validate_data import validate
 from scripts.tests.fake_gh import FakeGitHub
 from scripts.tests.test_quality import README, b64, iso, repo
@@ -282,6 +287,107 @@ class DecideCliTest(unittest.TestCase):
         g = gh()
         self.assertEqual(self.main(g, "--issue", "7"), 0)
         self.assertFalse(self.wrote)
+
+
+API = "/repos/devstreamhq/devstream"
+BOT = "devstreamhq-bot[bot]"
+
+
+def thread(n, comments, labels):
+    """Routes for issue n's comments and labels, backed by the lists given."""
+    def post(b):
+        comments.append({"id": 100 + len(comments), "user": {"login": BOT}, "body": b["body"]})
+        return comments[-1]
+
+    def patch(cid):
+        def answer(b):
+            next(c for c in comments if c["id"] == cid)["body"] = b["body"]
+        return answer
+
+    routes = {f"GET {API}/issues/{n}/comments": lambda _: list(comments),
+              f"POST {API}/issues/{n}/comments": post,
+              f"POST {API}/issues/{n}/labels": lambda b: labels.extend(b["labels"])}
+    routes.update({f"PATCH {API}/issues/comments/{100 + k}": patch(100 + k) for k in range(10)})
+    return routes
+
+
+class UndecidedTest(unittest.TestCase):
+    def decide(self, exc, tmp, g=None):
+        def stuck(*a, **kw):
+            raise exc
+
+        with mock.patch("scripts.submit.GitHub", lambda token: g or gh()), \
+                mock.patch("scripts.submit.load", lambda: []), \
+                mock.patch("scripts.submit.decide", stuck), \
+                mock.patch.dict(os.environ, {"GITHUB_TOKEN": "t"}), \
+                mock.patch("sys.stderr", io.StringIO()):
+            ev, out, und = (os.path.join(tmp, f) for f in ("event.json", "result.json", "undecided.json"))
+            write(ev, {"issue": issue()})
+            code = main(["decide", "--event", ev, "--out", out, "--undecided", und])
+            self.assertFalse(os.path.exists(out))
+            return code, und
+
+    def test_any_failure_exits_3_and_writes_the_error(self):
+        for exc in (Undecided(0, "LICENSE of alice/tool could not be decoded"), GitHubError(502, "bad gateway"),
+                    RateLimited(int(time.time()) - 5), TimeoutError("read timed out")):
+            with tempfile.TemporaryDirectory() as tmp:
+                code, und = self.decide(exc, tmp)
+                self.assertEqual(code, 3, exc)
+                with open(und) as f:
+                    self.assertEqual(json.load(f), {"issue": 7, "error": str(exc)})
+
+    def test_rate_limit_still_in_force_spends_no_attempt(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(RateLimited):
+                self.decide(RateLimited(int(time.time()) + 600), tmp)
+            self.assertFalse(os.path.exists(os.path.join(tmp, "undecided.json")))
+
+    def test_api_failure_three_times_parks_and_the_sweeper_moves_on(self):
+        comments, labels = [], []
+        g = FakeGitHub(thread(7, comments, labels))
+        for k in (1, 2, 3):
+            with tempfile.TemporaryDirectory() as tmp:
+                self.assertEqual(self.decide(GitHubError(500, "boom"), tmp)[0], 3)
+                with mock.patch("scripts.submit.GitHub", lambda token: g), \
+                        mock.patch.dict(os.environ, {"GITHUB_TOKEN": "t"}):
+                    self.assertEqual(main(["undecided", "--file", os.path.join(tmp, "undecided.json")]), 0)
+            self.assertEqual(labels, [] if k < 3 else ["needs-review"])
+        self.assertEqual(len(comments), 2)
+        self.assertTrue(comments[1]["body"].startswith(comment({}, "error")))
+        self.assertIn("GitHub API 500: boom", comments[1]["body"])
+
+        s = test_sweep.gh([test_sweep.issue(7, age=timedelta(hours=5), labels=("submission", *labels)),
+                           test_sweep.issue(8, age=timedelta(hours=1))])
+        sweep(s, test_sweep.NOW)
+        self.assertEqual(test_sweep.dispatched(s), ["8"])
+
+    def test_counter_is_bot_only_and_parks_from_three_on(self):
+        # The submitter can post a look-alike counter; only the bot's own comment counts.
+        comments = [{"id": 99, "user": {"login": "carol"}, "body": "<!-- devstream:undecided 2 -->"}]
+        labels = []
+        g = FakeGitHub(thread(1, comments, labels))
+        err = comment({}, "error")
+        for k in (1, 2):
+            self.assertFalse(record_failure(g, 1, "boom", err))
+            self.assertEqual(labels, [])
+            self.assertEqual(len(comments), 2, "one counter comment, edited in place")
+            self.assertIn(f"<!-- devstream:undecided {k} -->", comments[1]["body"])
+        self.assertTrue(record_failure(g, 1, "boom `x`", err))
+        self.assertEqual(labels, ["needs-review"])
+        self.assertEqual(len(comments), 3)
+        self.assertTrue(comments[2]["body"].startswith(err))
+        self.assertIn("boom 'x'", comments[2]["body"])
+        # At the limit the counter stops promising a retry.
+        self.assertNotIn("try again", comments[1]["body"])
+        self.assertIn("<!-- devstream:undecided 3 -->", comments[1]["body"])
+        # A maintainer retries by removing the label; failures 4 and 5 park it again, with no new comment.
+        for k in (4, 5):
+            labels.clear()
+            self.assertTrue(record_failure(g, 1, "boom", err))
+            self.assertEqual(labels, ["needs-review"], k)
+            self.assertEqual(len(comments), 3, k)
+            self.assertIn(f"<!-- devstream:undecided {k} -->", comments[1]["body"])
+            self.assertNotIn("try again", comments[1]["body"])
 
 
 class CliTest(unittest.TestCase):

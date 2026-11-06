@@ -254,9 +254,45 @@ class LicenseSearchTest(unittest.TestCase):
         self.assertEqual(run(g).failures, [MSG_NOT_FOUND])
         self.assertFalse([c for c in g.calls if c[1] == f"{R}/contents/LICENSE"])
 
-    def test_oversize_file_is_undecided(self):
+    def oversize(self, text):
         g = lic_gh({"LICENSE": MIT})
-        g.routes[f"GET {R}/contents/LICENSE"] = {"encoding": "none", "size": 2_000_000}
+        g.routes[f"GET {R}/contents/LICENSE"] = {"type": "file", "encoding": "none", "size": len(text), "sha": "big"}
+        g.routes[f"GET {R}/git/blobs/big"] = {"encoding": "base64", "sha": "big",
+                                              "content": base64.encodebytes(text.encode()).decode()}
+        return g
+
+    def test_oversize_file_is_read_through_the_blob(self):
+        busl = "Business Source License 1.1\n\n" + "Licensed Work terms. " * 100_000
+        self.assertGreater(len(busl), 2_000_000)
+        g = self.oversize(busl)
+        self.assertEqual(run(g).failures, [MSG_NON_OSI.format("Business Source License")])
+        self.assertEqual(run(g, "rot").rot, "remove")
+        self.assertIn(("GET", f"{R}/git/blobs/big", None), g.calls)
+
+    def test_oversize_file_is_capped_at_the_scan_limit(self):
+        # Only the first 100 KB is scanned, the same as a file under 1 MB.
+        self.assertEqual(run(self.oversize("x" * 150_000 + MIT)).failures, [MSG_NOT_FOUND])
+        self.assertEqual(run(self.oversize(MIT + "\n" + "x" * 2_000_000)).failures, [])
+
+    def test_file_over_5mb_is_never_downloaded_and_counts_as_no_license(self):
+        g = lic_gh({"LICENSE": MIT}, readme=README + "\n## License\n\nMIT License\n")
+        g.routes[f"GET {R}/contents/"] = [{"name": "LICENSE", "type": "file", "size": 100_000_000}]
+        g.routes[f"GET {R}/contents/LICENSE"] = {"type": "file", "encoding": "none", "size": 100_000_000, "sha": "big"}
+        g.routes[f"GET {R}/git/blobs/big"] = {"encoding": "base64", "sha": "big",
+                                              "content": base64.b64encode(MIT.encode()).decode()}
+        # Fails closed: the file is present, so the README's claim doesn't stand in for it.
+        self.assertEqual(run(g).failures, [MSG_NOT_FOUND])
+        self.assertEqual(run(g, "rot").rot, "remove")
+        self.assertFalse([c for c in g.calls if "/git/blobs/" in c[1]])
+
+    def test_3mb_file_is_still_read_through_the_blob(self):
+        g = self.oversize("Business Source License 1.1\n\n" + "x" * 3_000_000)
+        self.assertEqual(run(g).failures, [MSG_NON_OSI.format("Business Source License")])
+        self.assertIn(("GET", f"{R}/git/blobs/big", None), g.calls)
+
+    def test_oversize_file_without_a_blob_sha_is_undecided(self):
+        g = lic_gh({"LICENSE": MIT})
+        g.routes[f"GET {R}/contents/LICENSE"] = {"type": "file", "encoding": "none", "size": 2_000_000}
         with self.assertRaises(Undecided):
             run(g)
 

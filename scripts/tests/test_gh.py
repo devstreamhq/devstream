@@ -344,6 +344,24 @@ class Retries(unittest.TestCase):
                 gh.graphql("mutation M { x }", {})
             self.assertEqual(len(sent), 1)
 
+    def test_graphql_read_only_when_it_opens_with_query_or_brace(self):
+        cases = (
+            ("query Q { x }", True), ("{ viewer }", True), ("  \n{ viewer }", True),
+            ("# note\n  query Q { x }", True), ("# a\n# b\n{ x }", True),
+            # A comment line used to hide a mutation from the read check.
+            ("# note\nmutation M { x }", False),
+            # Fragment-first could hold a mutation further down; treated as one.
+            ("fragment F on X { y }\nquery Q { ...F }", False),
+            ("mutation M { x }", False), ("subscription S { x }", False), ("queryish { x }", False),
+        )
+        for q, read in cases:
+            gh, sent, _ = self.gh(502, 200)
+            try:
+                gh.graphql(q, {})
+            except GitHubError:
+                pass
+            self.assertEqual(len(sent), 2 if read else 1, q)
+
     def test_graphql_mutation_retried_when_never_sent(self):
         gh, sent, _ = self.gh(urllib.error.URLError(ConnectionRefusedError()), 200)
         gh.graphql("\n  mutation M { x }", {})

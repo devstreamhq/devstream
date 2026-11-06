@@ -1,6 +1,7 @@
 name: Health check
 # The sweeper only counts runs named exactly "Health check" as a full check.
-run-name: ${{ inputs.repo && 'Health check (one repo)' || 'Health check' }}
+# A one-repo run names its repo, so reports.py can see a recent check of that entry.
+run-name: "${{ inputs.repo && format('Health check: {0}', inputs.repo) || 'Health check' }}"
 
 # Re-checks every listed repo each Monday: warns stale ones, archives them 30
 # days later, brings back the ones that recover, follows renames and removes
@@ -54,6 +55,21 @@ jobs:
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}
           REPO_INPUT: ${{ inputs.repo }}
         run: python -m scripts.rot plan --out "$RUNNER_TEMP/plan.json" >> "$GITHUB_OUTPUT"
+      # Entries left undecided 3 weeks running get a needs-review issue. Its own token, so the one
+      # that can push never carries issues: write, and a failure here never stops the check.
+      - id: issues_token
+        if: steps.plan.outputs.review == 'true'
+        continue-on-error: true
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-issues: write
+      - if: steps.issues_token.outputs.token != ''
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ steps.issues_token.outputs.token }}
+        run: python -m scripts.rot review --plan "$RUNNER_TEMP/plan.json"
       - id: pr
         if: steps.plan.outputs.changed == 'true'
         env:

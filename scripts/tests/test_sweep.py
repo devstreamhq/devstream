@@ -201,14 +201,14 @@ class SweepTest(unittest.TestCase):
 
     def test_only_full_runs_count_as_a_health_check(self):
         # A one-repo re-check doesn't cover the rest of the list.
-        oks = mixed((timedelta(hours=3), "Health check (one repo)"), (timedelta(days=9), "Health check"))
-        latest = mixed((timedelta(hours=3), "Health check (one repo)"), (timedelta(days=2), "Health check"))
+        oks = mixed((timedelta(hours=3), "Health check: alice/tool"), (timedelta(days=9), "Health check"))
+        latest = mixed((timedelta(hours=3), "Health check: alice/tool"), (timedelta(days=2), "Health check"))
         g = gh(routes={ROT_OK: oks, ROT_LATEST: latest})
         sweep(g, NOW)
         self.assertEqual(rot_dispatched(g), [{"ref": "main"}])
 
         # Names that only start or end the same way don't count either.
-        oks = mixed((timedelta(days=1), "Health check (one repo)"), (timedelta(days=1), "Health check "),
+        oks = mixed((timedelta(days=1), "Health check: alice/tool"), (timedelta(days=1), "Health check "),
                     (timedelta(days=1), "health check"))
         g = gh(routes={ROT_OK: oks, ROT_LATEST: runs(timedelta(days=2))})
         sweep(g, NOW)

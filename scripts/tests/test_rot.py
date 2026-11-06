@@ -1,6 +1,7 @@
 import base64
 import json
 import os
+import re
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
@@ -16,7 +17,7 @@ from scripts.devstream.quality import (
     Undecided,
     check_repo,
 )
-from scripts.rot import Action, finish, plan_rot, pr_body, prepare, select
+from scripts.rot import Action, finish, open_reviews, plan_rot, pr_body, prepare, select
 from scripts.tests.fake_gh import FakeGitHub, Redirect
 
 NOW = datetime(2026, 11, 5, 6, 0, tzinfo=timezone.utc)
@@ -210,6 +211,7 @@ def routes(rot=None, discussions=None, flags=None, extra=None):
         f"PUT {API}/contents/discussions.json": None,
         f"PUT {API}/contents/flags.json": None,
         f"PUT {API}/contents/renames.json": None,
+        f"PUT {API}/contents/undecided.json": None,
         f"GET {API}/git/ref/heads/stats": {"ref": "refs/heads/stats"},
     }
     r.update(extra or {})
@@ -242,7 +244,7 @@ def store(files=None, extra=None, conflicts=()):
         return answer
 
     r = {f"GET {API}/git/ref/heads/stats": {"ref": "refs/heads/stats"}}
-    for path in ("rot.json", "discussions.json", "flags.json", "likes.json", "meta.json", "renames.json"):
+    for path in ("rot.json", "discussions.json", "flags.json", "likes.json", "meta.json", "renames.json", "undecided.json"):
         r[f"GET {API}/contents/{path}"] = get(path)
         r[f"PUT {API}/contents/{path}"] = put(path)
     r.update(extra or {})
@@ -305,6 +307,52 @@ class PrepareTest(unittest.TestCase):
         plan = self.run_prepare(FakeGitHub(routes()), check)
         self.assertEqual(kinds([Action(**a) for a in plan["actions"]]), [("warn", "bob/other")])
         self.assertEqual({e["repo"]: e["status"] for e in load(self.path)}, {"alice/tool": "live", "bob/other": "warned"})
+
+    def test_undecided_three_weeks_running_opens_one_review_issue(self):
+        def check(full, gh, now, mode, **kw):
+            if full == "alice/tool":
+                raise Undecided(0, "README of alice/tool could not be decoded")
+            return ok(full)
+
+        issues = []
+
+        def open_issue(b):
+            issues.append({"number": 50 + len(issues), "title": b["title"], "user": {"login": "devstreamhq-bot[bot]"}})
+            return issues[-1]
+
+        # A look-alike title from someone else doesn't stand in for the bot's issue.
+        fake = {"number": 9, "title": "Health check can't decide on alice/tool", "user": {"login": "mallory"}}
+        r, state = store(extra={f"GET {API}/issues": lambda _: [fake, *issues], f"POST {API}/issues": open_issue})
+        g = FakeGitHub(r)
+        for week in range(5):
+            plan = prepare(g, NOW + timedelta(days=7 * week), self.path, None, check=check)
+            self.assertEqual(state["undecided.json"]["alice/tool"]["weeks"], week + 1)
+            self.assertEqual([r["repo"] for r in plan["review"]], [] if week < 2 else ["alice/tool"])
+            # The plan step opens nothing; the review step does, with its own issues-only token.
+            self.assertFalse([c for c in g.calls if c[:2] == ("POST", f"{API}/issues")][len(issues):])
+            open_reviews(g, plan["review"])
+            self.assertEqual(len(issues), 0 if week < 2 else 1, week)
+        posts = [b for m, p, b in g.calls if m == "POST" and p == f"{API}/issues"]
+        self.assertEqual(posts[0]["labels"], ["needs-review"])
+        self.assertIn("`alice/tool`", posts[0]["body"])
+        self.assertNotIn("bob/other", state["undecided.json"])
+
+        # A one-repo run or a second run the same week isn't another week.
+        prepare(g, NOW + timedelta(days=29), self.path, None, check=check)
+        prepare(g, NOW + timedelta(days=30), self.path, "alice/tool", check=check)
+        self.assertEqual(state["undecided.json"]["alice/tool"]["weeks"], 5)
+
+        # Decided again: the count starts over.
+        prepare(g, NOW + timedelta(days=35), self.path, None, check=lambda full, *a, **kw: ok(full))
+        self.assertEqual(state["undecided.json"], {})
+
+    def test_review_issue_step_has_its_own_issues_only_token(self):
+        text = (Path(__file__).resolve().parents[2] / ".github" / "workflows" / "rot.yml").read_text()
+        blocks = text.split("create-github-app-token@")
+        scopes = [re.findall(r"permission-([\w-]+): (\w+)", b.split("- ")[0]) for b in blocks[1:]]
+        self.assertIn([("issues", "write")], scopes)
+        self.assertFalse([sc for sc in scopes if ("issues", "write") in sc and len(sc) > 1])
+        self.assertIn("python -m scripts.rot review", text)
 
     def test_skips_hidden_and_superseded(self):
         save([entry(status="hidden"), entry("bob/other", status="superseded", issue=2)], self.path)

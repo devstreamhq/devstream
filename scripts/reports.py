@@ -5,6 +5,8 @@ python -m scripts.reports dispatch --result result.json
 python -m scripts.reports apply --result result.json
 python -m scripts.reports issue --result result.json [--error]
 python -m scripts.reports pr-body --result result.json
+python -m scripts.reports decide ... --undecided undecided.json   (exits 3 when the run reached no decision)
+python -m scripts.reports undecided --file undecided.json   (counts it, and parks the report after 3)
 """
 
 import argparse
@@ -12,9 +14,12 @@ import json
 import os
 import re
 import sys
+import traceback
+import urllib.parse
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 
+from scripts.devstream.attempts import note_failure, record_from_file, spends_attempt
 from scripts.devstream.entries import DEFAULT_PATH, find, load, normalize_repo, save
 from scripts.devstream.gh import GitHub
 from scripts.devstream.issue_form import FormError, _repo, parse_report
@@ -30,6 +35,11 @@ HIDE_AT = 3
 ESTABLISHED_AGE = timedelta(days=365)
 ESTABLISHED_REPOS = 3
 ESTABLISHED_CONTRIBUTIONS = 50
+# rot.yml names a one-repo run "Health check: owner/name".
+ONE_REPO = "Health check: "
+RECHECK_AFTER = timedelta(hours=24)
+# One-repo checks an hour, across all reporters, before new dead reports wait for a maintainer.
+CHECKS_PER_HOUR = 3
 
 NOT_LISTED = "That repo isn't on the list, so there's nothing here for us to act on."
 UNTRUSTED = (
@@ -84,6 +94,20 @@ def _other_recent_reports(login: str, number: int, gh, now: datetime) -> int:
     q = f"repo:{REPO}+label:report+author:{login}+created:>={since}"
     # shortcut: one page of 100 is plenty to see 5.
     return sum(1 for i in gh.get(f"/search/issues?q={q}&per_page=100")["items"] if i["number"] != number)
+
+
+def _recent_checks(gh, now: datetime) -> list[tuple[datetime, str]]:
+    """(created, normalised repo) for one-repo health checks from the last 24 hours, any status.
+
+    Every queued or running check is in there too: a run can't wait in the queue longer than that.
+    """
+    since = (now - RECHECK_AFTER).strftime("%Y-%m-%dT%H:%M:%SZ")
+    query = urllib.parse.urlencode({"created": f">={since}", "per_page": 100})
+    # shortcut: newest 100 runs only. The cap allows 72 a day, plus manual runs; paginate if those
+    # ever push a day's one-repo checks past 100.
+    page = gh.get(f"{API}/actions/workflows/rot.yml/runs?{query}") or {}
+    return [(datetime.fromisoformat(r["created_at"].replace("Z", "+00:00")), normalize_repo(r["display_title"][len(ONE_REPO):]))
+            for r in page.get("workflow_runs", []) if (r.get("display_title") or "").startswith(ONE_REPO)]
 
 
 def _unedited(gh, numbers: list[int]) -> set[int]:
@@ -149,6 +173,13 @@ def handle_report(issue: dict, gh, entries: list, open_reports: list[dict],
     hidden = f"Thanks for the heads-up. `{repo}` is hidden from the list while a maintainer reviews it."
 
     if reason == "dead":
+        recent = _recent_checks(gh, now)
+        if normalize_repo(repo) in {r for _, r in recent}:
+            return _reply(f"Thanks. `{repo}` had a health check in the last day, "
+                          "so a maintainer will take it from here.", "needs-review")
+        if sum(now - at <= timedelta(hours=1) for at, _ in recent) >= CHECKS_PER_HOUR:
+            return _reply(f"Thanks for reporting `{repo}`. A lot of health checks are queued right now, "
+                          "so a maintainer will take a look instead.", "needs-review")
         return [Action("dispatch_rot", repo)] + _reply(
             f"A health check on `{repo}` has been queued.",
             "needs-review")
@@ -205,6 +236,24 @@ def _values(result: dict, kind: str) -> list:
 
 
 def _decide(args) -> int:
+    """Exit 3 with undecided.json on any failure, so the report can be parked after a few."""
+    try:
+        return _decide_issue(args)
+    except Exception as e:
+        if args.undecided is None or not spends_attempt(e):
+            raise
+        traceback.print_exc()
+        n = int(args.issue) if args.issue is not None else _read(args.event)["issue"]["number"]
+        note_failure(args.undecided, n, e)
+        return 3
+
+
+def _undecided(args) -> int:
+    record_from_file(GitHub(os.environ["GITHUB_TOKEN"]), args.file, ERROR)
+    return 0
+
+
+def _decide_issue(args) -> int:
     gh = GitHub(os.environ["GITHUB_TOKEN"])
     if args.issue is not None:
         issue = _fetch_issue(gh, args.issue)
@@ -224,9 +273,18 @@ def _decide(args) -> int:
 
 
 def _dispatch(args) -> int:
-    for repo in _values(_read(args.result), "dispatch_rot"):
-        GitHub(os.environ["GITHUB_TOKEN"]).post(
-            f"{API}/actions/workflows/rot.yml/dispatches", {"ref": "main", "inputs": {"repo": repo}})
+    result = _read(args.result)
+    try:
+        for repo in _values(result, "dispatch_rot"):
+            GitHub(os.environ["GITHUB_TOKEN"]).post(
+                f"{API}/actions/workflows/rot.yml/dispatches", {"ref": "main", "inputs": {"repo": repo}})
+    except Exception as e:
+        # No comment has gone out yet, so this run reached no decision either.
+        if args.undecided is None or not spends_attempt(e):
+            raise
+        traceback.print_exc()
+        note_failure(args.undecided, result["issue"], e)
+        return 3
     return 0
 
 
@@ -284,14 +342,17 @@ def main(argv: list[str]) -> int:
     src.add_argument("--event")
     src.add_argument("--issue")
     d.add_argument("--out", required=True)
+    d.add_argument("--undecided")
+    sub.add_parser("undecided").add_argument("--file", required=True)
     for name in ("dispatch", "apply", "issue", "pr-body"):
         s = sub.add_parser(name)
         s.add_argument("--result", required=True)
     sub.choices["apply"].add_argument("--entries", default=DEFAULT_PATH)
     sub.choices["issue"].add_argument("--error", action="store_true")
+    sub.choices["dispatch"].add_argument("--undecided")
     args = p.parse_args(argv)
     return {"decide": _decide, "dispatch": _dispatch, "apply": _apply, "issue": _issue,
-            "pr-body": _pr_body}[args.cmd](args)
+            "pr-body": _pr_body, "undecided": _undecided}[args.cmd](args)
 
 
 if __name__ == "__main__":

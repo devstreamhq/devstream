@@ -47,7 +47,7 @@ Want what's climbing instead? The site has Trending and New too.
 
 ## How it works
 
-1. You submit, and a bot checks. It wants 30 days of history, a push in the last 90, an OSI license, a real README and [a few more things](CONTRIBUTING.md#submit-a-repo). Pass, and a bot PR adds it. Nobody has to wake up and approve it.
+1. You submit, and a bot checks. It wants 30 days of history, a push in the last 90, an OSI license (learning resources can use CC0 or CC BY), a real README and [a few more things](CONTRIBUTING.md#submit-a-repo). Pass, and a bot PR adds it. Nobody has to wake up and approve it.
 2. You Like what you use. A 👍 on the entry's Discussion counts once per account, and trust filters and burst detection make sock puppets a waste of effort.
 3. Dead repos leave. A weekly health check warns the owner first, then archives or removes what's gone quiet.
 

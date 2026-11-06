@@ -11,7 +11,7 @@ Your account has to be at least 30 days old, with some public activity. You can 
 The repo has to:
 
 - be at least 30 days old, with a push in the last 90 days;
-- have an OSI-approved license, a real README and a description;
+- have an OSI-approved license (Learning & Resources also takes CC0-1.0, CC-BY-4.0 and CC-BY-SA-4.0), a real README and a description;
 - have at least 2 of these 7 extras: a topic, a CONTRIBUTING guide, a code of conduct, an issue or pull request template, a SECURITY policy, GitHub Actions workflows, or a release.
 
 If it passes, the bot opens a PR and the repo lands on its own. If it doesn't, the bot comments on your issue with the reasons. Fix them and submit again whenever you're ready.
@@ -44,7 +44,7 @@ We use [Conventional Commits](https://www.conventionalcommits.org/), for example
 
 ### Review
 
-Every pull request needs an approving review before it can merge, and the PR checks (`validate`, `test` and `lint`) have to pass. If you're planning something big, open an issue or start a thread in [Ideas](https://github.com/devstreamhq/devstream/discussions/categories/ideas) first, so we can agree on the shape before you write the code.
+Every pull request needs an approving review before it can merge, and the PR checks have to pass: `validate`, `test`, `lint`, `site` and the three CodeQL `analyze` jobs. If you're planning something big, open an issue or start a thread in [Ideas](https://github.com/devstreamhq/devstream/discussions/categories/ideas) first, so we can agree on the shape before you write the code.
 
 ## Questions
 

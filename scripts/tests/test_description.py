@@ -185,6 +185,23 @@ class DescriptionTest(unittest.TestCase):
         # Any selector, not only U+FE0F: they are all dropped before storing.
         bad("Stars \u2728\u2728\ufe08\u2728\u2728 everywhere here")
 
+    def test_zwj_emoji_counts_once(self):
+        family = "\U0001F468\u200d\U0001F469\u200d\U0001F467"
+        self.assertEqual(ok(f"Plans for the whole {family} at once"), f"Plans for the whole {family} at once.")
+        ok(f"Plans {family}{family} for everyone here")
+        bad(f"Plans {family}{family}{family} for everyone here")
+        # Still stripped anywhere else, so it can't split a blocked word or hide in text.
+        self.assertEqual(ok("A tool\u200d that works well"), "A tool that works well.")
+        # Re-checking the stored text gives the same answer, as validate_data does.
+        out = ok(f"Plans for the whole {family} at once")
+        self.assertEqual(clean(out), (out, None))
+
+    def test_question_keeps_one_question_mark(self):
+        self.assertEqual(ok("Why write YAML by hand?!?!"), "Why write YAML by hand?")
+        self.assertEqual(ok("Why write YAML by hand?"), "Why write YAML by hand?")
+        self.assertEqual(ok("A tool that works well!!!"), "A tool that works well.")
+        self.assertEqual(clean("Why write YAML by hand?"), ("Why write YAML by hand?", None))
+
     def test_removed_terms_allowed(self):
         ok("Work from home setup scripts for devs")
         ok("A bulk sms sender for alert systems")

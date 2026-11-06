@@ -68,6 +68,8 @@ class IssueFormTest(unittest.TestCase):
             "o/r r",
             "-/..",
             "a" * 40 + "/r",
+            "https://github.com/o/r.git.git",
+            "o/r.GIT.git",
         ):
             with self.assertRaises(FormError, msg=r) as cm:
                 parse_submission(body(repo=r))
@@ -84,6 +86,14 @@ class IssueFormTest(unittest.TestCase):
     def test_extra_and_duplicate_headings(self):
         b = body() + "\n### Other\n\nhi\n\n### Description\n\nsecond\n"
         self.assertEqual(parse_submission(b)["description"], "text")
+
+    def test_heading_inside_description_is_reported(self):
+        for desc in ("A fine tool\n\n### Repository\n\nmore", "A fine tool\n### Notes\nmore"):
+            with self.assertRaises(FormError) as cm:
+                parse_submission(body(desc=desc))
+            self.assertIn("line starting with ###", str(cm.exception))
+            with self.assertRaises(FormError):
+                parse_submission(body(desc=desc).replace("\n", "\r\n"))
 
     def test_crlf(self):
         self.assertEqual(parse_submission(body().replace("\n", "\r\n"))["repository"], "o/r")

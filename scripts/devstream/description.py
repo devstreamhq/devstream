@@ -6,6 +6,9 @@ MIN_LEN, MAX_LEN = 10, 140
 FORBIDDEN = set("<>[]()`*_#")
 EMOJI = re.compile("[\U0001f000-\U0001faff\u2600-\u27bf]")
 VARIATION = re.compile("[\ufe00-\ufe0f]")
+ZWJ = "\u200d"
+# A zero-width joiner between two emoji builds one emoji (a family, say), so it survives the stripping.
+EMOJI_ZWJ = re.compile("(?<=[\U0001f000-\U0001faff\u2600-\u27bf\ufe00-\ufe0f])\u200d(?=[\U0001f000-\U0001faff\u2600-\u27bf])")
 # Only names that are not real TLDs a spammer would use; Node.js and Vue.js rely on "js".
 NOT_TLDS = {"js", "ts", "py", "md", "rb"}
 DOMAIN = re.compile(r"(?<![\w.-])(?:[a-z0-9-]+\.)+([a-z]{2,24})(?![a-z0-9])", re.I)
@@ -26,7 +29,8 @@ IGNORABLE = re.compile(
 
 def _strip_invisible(s: str) -> str:
     # Cf also covers format characters outside the table, such as U+0600-0605.
-    return IGNORABLE.sub("", "".join(c for c in s if unicodedata.category(c) != "Cf"))
+    return ZWJ.join(IGNORABLE.sub("", "".join(c for c in part if unicodedata.category(c) != "Cf"))
+                    for part in EMOJI_ZWJ.split(s))
 
 
 def _load_blocklist() -> list[str]:
@@ -69,10 +73,13 @@ def _has_url(t: str) -> bool:
 
 
 def _emoji_run_too_long(t: str) -> bool:
-    run = 0
+    run, joined = 0, False
     for ch in t:
-        if EMOJI.match(ch):
-            run += 1
+        if ch == ZWJ:  # the next emoji is part of this one
+            joined = True
+        elif EMOJI.match(ch):
+            run += not joined
+            joined = False
             if run > 2:
                 return True
         elif not VARIATION.match(ch):  # variation selectors ride along with their emoji
@@ -89,7 +96,9 @@ def clean_description(text: str) -> tuple[str | None, str | None]:
     if _emoji_run_too_long(t):
         return None, "Descriptions can't have more than 2 emoji in a row."
     t = " ".join(VARIATION.sub("", t).split())
-    final = t.rstrip("!?,;: ").rstrip(".") + "."
+    body = t.rstrip("!?,;: ")
+    # A question keeps one question mark; anything else ends in a full stop.
+    final = body.rstrip(".") + ("?" if "?" in t[len(body):] else ".")
     # Both limits cover the finished text: a 140-character input with no period
     # would be stored at 141, and "Toolkit!!!" shrinks to an 8-character "Toolkit.".
     if not MIN_LEN <= len(final) <= MAX_LEN:

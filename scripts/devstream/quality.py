@@ -12,15 +12,21 @@ from scripts.devstream.license_detect import OSI, Undecided, find_license
 
 NO_LICENSE = {None, "NOASSERTION", "NONE"}
 DEPRECATED = re.compile(r"\b(deprecated|unmaintained|no longer maintained)\b", re.I)
-# Project-level README statements only: a marker opening a line (after quote, heading or
-# admonition syntax), or "this <project> is <marker>". Every repeat is capped, so no ReDoS.
+# Project-level README statements only: a marker opening a line (after up to 10 symbols,
+# emoji or one-level HTML tags), a "Status:" line, "this/the <project> is <marker>", or a
+# marker after a dash, colon or bracket on the first line. Every repeat is capped, so no ReDoS.
+_MARK = r"deprecated|unmaintained|no\s{1,3}longer\s{1,3}(?:actively\s{1,3})?maintained"
+_END = r"(?![A-Za-z0-9])"
 README_DEPRECATED = re.compile(
-    r"^[ \t]{0,3}(?:>[ \t]{0,3}){0,5}(?:#{1,6}[ \t]{1,5})?(?:\[![A-Za-z]{1,20}\][ \t]{0,5})?[*_]{0,3}"
-    r"(?P<a>deprecated|unmaintained|no longer maintained)\b"
-    r"|\bthis[ \t]{1,5}(?:project|repo|repository|library|package|tool|crate|module|app|plugin)[ \t]{1,5}"
-    r"(?:is|has been)[ \t]{1,5}(?:now[ \t]{1,5})?(?P<b>deprecated|unmaintained|archived|no[ \t]{1,5}longer[ \t]{1,5}maintained)\b",
+    r"^(?:<[^<>\n]{1,100}>|[^A-Za-z0-9\n<]){0,10}(?P<a>" + _MARK + r")" + _END
+    + r"|^[^A-Za-z0-9\n<]{0,10}status[ \t]{0,3}:[^A-Za-z0-9\n]{0,10}(?P<c>" + _MARK + r")" + _END
+    + r"|\b(?:this|the)(?:[ \t]{1,5}(?:project|repo|repository|library|package|tool|crate|module|app|plugin))?"
+    r"[ \t]{1,5}(?:is|was|has[ \t]{1,5}been)[ \t]{1,5}(?:(?:now|officially|currently)[ \t]{1,5}){0,2}"
+    r"(?P<b>deprecated|unmaintained|archived|no[ \t]{1,5}longer[ \t]{1,5}(?:actively[ \t]{1,5})?maintained)" + _END,
     re.I | re.M,
 )
+# Title lines like "foo - DEPRECATED" or "# foo (deprecated)"; first non-blank line only.
+README_TITLE_DEPRECATED = re.compile(r"[-\u2013\u2014:|(\[][ \t]{0,3}(?P<d>" + _MARK + r")" + _END, re.I)
 README_MIN = 300
 README_SCAN = 200_000
 
@@ -169,7 +175,10 @@ def check_repo(full: str, gh, now: datetime, mode: Literal["submit", "rot"]) -> 
     text = (readme[0] if readme else None) or ""
     m = DEPRECATED.search(repo.get("description") or "")
     rm = README_DEPRECATED.search(text[:500])
-    deprecated = m.group(0) if m else (rm.group("a") or rm.group("b") if rm else None)
+    if not rm:
+        title = next((ln for ln in text[:500].splitlines() if ln.strip()), "")
+        rm = README_TITLE_DEPRECATED.search(title)
+    deprecated = m.group(0) if m else (rm.group(rm.lastgroup) if rm else None)
 
     failures = []
     if not license_ok:

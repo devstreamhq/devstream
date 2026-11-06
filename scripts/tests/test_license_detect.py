@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from scripts.devstream.gh import GitHubError
+from scripts.devstream.license_detect import FILE_RE
 from scripts.tests.fake_gh import FakeGitHub
 from scripts.devstream.quality import Undecided
 from scripts.tests.test_quality import NOW, README, R, gh, run
@@ -179,6 +180,29 @@ class LicenseSearchTest(unittest.TestCase):
     def test_unknown_copyright_file_not_found(self):
         r = run(lic_gh({"COPYRIGHT": "Copyright 2020 X. All rights reserved."}))
         self.assertEqual(r.failures, [MSG_NOT_FOUND])
+
+    def test_artistic_lookalikes_are_not_found(self):
+        for text in (
+            "Proprietary software. Not licensed under the Artistic License 2.0. The Copyright Holder reserves all rights. No redistribution.",
+            "This software is proprietary. Unlike the Artistic License, you may not redistribute this Package. Standard Version only.",
+            "Commercial license. See the Artistic License for details about Package use in the Standard Version.",
+        ):
+            self.assertEqual(run(lic_gh({"LICENSE": text})).failures, [MSG_NOT_FOUND], text)
+
+    def test_artistic_curly_quotes(self):
+        t = (FIXTURES / "Artistic-1.0.txt").read_text().replace("Reasonable copying fee", "\u201cReasonable copying fee\u201d")
+        self.passes(lic_gh({"Artistic": t}))
+
+    def test_filename_stems(self):
+        for n in ("COPYRIGHT", "Artistic", "BSDL", "GPL", "COPYRIGHT.txt", "GPL-2", "LICENSE", "LICENSE.py", "COPYING.md"):
+            self.assertTrue(FILE_RE.match(n), n)
+        for n in ("copyright.py", "gpl.js", "Copyright.h", "copyright-header.txt", "artistic.c", "bsdl.rb"):
+            self.assertFalse(FILE_RE.match(n), n)
+
+    def test_license_file_read_before_cap(self):
+        files = {n: "x" for n in ("COPYRIGHT", "Artistic", "BSDL", "GPL", "GPL-2", "COPYING-extra")}
+        files["license"] = MIT
+        self.passes(lic_gh(files))
 
     def test_weak_markers_alone_are_not_found(self):
         for text in ("Copyright 2020 X. All rights reserved.", "This software is proprietary.", "For noncommercial use only."):

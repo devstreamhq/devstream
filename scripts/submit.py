@@ -3,9 +3,11 @@
 python -m scripts.submit decide (--event EVENT.json | --issue N) --out result.json
 python -m scripts.submit apply --result result.json
 python -m scripts.submit comment --result result.json --kind {accepted,rejected,pr,error}
+python -m scripts.submit seed --file seeds.csv --out report.json [--apply]
 """
 
 import argparse
+import csv
 import json
 import os
 import re
@@ -14,8 +16,8 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta, timezone
 
 from scripts.devstream.description import clean_description
-from scripts.devstream.entries import CATEGORIES, DEFAULT_PATH, Entry, find, load, save
-from scripts.devstream.gh import GitHub
+from scripts.devstream.entries import CATEGORIES, DEFAULT_PATH, Entry, find, load, normalize_repo, save
+from scripts.devstream.gh import GitHub, GitHubError, RateLimited
 from scripts.devstream.issue_form import FormError, parse_submission
 from scripts.devstream.quality import check_repo
 from scripts.devstream.trust import check_user, ensure_block_access
@@ -25,6 +27,9 @@ REPO = "devstreamhq/devstream"
 SITE = "https://devstream.jamesconway.dev"
 QUALITY_BAR = f"https://github.com/{REPO}/wiki/Quality-Bar"
 WEEKLY_LIMIT = 3
+SEED_BY = "jamesconwaydev"
+# The schema takes any integer; 0 marks an entry that no submission issue backs.
+SEED_ISSUE = 0
 
 RATE_LIMIT = "You've hit the limit of 3 submissions a week. Try again in a few days."
 DUPLICATE = "This repo is already on the list."
@@ -33,6 +38,7 @@ ARCHIVED_DUP = (
     "It comes back automatically once it's active again."
 )
 NOT_FOUND = "We couldn't find that repo on GitHub. Is it public?"
+SEED_DUP = "This repo appears earlier in the seed file."
 
 
 @dataclass
@@ -70,39 +76,51 @@ def decide(issue: dict, gh, now: datetime, entries: list[Entry], excluded: set[s
     if _recent_submissions(login, gh, now) > WEEKLY_LIMIT:
         reasons.append(RATE_LIMIT)
 
-    dup = find(entries, form["repository"])
-    if dup:
-        return Decision(False, reasons + [_dup_reason(dup)])
+    more, canonical, description = _check(form["repository"], form["description"], gh, now, entries)
+    reasons += more
+    if reasons:
+        return Decision(False, reasons)
+    return Decision(True, [], _entry(canonical, form["category"], description, login, now, issue["number"]))
 
-    result = check_repo(form["repository"], gh, now, "submit")
+
+def _check(link: str, text: str, gh, now: datetime, entries: list[Entry]) -> tuple[list[str], str, str | None]:
+    """The repo and description checks: (reasons, canonical repo, cleaned description)."""
+    dup = find(entries, link)
+    if dup:
+        return [_dup_reason(dup)], link, None
+
+    reasons = []
+    result = check_repo(link, gh, now, "submit")
     if not result.exists:
         reasons.append(NOT_FOUND)
     else:
         dup = find(entries, result.canonical)
         if dup:
-            return Decision(False, reasons + [_dup_reason(dup)])
+            return [_dup_reason(dup)], result.canonical, None
         reasons += result.failures
 
-    description, why = clean_description(form["description"])
+    description, why = clean_description(text)
     if description is None and result.meta.get("description"):
         description = clean_description(result.meta["description"])[0]
     if description is None:
         reasons.append(why)
+    return reasons, result.canonical, description
 
-    if reasons:
-        return Decision(False, reasons)
-    return Decision(True, [], {
-        "repo": result.canonical,
-        "category": form["category"],
+
+def _entry(repo: str, category: str, description: str, login: str, now: datetime, issue: int,
+           seed: bool = False) -> Entry:
+    return {
+        "repo": repo,
+        "category": category,
         "description": description,
         "submitted_by": login,
         "submitted_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "issue": issue["number"],
+        "issue": issue,
         "status": "live",
         "warned_at": None,
         "superseded_by": None,
-        "added_by_seed": False,
-    })
+        "added_by_seed": seed,
+    }
 
 
 def comment(result: dict, kind: str) -> str:
@@ -189,6 +207,62 @@ def _apply(args) -> int:
     return 0
 
 
+def _seed_row(row: dict, gh, now: datetime, entries: list[Entry], seen: set[str]) -> dict:
+    out = {"repo": row["repo"], "category": row["category"], "status": "fail", "reasons": [], "entry": None}
+    if normalize_repo(row["repo"]) in seen:
+        out["reasons"] = [SEED_DUP]
+        return out
+    if row["category"] not in CATEGORIES:
+        out["reasons"] = [f"unknown category {row['category']!r}"]
+        return out
+    try:
+        reasons, canonical, description = _check(row["repo"], row["description"], gh, now, entries)
+    except (GitHubError, RateLimited, OSError) as e:
+        # Undecided is a GitHubError; none of these say anything about the repo.
+        return out | {"status": "undecided", "reasons": [str(e)]}
+    if normalize_repo(canonical) in seen:
+        reasons = [SEED_DUP]
+    if reasons:
+        return out | {"reasons": reasons}
+    return out | {"status": "ok", "entry": _entry(canonical, row["category"], description, SEED_BY, now,
+                                                   SEED_ISSUE, seed=True)}
+
+
+def _seed(args) -> int:
+    with open(args.file, encoding="utf-8", newline="") as f:
+        rows = list(csv.DictReader(f))
+    done: dict[str, dict] = {}
+    if os.path.exists(args.out):
+        with open(args.out, encoding="utf-8") as f:
+            for r in json.load(f)["rows"]:
+                if r["status"] != "undecided":
+                    done.setdefault(r["repo"], r)
+    gh = GitHub(os.environ["GITHUB_TOKEN"])
+    entries = load(args.entries)
+    known = list(entries)
+    seen: set[str] = set()
+    report = []
+    for row in rows:
+        r = done.pop(row["repo"], None) or _seed_row(row, gh, datetime.now(timezone.utc), known, seen)
+        seen.add(normalize_repo(row["repo"]))
+        if r["entry"]:
+            seen.add(normalize_repo(r["entry"]["repo"]))
+            known.append(r["entry"])
+        report.append(r)
+        # Written every row so a stopped run resumes where it left off.
+        with open(args.out, "w", encoding="utf-8") as f:
+            json.dump({"rows": report}, f, indent=2, ensure_ascii=False)
+        print(f"{r['status']}\t{r['repo']}\t{'; '.join(r['reasons'])}", flush=True)
+    if not args.apply:
+        return 0
+    entries += [r["entry"] for r in report if r["status"] == "ok" and not find(entries, r["entry"]["repo"])]
+    save(entries, args.entries)
+    errors = validate(load(args.entries))
+    for e in errors:
+        print(e, file=sys.stderr)
+    return 1 if errors else 0
+
+
 def _comment(args) -> int:
     with open(args.result, encoding="utf-8") as f:
         sys.stdout.write(comment(json.load(f), args.kind))
@@ -206,11 +280,16 @@ def main(argv: list[str]) -> int:
     a = sub.add_parser("apply")
     a.add_argument("--result", required=True)
     a.add_argument("--entries", default=DEFAULT_PATH)
+    sd = sub.add_parser("seed")
+    sd.add_argument("--file", required=True)
+    sd.add_argument("--out", required=True)
+    sd.add_argument("--entries", default=DEFAULT_PATH)
+    sd.add_argument("--apply", action="store_true")
     c = sub.add_parser("comment")
     c.add_argument("--result", required=True)
     c.add_argument("--kind", required=True, choices=("accepted", "rejected", "pr", "error"))
     args = p.parse_args(argv)
-    return {"decide": _decide, "apply": _apply, "comment": _comment}[args.cmd](args)
+    return {"decide": _decide, "apply": _apply, "comment": _comment, "seed": _seed}[args.cmd](args)
 
 
 if __name__ == "__main__":

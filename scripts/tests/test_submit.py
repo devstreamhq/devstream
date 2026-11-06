@@ -1,3 +1,4 @@
+import io
 import json
 import os
 import subprocess
@@ -9,7 +10,10 @@ from datetime import datetime, timedelta, timezone
 
 from scripts.devstream.entries import save
 from scripts.devstream.gh import GitHubError, RateLimited
-from scripts.submit import ARCHIVED_DUP, DUPLICATE, RATE_LIMIT, comment, decide, main
+from scripts.submit import (
+    ARCHIVED_DUP, DUPLICATE, NOT_FOUND, RATE_LIMIT, SEED_DUP, comment, decide, main,
+)
+from scripts.validate_data import validate
 from scripts.tests.fake_gh import FakeGitHub
 from scripts.tests.test_quality import README, b64, iso, repo
 
@@ -319,6 +323,104 @@ class CliTest(unittest.TestCase):
             p = subprocess.run([sys.executable, "-m", "scripts.submit", "apply", "--result", result,
                                 "--entries", path], capture_output=True, text=True)
             self.assertNotEqual(p.returncode, 0)
+
+
+class SeedCliTest(unittest.TestCase):
+    CLI = {"repo": "cli/cli", "category": "developer-tools",
+           "description": "GitHub on the command line, so you can open PRs from the terminal.",
+           "submitted_by": "jamesconwaydev", "submitted_at": "2026-11-05T00:00:00Z", "issue": 8,
+           "status": "live", "warned_at": None, "superseded_by": None, "added_by_seed": False}
+    ROWS = [
+        ("alice/tool", "developer-tools", "A small tool that does one thing well"),
+        ("Alice/Tool", "testing", "The same tool again, under another case"),
+        ("ghost/gone", "testing", "A repo that does not exist on GitHub"),
+        ("CLI/cli", "developer-tools", "Already on the list, so this is a duplicate"),
+        ("flaky/api", "testing", "GitHub answers this one with a server error"),
+    ]
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.csv = os.path.join(tmp.name, "seeds.csv")
+        self.out = os.path.join(tmp.name, "report.json")
+        self.entries = os.path.join(tmp.name, "entries.json")
+        save([self.CLI], self.entries)
+        with open(self.csv, "w", newline="") as f:
+            f.write("repo,category,description,stars\n")
+            for r in self.ROWS:
+                f.write(",".join(r) + ",10\n")
+
+    def flaky(self, _):
+        raise GitHubError(502, "bad gateway")
+
+    def main(self, g, *extra):
+        with mock.patch("scripts.submit.GitHub", lambda token: g), \
+                mock.patch("scripts.submit.datetime") as dt, \
+                mock.patch.dict(os.environ, {"GITHUB_TOKEN": "t"}), \
+                mock.patch("sys.stdout", io.StringIO()):
+            dt.now.return_value = NOW
+            code = main(["seed", "--file", self.csv, "--out", self.out, "--entries", self.entries, *extra])
+        with open(self.out) as f:
+            self.report = json.load(f)
+        return code
+
+    def rows(self):
+        return {(r["repo"], r["status"]): r for r in self.report["rows"]}
+
+    def test_pass_fail_duplicate_and_undecided(self):
+        g = gh(extra={"GET /repos/flaky/api": self.flaky})
+        self.assertEqual(self.main(g), 0)
+        self.assertEqual([(r["repo"], r["status"]) for r in self.report["rows"]], [
+            ("alice/tool", "ok"), ("Alice/Tool", "fail"), ("ghost/gone", "fail"),
+            ("CLI/cli", "fail"), ("flaky/api", "undecided"),
+        ])
+        rows = self.rows()
+        self.assertEqual(rows["alice/tool", "ok"]["entry"], {
+            "repo": "alice/tool", "category": "developer-tools",
+            "description": "A small tool that does one thing well.",
+            "submitted_by": "jamesconwaydev", "submitted_at": "2026-11-05T12:00:00Z", "issue": 0,
+            "status": "live", "warned_at": None, "superseded_by": None, "added_by_seed": True,
+        })
+        self.assertEqual(rows["Alice/Tool", "fail"]["reasons"], [SEED_DUP])
+        self.assertEqual(rows["ghost/gone", "fail"]["reasons"], [NOT_FOUND])
+        self.assertEqual(rows["CLI/cli", "fail"]["reasons"], [DUPLICATE])
+        self.assertIn("502", rows["flaky/api", "undecided"]["reasons"][0])
+        # No trust check, no rate limit search, no block list.
+        self.assertFalse([c for c in g.calls if "/users/" in c[1] or "/search/" in c[1] or "/blocks" in c[1]])
+
+    def test_rate_limited_row_is_undecided_and_run_continues(self):
+        def limited(_):
+            raise RateLimited(0)
+
+        g = gh(extra={"GET /repos/ghost/gone": limited})
+        self.assertEqual(self.main(g), 0)
+        self.assertEqual(self.rows()["ghost/gone", "undecided"]["entry"], None)
+        self.assertIn(("flaky/api", "fail"), self.rows())
+
+    def test_bad_category_fails(self):
+        with open(self.csv, "w") as f:
+            f.write("repo,category,description\nalice/tool,nope,A small tool that does one thing well\n")
+        self.main(gh())
+        self.assertEqual(self.report["rows"][0]["status"], "fail")
+        self.assertIn("unknown category", self.report["rows"][0]["reasons"][0])
+
+    def test_resume_skips_decided_rows_and_retries_undecided(self):
+        self.main(gh(extra={"GET /repos/flaky/api": self.flaky}))
+        g = gh(extra={"GET /repos/flaky/api": repo(full_name="flaky/api"),
+                      "GET /repos/flaky/api/readme": b64(README),
+                      "GET /repos/flaky/api/community/profile": {"files": {"contributing": {}, "code_of_conduct": {}}}})
+        self.main(g)
+        self.assertEqual({c[1] for c in g.calls if c[0] == "GET"} & {R, "/repos/ghost/gone"}, set())
+        self.assertIn(("flaky/api", "ok"), self.rows())
+        self.assertIn(("alice/tool", "ok"), self.rows())
+
+    def test_apply_appends_passing_entries_and_validates(self):
+        self.assertEqual(self.main(gh(extra={"GET /repos/flaky/api": self.flaky}), "--apply"), 0)
+        with open(self.entries) as f:
+            doc = json.load(f)
+        self.assertEqual([e["repo"] for e in doc["entries"]], ["alice/tool", "cli/cli"])
+        self.assertTrue(doc["entries"][0]["added_by_seed"])
+        self.assertEqual(validate(doc["entries"]), [])
 
 
 if __name__ == "__main__":

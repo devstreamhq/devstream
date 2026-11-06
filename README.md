@@ -6,12 +6,12 @@
 </a>
 
 <p align="center">
-  <a href="https://devstream.jamesconway.dev"><img src="https://img.shields.io/endpoint?url=https://devstream.jamesconway.dev/badge.json" alt="Repos listed on DevStream"></a>
+  <a href="https://devstream.jamesconway.dev"><img src="https://img.shields.io/endpoint?url=https://devstream.jamesconway.dev/badge.json&cacheSeconds=3600" alt="Repos listed on DevStream"></a>
   <a href="https://github.com/devstreamhq/devstream/actions/workflows/pr-checks.yml"><img src="https://github.com/devstreamhq/devstream/actions/workflows/pr-checks.yml/badge.svg" alt="PR checks"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-CC0-blue" alt="License: CC0"></a>
   <a href="https://github.com/devstreamhq/devstream/discussions"><img src="https://img.shields.io/github/discussions/devstreamhq/devstream" alt="GitHub Discussions"></a>
   <a href="https://devstream.jamesconway.dev"><img src="https://img.shields.io/website?url=https%3A%2F%2Fdevstream.jamesconway.dev" alt="Website"></a>
-  <a href="https://scorecard.dev/viewer/?uri=github.com/devstreamhq/devstream"><img src="https://api.scorecard.dev/projects/github.com/devstreamhq/devstream/badge" alt="OpenSSF Scorecard"></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/devstreamhq/devstream"><img src="https://img.shields.io/ossf-scorecard/github.com/devstreamhq/devstream?label=openssf%20scorecard" alt="OpenSSF Scorecard"></a>
 </p>
 
 Awesome lists rot. That link someone merged in 2019 is still sitting there, long after the repo's last commit, and the star count beside it only tells you who got excited once. DevStream checks a repo before it lands and again every week. Then it ranks what survives by Likes, one per account.

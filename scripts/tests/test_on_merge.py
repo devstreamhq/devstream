@@ -1,6 +1,7 @@
 import base64
 import json
 import unittest
+from pathlib import Path
 
 from scripts.devstream.gh import GitHubError
 from scripts.on_merge import CAP, run
@@ -147,6 +148,44 @@ class OnMerge(unittest.TestCase):
         g = gh({"o/r1": 5})
         run(g, [entry(1)], sleep=lambda s: None)
         self.assertEqual(puts(g), [])
+
+
+WORKFLOWS = Path(__file__).resolve().parents[2] / ".github" / "workflows"
+
+
+def step_after(text, marker):
+    """The text from marker to the end of the file."""
+    return text[text.index(marker):]
+
+
+class Workflows(unittest.TestCase):
+    """Threads are made by the run that changed the list, while it still holds list-writes."""
+
+    def test_rot_makes_threads_after_its_keys_move(self):
+        text = (WORKFLOWS / "rot.yml").read_text()
+        self.assertIn("python -m scripts.on_merge", step_after(text, "python -m scripts.rot finish"))
+
+    def test_submit_makes_the_thread_once_its_pr_has_merged(self):
+        text = (WORKFLOWS / "submit.yml").read_text()
+        apply = text[text.index("\n  apply:\n"):text.index("\n  reject:\n")]
+        tail = step_after(apply, "did not merge within 15 minutes")
+        self.assertIn("python -m scripts.on_merge", tail)
+        # A failed create is the hourly run's to retry; it mustn't park an accepted issue as needs-review.
+        step = tail[tail.rindex("- ", 0, tail.index("python -m scripts.on_merge")):]
+        self.assertIn("continue-on-error: true", step[:step.index("python -m scripts.on_merge")])
+
+    def test_on_merge_is_only_the_hourly_backstop(self):
+        text = (WORKFLOWS / "on-merge.yml").read_text()
+        on = text[text.index("\non:\n"):text.index("\npermissions:")]
+        self.assertNotIn("push:", on)
+        self.assertIn("schedule:", on)
+        self.assertIn("group: list-writes", text)
+
+    def test_site_redeploys_after_the_runs_that_make_threads(self):
+        text = (WORKFLOWS / "deploy.yml").read_text()
+        after = text[text.index("workflow_run:"):text.index("types: [completed]")]
+        for name in ("Submit", "Health check", "Create entry Discussions", "Sync Likes"):
+            self.assertIn(f'"{name}"', after)
 
 
 if __name__ == "__main__":

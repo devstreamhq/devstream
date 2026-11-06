@@ -1,13 +1,15 @@
 name: Deploy site
 
 # Builds the leaderboard from main plus the stats branch and ships it to
-# Cloudflare Pages, after every merge, Likes sync and site change.
+# Cloudflare Pages, after every merge, Likes sync and site change, and again once
+# a submission or health check has made its threads and moved its stats.
 on:
   push:
     branches: [main]
     paths: ["site/**", "data/**"]
   workflow_run:
-    workflows: ["Create entry Discussions", "Sync Likes"]
+    workflows:
+      ["Create entry Discussions", "Sync Likes", "Submit", "Health check"]
     types: [completed]
   workflow_dispatch:
 

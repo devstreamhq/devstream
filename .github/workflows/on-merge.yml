@@ -1,11 +1,10 @@
 name: Create entry Discussions
 
-# Every listed entry gets a Discussion; a thumbs-up on it is a Like. The
-# hourly run picks up whatever the 40-per-run cap left behind.
+# Every listed entry gets a Discussion; a thumbs-up on it is a Like. Submit and
+# the health check make threads themselves, right after their PR merges; this
+# hourly run is the backstop for the 40-per-run cap, failed creates and any
+# other change to the list.
 on:
-  push:
-    branches: [main]
-    paths: [data/entries.json]
   schedule:
     - cron: "23 * * * *"
   workflow_dispatch:
@@ -14,7 +13,7 @@ permissions: {}
 
 # Shared with rot.yml so this waits until a rename's keys have moved and its
 # thread is retitled; otherwise it would open a second thread for the new name.
-# A run dropped from the queue is picked up by the hourly schedule.
+# A run dropped from the queue costs nothing: the next one covers the same list.
 concurrency:
   group: list-writes
   cancel-in-progress: false

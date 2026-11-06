@@ -47,6 +47,7 @@ jobs:
           permission-organization-user-blocking: read
           permission-issues: read
       # An API failure exits non-zero with no result file, so nothing is accepted or rejected.
+      # A repo that can't be decided also writes undecided.json, counted by the steps below.
       # A dispatched issue that is already decided exits 0 with no result file, so nothing runs.
       - env:
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}
@@ -54,10 +55,22 @@ jobs:
           ISSUE_INPUT: ${{ inputs.issue }}
         run: |
           if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
-            python -m scripts.submit decide --issue "$ISSUE_INPUT" --out result.json
+            python -m scripts.submit decide --issue "$ISSUE_INPUT" --out result.json --undecided undecided.json
           else
-            python -m scripts.submit decide --event "$GITHUB_EVENT_PATH" --out result.json
+            python -m scripts.submit decide --event "$GITHUB_EVENT_PATH" --out result.json --undecided undecided.json
           fi
+      # After 3 undecided runs the issue is parked as needs-review, so the sweeper moves on.
+      - id: undecided_token
+        if: failure() && hashFiles('undecided.json') != ''
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-issues: write
+      - if: failure() && steps.undecided_token.outputs.token != ''
+        env:
+          GITHUB_TOKEN: ${{ steps.undecided_token.outputs.token }}
+        run: python -m scripts.submit undecided --file undecided.json
       - if: hashFiles('result.json') != ''
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

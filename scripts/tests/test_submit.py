@@ -10,9 +10,12 @@ from datetime import datetime, timedelta, timezone
 
 from scripts.devstream.entries import save
 from scripts.devstream.gh import GitHubError, RateLimited
+from scripts.devstream.quality import Undecided
 from scripts.submit import (
-    ARCHIVED_DUP, DUPLICATE, NOT_FOUND, RATE_LIMIT, SEED_DUP, comment, decide, main,
+    ARCHIVED_DUP, DUPLICATE, NOT_FOUND, RATE_LIMIT, SEED_DUP, comment, decide, main, record_undecided,
 )
+from scripts.sweep import sweep
+from scripts.tests import test_sweep
 from scripts.validate_data import validate
 from scripts.tests.fake_gh import FakeGitHub
 from scripts.tests.test_quality import README, b64, iso, repo
@@ -282,6 +285,68 @@ class DecideCliTest(unittest.TestCase):
         g = gh()
         self.assertEqual(self.main(g, "--issue", "7"), 0)
         self.assertFalse(self.wrote)
+
+
+API = "/repos/devstreamhq/devstream"
+BOT = "devstreamhq-bot[bot]"
+
+
+def thread(n, comments, labels):
+    """Routes for issue n's comments and labels, backed by the lists given."""
+    def post(b):
+        comments.append({"id": 100 + len(comments), "user": {"login": BOT}, "body": b["body"]})
+        return comments[-1]
+
+    def patch(cid):
+        def answer(b):
+            next(c for c in comments if c["id"] == cid)["body"] = b["body"]
+        return answer
+
+    routes = {f"GET {API}/issues/{n}/comments": lambda _: list(comments),
+              f"POST {API}/issues/{n}/comments": post,
+              f"POST {API}/issues/{n}/labels": lambda b: labels.extend(b["labels"])}
+    routes.update({f"PATCH {API}/issues/comments/{100 + k}": patch(100 + k) for k in range(10)})
+    return routes
+
+
+class UndecidedTest(unittest.TestCase):
+    def test_undecided_decide_exits_3_and_writes_the_error(self):
+        def stuck(*a, **kw):
+            raise Undecided(0, "LICENSE of alice/tool could not be decoded")
+
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch("scripts.submit.GitHub", lambda token: gh()), \
+                mock.patch("scripts.submit.load", lambda: []), \
+                mock.patch("scripts.submit.decide", stuck), \
+                mock.patch.dict(os.environ, {"GITHUB_TOKEN": "t"}):
+            ev, out, und = (os.path.join(tmp, f) for f in ("event.json", "result.json", "undecided.json"))
+            write(ev, {"issue": issue()})
+            self.assertEqual(main(["decide", "--event", ev, "--out", out, "--undecided", und]), 3)
+            self.assertFalse(os.path.exists(out))
+            with open(und) as f:
+                self.assertEqual(json.load(f), {"issue": 7, "error": "GitHub API 0: LICENSE of alice/tool could not be decoded"})
+
+    def test_parked_after_three_undecided_runs_and_the_sweeper_moves_on(self):
+        # The submitter can post a look-alike counter; only the bot's own comment counts.
+        comments = [{"id": 99, "user": {"login": "carol"}, "body": "<!-- devstream:undecided 2 -->"}]
+        labels = []
+        g = FakeGitHub(thread(1, comments, labels))
+        for k in (1, 2):
+            self.assertFalse(record_undecided(g, 1, "boom"))
+            self.assertEqual(labels, [])
+            self.assertEqual(len(comments), 2, "one counter comment, edited in place")
+            self.assertIn(f"<!-- devstream:undecided {k} -->", comments[1]["body"])
+        self.assertTrue(record_undecided(g, 1, "boom `x`"))
+        self.assertEqual(labels, ["needs-review"])
+        self.assertEqual(len(comments), 3)
+        self.assertTrue(comments[2]["body"].startswith(comment({}, "error")))
+        self.assertIn("boom 'x'", comments[2]["body"])
+
+        # Parked: the sweeper skips #1, though older, and dispatches #2.
+        s = test_sweep.gh([test_sweep.issue(1, age=timedelta(hours=5), labels=("submission", *labels)),
+                           test_sweep.issue(2, age=timedelta(hours=1))])
+        sweep(s, test_sweep.NOW)
+        self.assertEqual(test_sweep.dispatched(s), ["2"])
 
 
 class CliTest(unittest.TestCase):

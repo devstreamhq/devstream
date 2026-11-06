@@ -1,7 +1,8 @@
 """Decide on a repo submission issue, and apply an accepted one to entries.json.
 
 python -m scripts.submit decide (--event EVENT.json | --issue N) --out result.json
-python -m scripts.submit apply --result result.json
+python -m scripts.submit apply --result result.json   (prints the branch, "done" if this issue is already listed,
+                                                     or nothing when it went down the reject path)
 python -m scripts.submit decide ... --undecided undecided.json   (exits 3 when the run reached no decision)
 python -m scripts.submit undecided --file undecided.json   (counts it, and parks the issue after 3)
 python -m scripts.submit comment --result result.json --kind {accepted,rejected,pr,error}
@@ -205,8 +206,13 @@ def _decide_issue(args) -> int:
     else:
         with open(args.event, encoding="utf-8") as f:
             issue = json.load(f)["issue"]
+    entries = load()
+    # A second dispatch of a submission another run already added: deciding again would reject it.
+    if any(e["issue"] == issue["number"] for e in entries):
+        print(f"issue {issue['number']} is already on the list", file=sys.stderr)
+        return 0
     excluded = {u.strip() for u in os.environ.get("EXCLUDED_USERS", "").split(",") if u.strip()}
-    d = decide(issue, gh, datetime.now(timezone.utc), load(), excluded)
+    d = decide(issue, gh, datetime.now(timezone.utc), entries, excluded)
     out = asdict(d) | {"issue": issue["number"], "author": issue["user"]["login"]}
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(out, f, indent=2, ensure_ascii=False)
@@ -222,6 +228,10 @@ def _apply(args) -> int:
     entries = load(args.entries)
     # main may have moved since decide ran; a duplicate now goes down the reject path.
     dup = find(entries, result["entry"]["repo"])
+    if dup and dup["issue"] == result["issue"]:
+        # Another run of this same issue added it, and that run answers the issue.
+        print("done")
+        return 0
     if dup:
         result.update(ok=False, reasons=[_dup_reason(dup)], entry=None)
         with open(args.result, "w", encoding="utf-8") as f:

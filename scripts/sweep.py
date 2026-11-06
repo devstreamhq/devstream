@@ -123,10 +123,12 @@ def _dispatch_if_stale(gh, wf, now) -> bool:
 
 
 def _list_write_waiting(gh) -> bool:
-    # These share the list-writes group, which holds one waiting run.
+    # These share the list-writes group, which holds one waiting run. A running one counts too:
+    # its issue isn't labelled yet, so a dispatch now would decide it a second time.
     return any(
         gh.get(f"{API}/actions/workflows/{wf}/runs?status={s}")["total_count"] > 0
-        for wf in ("submit.yml", "rot.yml", "on-merge.yml", "reports.yml") for s in ("queued", "pending")
+        for wf in ("submit.yml", "rot.yml", "on-merge.yml", "reports.yml")
+        for s in ("queued", "pending", "in_progress")
     )
 
 
@@ -165,6 +167,8 @@ def sweep(gh, now: datetime, entries=()) -> None:
     todo = []
     # Older than the longest run (merge wait included), so the run that added it has finished.
     listed = {e["issue"]: e for e in entries if now - _parse(e["submitted_at"]) > BRANCH_AGE}
+    # Too recent to finish, but already on the list: submit would skip a dispatch, and set off another sweep.
+    adding = {e["issue"] for e in entries} - listed.keys()
     # Submissions and reports share the one dispatch; every handled report is closed or needs-review.
     for label, workflow, done in (("submission", "submit.yml", {"accepted", "rejected", "needs-review"}),
                                   ("report", "reports.yml", {"needs-review"})):
@@ -177,6 +181,7 @@ def sweep(gh, now: datetime, entries=()) -> None:
                 continue
             if (label not in labels or "pull_request" in issue or labels & done
                     or issue["number"] in busy or now - _parse(issue["created_at"]) <= ISSUE_AGE
+                    or (label == "submission" and issue["number"] in adding)
                     # The bot's own Like-burst reports are for a maintainer, not reports.yml.
                     or (label == "report" and (user.get("login") == BOT or user.get("type") == "Bot"))):
                 continue

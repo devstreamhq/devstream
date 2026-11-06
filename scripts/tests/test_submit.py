@@ -7,6 +7,7 @@ import tempfile
 import time
 import unittest
 import zlib
+from pathlib import Path
 from unittest import mock
 from datetime import datetime, timedelta, timezone
 
@@ -304,6 +305,17 @@ class DecideCliTest(unittest.TestCase):
         self.assertEqual(self.main(g, "--issue", "7"), 0)
         self.assertFalse(self.wrote)
 
+    def test_issue_already_on_the_list_is_skipped(self):
+        listed = [dict(entry(), issue=7)]
+        with mock.patch("scripts.submit.load", lambda: listed):
+            g = gh(extra={"GET /repos/devstreamhq/devstream/issues/7": issue_api()})
+            with tempfile.TemporaryDirectory() as tmp, mock.patch("scripts.submit.GitHub", lambda token: g), \
+                    mock.patch.dict(os.environ, {"GITHUB_TOKEN": "t"}):
+                out = os.path.join(tmp, "result.json")
+                self.assertEqual(main(["decide", "--issue", "7", "--out", out]), 0)
+                self.assertFalse(os.path.exists(out))
+        self.assertEqual([c[1] for c in g.calls], ["/repos/devstreamhq/devstream/issues/7"])
+
 
 API = "/repos/devstreamhq/devstream"
 BOT = "devstreamhq-bot[bot]"
@@ -423,6 +435,28 @@ class CliTest(unittest.TestCase):
                 with open(result) as f:
                     self.assertEqual(json.load(f), {"ok": False, "reasons": [reason], "entry": None,
                                                     "issue": 7, "author": "carol"})
+
+    def test_apply_of_an_issue_already_on_main_is_done_not_rejected(self):
+        # A duplicate dispatch of the same submission: the first run already added it.
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "entries.json")
+            save([dict(entry("Alice/Tool"), issue=7)], path)
+            before = open(path).read()
+            result = os.path.join(tmp, "result.json")
+            accepted = {"ok": True, "reasons": [], "entry": run().entry, "issue": 7, "author": "carol"}
+            write(result, accepted)
+            p = subprocess.run([sys.executable, "-m", "scripts.submit", "apply", "--result", result,
+                                "--entries", path], capture_output=True, text=True)
+            self.assertEqual((p.returncode, p.stdout.strip()), (0, "done"), p.stderr)
+            self.assertEqual(open(path).read(), before)
+            with open(result) as f:
+                self.assertEqual(json.load(f), accepted)
+
+    def test_workflow_skips_the_reject_step_when_apply_is_done(self):
+        text = (Path(__file__).resolve().parents[2] / ".github" / "workflows" / "submit.yml").read_text()
+        apply = text[text.index("\n  apply:\n"):text.index("\n  reject:\n")]
+        step = apply[apply.rindex("- if:", 0, apply.index("--kind rejected")):]
+        self.assertIn("steps.apply.outputs.done != 'true'", step[:step.index("run:")])
 
     def test_apply_appends_and_validates(self):
         with tempfile.TemporaryDirectory() as tmp:

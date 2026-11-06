@@ -132,14 +132,14 @@ jobs:
           print(f"repo={repo}")
           print(f"issue={issue}")
           PY
-      # Prints the branch name, or nothing when fresh main already has the repo
-      # (result.json is then rewritten as a rejection).
+      # Prints the branch name, "done" when another run of this issue already added it,
+      # or nothing when fresh main already has the repo (result.json is then rewritten as a rejection).
       - id: apply
         env:
           RESULT: ${{ runner.temp }}/result/result.json
         run: |
-          branch=$(python -m scripts.submit apply --result "$RESULT")
-          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          out=$(python -m scripts.submit apply --result "$RESULT")
+          if [ "$out" = done ]; then echo "done=true"; else echo "branch=$out"; fi >> "$GITHUB_OUTPUT"
       - id: pr
         if: steps.apply.outputs.branch != ''
         env:
@@ -224,7 +224,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.discussions_token.outputs.token }}
         run: python -m scripts.on_merge
-      - if: steps.apply.outputs.branch == ''
+      - if: steps.apply.outputs.branch == '' && steps.apply.outputs.done != 'true'
         env:
           GH_TOKEN: ${{ steps.late_issues_token.outputs.token || steps.issues_token.outputs.token }}
           RESULT: ${{ runner.temp }}/result/result.json

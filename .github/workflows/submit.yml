@@ -194,15 +194,19 @@ jobs:
           client-id: ${{ vars.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           permission-issues: write
+      # The entry is live now, so a failure here must not park it as needs-review: it retries, and
+      # the sweeper finishes the comment, label and close if the issue is still open after that.
       - if: steps.apply.outputs.branch != ''
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ steps.late_issues_token.outputs.token || steps.issues_token.outputs.token }}
           RESULT: ${{ runner.temp }}/result/result.json
           ISSUE: ${{ steps.meta.outputs.issue }}
         run: |
           python -m scripts.submit comment --result "$RESULT" --kind accepted > "$RUNNER_TEMP/comment.md"
-          gh issue comment "$ISSUE" --body-file "$RUNNER_TEMP/comment.md"
-          gh issue edit "$ISSUE" --add-label accepted
+          retry() { for i in 1 2 3; do "$@" && return; [ "$i" = 3 ] || sleep $((i * 10)); done; return 1; }
+          retry gh issue comment "$ISSUE" --body-file "$RUNNER_TEMP/comment.md"
+          retry gh issue edit "$ISSUE" --add-label accepted
       # The new entry's Like thread, made while this run still holds list-writes so a burst of
       # submissions can't starve it. A failure is left to the hourly on-merge run, not parked.
       - id: discussions_token

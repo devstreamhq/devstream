@@ -69,6 +69,10 @@ def gh(issues=(), refs=(), routes=None):
     return FakeGitHub(r)
 
 
+def listed(n, age=timedelta(hours=1)):
+    return {"repo": "o/r", "issue": n, "submitted_at": iso(NOW - age)}
+
+
 def commit(sha, age):
     return {f"GET {API}/commits/{sha}": {"commit": {"committer": {"date": iso(NOW - age)}}}}
 
@@ -94,6 +98,37 @@ def deleted(g):
 
 
 class SweepTest(unittest.TestCase):
+    def test_listed_submission_is_finished_not_redispatched(self):
+        # 9's branch is merged and won't delete; 8 already got its label; 7 merged too recently to touch.
+        def boom(b):
+            raise GitHubError(422, "nope")
+        g = gh([issue(9, age=timedelta(hours=2)), issue(8, labels=("submission", "accepted")),
+                issue(7, age=timedelta(hours=3))],
+               refs=[ref(9)], routes={**commit("sha9", timedelta(hours=2)),
+                                      f"DELETE {API}/git/refs/heads/submit/9": boom,
+                                      f"POST {API}/issues/9/comments": {}, f"POST {API}/issues/9/labels": {},
+                                      f"PATCH {API}/issues/9": {}, f"PATCH {API}/issues/8": {}})
+        sweep(g, NOW, [listed(9), listed(8), listed(7, age=timedelta(minutes=20))])
+        writes = [(m, p) for m, p, _ in g.calls if m in ("POST", "PATCH")]
+        self.assertEqual(writes, [
+            ("POST", f"{API}/issues/9/comments"), ("POST", f"{API}/issues/9/labels"),
+            ("PATCH", f"{API}/issues/9"),
+            ("PATCH", f"{API}/issues/8"),
+            ("POST", f"{API}/actions/workflows/submit.yml/dispatches"),
+        ])
+        body = {p: b for m, p, b in g.calls}
+        self.assertIn("`o/r` is on the list", body[f"{API}/issues/9/comments"]["body"])
+        self.assertEqual(body[f"{API}/issues/9"], {"state": "closed", "state_reason": "completed"})
+        self.assertEqual(dispatched(g), ["7"])
+
+    def test_failed_close_is_logged_and_the_sweep_goes_on(self):
+        def boom(b):
+            raise GitHubError(500, "boom")
+        g = gh([issue(9, labels=("submission", "accepted")), issue(5, age=timedelta(hours=3))],
+               routes={f"PATCH {API}/issues/9": boom})
+        sweep(g, NOW, [listed(9)])
+        self.assertEqual(dispatched(g), ["5"])
+
     def test_skips_handled_young_and_pr_issues(self):
         g = gh([
             issue(2, labels=("submission", "accepted")),

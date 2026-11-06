@@ -8,7 +8,9 @@ import os
 import re
 from datetime import datetime, timedelta, timezone
 
+from scripts.devstream.entries import load
 from scripts.devstream.gh import GitHub, GitHubError
+from scripts.submit import comment
 
 OWNER = "devstreamhq"
 API = f"/repos/{OWNER}/devstream"
@@ -113,7 +115,22 @@ def _list_write_waiting(gh) -> bool:
     )
 
 
-def sweep(gh, now: datetime) -> None:
+def _finish_listed(gh, issue, entry) -> None:
+    """The issue's entry is on the list, so its run merged; post what a failed follow-up step didn't, and close it."""
+    n = issue["number"]
+    try:
+        if "accepted" not in {lb["name"] for lb in issue["labels"]}:
+            gh.post(f"{API}/issues/{n}/comments", {"body": comment({"entry": entry}, "accepted")})
+            gh.post(f"{API}/issues/{n}/labels", {"labels": ["accepted"]})
+        gh.patch(f"{API}/issues/{n}", {"state": "closed", "state_reason": "completed"})
+    except GitHubError as e:
+        # Tried again next sweep; one bad issue mustn't stop the dispatches.
+        print(f"could not close #{n}: {e}")
+        return
+    print(f"closed #{n}: already on the list")
+
+
+def sweep(gh, now: datetime, entries=()) -> None:
     # Branches first, so an issue freed by a deleted branch can be dispatched this run.
     busy = _sweep_branches(gh, now)
     _sweep_rot_branches(gh, now)
@@ -128,12 +145,18 @@ def sweep(gh, now: datetime) -> None:
         print("dispatched rot.yml")
         return
     todo = []
+    # Older than the longest run (merge wait included), so the run that added it has finished.
+    listed = {e["issue"]: e for e in entries if now - _parse(e["submitted_at"]) > BRANCH_AGE}
     # Submissions and reports share the one dispatch; every handled report is closed or needs-review.
     for label, workflow, done in (("submission", "submit.yml", {"accepted", "rejected", "needs-review"}),
                                   ("report", "reports.yml", {"needs-review"})):
         for issue in gh.paginate(f"{API}/issues?state=open&labels={label}&per_page=100"):
             labels = {lb["name"] for lb in issue["labels"]}
             user = issue.get("user") or {}
+            # Before the busy check: a merged branch that won't delete must not keep its issue open.
+            if label == "submission" and label in labels and issue["number"] in listed and "pull_request" not in issue:
+                _finish_listed(gh, issue, listed[issue["number"]])
+                continue
             if (label not in labels or "pull_request" in issue or labels & done
                     or issue["number"] in busy or now - _parse(issue["created_at"]) <= ISSUE_AGE
                     # The bot's own Like-burst reports are for a maintainer, not reports.yml.
@@ -149,4 +172,4 @@ def sweep(gh, now: datetime) -> None:
 
 
 if __name__ == "__main__":
-    sweep(GitHub(os.environ["GITHUB_TOKEN"]), datetime.now(timezone.utc))
+    sweep(GitHub(os.environ["GITHUB_TOKEN"]), datetime.now(timezone.utc), load())

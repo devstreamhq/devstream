@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 with atheris.instrument_imports(include=["scripts"]):
     from scripts.devstream import license_detect
-    from scripts.devstream.description import FORBIDDEN, IGNORABLE, MAX_LEN, MIN_LEN, VARIATION, clean_description
+    from scripts.devstream.description import EMOJI_ZWJ, FORBIDDEN, IGNORABLE, MAX_LEN, MIN_LEN, VARIATION, clean_description
 
 
 # Invisible characters people use to slip a blocked word past the filter.
@@ -39,7 +39,8 @@ def TestOneInput(data: bytes) -> None:
     if final is not None:
         assert MIN_LEN <= len(final) <= MAX_LEN, final
         assert not FORBIDDEN & set(final), final
-        assert not IGNORABLE.search(final) and not VARIATION.search(final), final
+        # The one invisible character kept is a joiner between two emoji, which builds a single emoji.
+        assert not IGNORABLE.search(EMOJI_ZWJ.sub("", final)) and not VARIATION.search(final), final
         assert clean_description(final) == (final, None), final
     license_detect._spdx_scan("SPDX-License-Identifier: " + text)
     license_detect._readme_license("## License\n\n" + text)

@@ -105,5 +105,23 @@ test("top10.svg and badge.json are built", () => {
   assert.ok(
     svg.startsWith("<svg") && !/<script/i.test(svg) && svg.length < 30 * 1024,
   );
-  assert.equal(JSON.parse(read("badge.json")).message, "6 repos");
+  assert.equal(JSON.parse(read("badge.json")).message, "7 repos");
+});
+
+test("hostile stats are neutralised in the HTML and the SVG", () => {
+  for (const p of ["index.html", "category/security/index.html", "top10.svg"]) {
+    const s = read(p);
+    if (p !== "top10.svg") assert.ok(s.includes("hostile-stats"), p);
+    for (const bad of [
+      "javascript:",
+      "onload=x",
+      "9<x>",
+      "<script>",
+      "evil.example.com",
+      "12<x>",
+      "1e3<x>",
+    ]) {
+      assert.ok(!s.includes(bad), `${p}: ${bad}`);
+    }
+  }
 });

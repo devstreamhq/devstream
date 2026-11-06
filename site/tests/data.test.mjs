@@ -53,6 +53,7 @@ test("sort by likes then stars then name", () => {
     "quiet-co/tiny-queue",
     "Pixel-Forge/shader-kit",
     "burst/likes-spike",
+    "evil/hostile-stats",
     "fresh/no-stats-yet",
   ]);
 });
@@ -81,7 +82,9 @@ test("new sorts by submission time, newest first", () => {
 });
 
 test("stats are merged by lowercased repo key", () => {
-  const e = all().entries.find((x) => x.repo === "Pixel-Forge/shader-kit");
+  const e = liveList(all().entries).find(
+    (x) => x.repo === "Pixel-Forge/shader-kit",
+  );
   assert.equal(e.likes, 90);
   assert.equal(e.stars, 800);
   assert.equal(e.rank, 4);
@@ -92,11 +95,10 @@ test("stats are merged by lowercased repo key", () => {
   );
 });
 
-test("an entry with no stats gets zero likes, no rank and no meta", () => {
+test("an entry with no stats gets zero likes and no meta", () => {
   const e = all().entries.find((x) => x.repo === "fresh/no-stats-yet");
   assert.equal(e.likes, 0);
   assert.equal(e.delta_7d, 0);
-  assert.equal(e.rank, null);
   assert.equal(e.stars, null);
   assert.equal(e.language, null);
   assert.equal(e.avatar_url, null);
@@ -108,7 +110,7 @@ test("missing stats files are treated as empty", () => {
     dataDir: fixtures,
     statsDir: `${fixtures}/does-not-exist`,
   });
-  assert.equal(liveList(entries).length, 6);
+  assert.equal(liveList(entries).length, 7);
   assert.ok(entries.every((e) => e.likes === 0 && e.rank === null));
 });
 
@@ -118,4 +120,46 @@ test("languages come from meta, deduplicated and sorted", () => {
     "Rust",
     "TypeScript",
   ]);
+});
+
+test("displayed rank is the Top position, so a hidden entry leaves no gap", () => {
+  const live = liveList(all().entries);
+  assert.deepEqual(
+    live.map((e) => e.rank),
+    live.map((_, i) => i + 1),
+  );
+  assert.equal(live.find((e) => e.repo === "zz-tie/same-likes").rank, 2);
+});
+
+test("hostile stats values are dropped, not passed through", () => {
+  const e = all().entries.find((x) => x.repo === "evil/hostile-stats");
+  assert.equal(e.likes, 0);
+  assert.equal(e.delta_7d, 0);
+  assert.equal(e.rank_delta_7d, 0);
+  assert.equal(e.flagged, false);
+  assert.equal(e.stars, null);
+  assert.equal(e.avatar_url, null);
+  assert.equal(e.language_color, null);
+  assert.equal(e.pushed_at, null);
+  assert.equal(e.discussion_url, null);
+});
+
+test("avatars must be https on avatars.githubusercontent.com", () => {
+  const { entries } = all();
+  assert.equal(
+    entries.find((x) => x.repo === "burst/likes-spike").avatar_url,
+    null,
+  );
+  assert.equal(
+    entries.find((x) => x.repo === "acme/fast-cli").avatar_url,
+    "https://avatars.githubusercontent.com/u/1?v=4",
+  );
+});
+
+test("a Discussion link needs a positive integer", () => {
+  const { entries } = all();
+  assert.equal(
+    entries.find((x) => x.repo === "zz-tie/same-likes").discussion_url,
+    null,
+  );
 });

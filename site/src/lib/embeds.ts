@@ -1,4 +1,4 @@
-import type { SiteEntry } from "./data.ts";
+import { isFlagged, type SiteEntry } from "./data.ts";
 
 // The light-theme accent ink: white badge text on it clears 5.8:1.
 export const BRAND_HEX = "#c4155f";
@@ -12,15 +12,16 @@ const W = 720;
 const ROW = 44;
 const TOP = 76;
 
-const esc = (s: string) =>
-  s
+const esc = (v: unknown) =>
+  String(v)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 const clip = (s: string, n: number) =>
   s.length > n ? s.slice(0, n - 1) + "…" : s;
-const num = (n: number) => n.toLocaleString("en-US");
+const num = (n: unknown) =>
+  typeof n === "number" ? n.toLocaleString("en-US") : String(n);
 
 const MARK =
   `<path d="M8.5 5.5H25.5L23.5 10.5H6.5Z" fill="url(#g)" stroke="url(#g)" stroke-width="1.2" stroke-linejoin="round"/>` +
@@ -29,9 +30,10 @@ const MARK =
 const THUMB = `<path d="M2 7h2.5v7H2zM6 14V7l3-5c1.1 0 1.9.9 1.7 2L10.3 6H14c.8 0 1.4.8 1.2 1.6l-1.3 5.2c-.2.7-.8 1.2-1.5 1.2Z"/>`;
 
 export function top10Svg(live: SiteEntry[]): string {
-  const rows = live.slice(0, 10);
+  // Same rule as Trending: a flagged entry doesn't get promoted off-site.
+  const rows = live.filter((e) => !isFlagged(e)).slice(0, 10);
   const h = TOP + (rows.length ? rows.length * ROW : 64) + 20;
-  const max = Math.max(1, ...rows.map((e) => e.likes));
+  const max = Math.max(1, ...rows.map((e) => +e.likes || 0));
   const body = rows.length
     ? rows
         .map((e, i) => {
@@ -43,17 +45,17 @@ export function top10Svg(live: SiteEntry[]): string {
               ]
             : ["", e.repo];
           const first = i === 0;
-          const bar = Math.max(4, Math.round((e.likes / max) * 500));
+          const bar = Math.max(4, Math.round(((+e.likes || 0) / max) * 500));
           return (
-            `<g transform="translate(0 ${y})">` +
+            `<g transform="translate(0 ${esc(y)})">` +
             (first
               ? `<rect x="16" y="0" width="${W - 32}" height="${ROW - 6}" rx="8" fill="#151b23" stroke="url(#g)"/>`
               : "") +
-            `<text x="48" y="24" font-size="15" font-weight="600" fill="${first ? ACC : MUTED}" text-anchor="end">${e.rank ?? i + 1}</text>` +
+            `<text x="48" y="24" font-size="15" font-weight="600" fill="${first ? ACC : MUTED}" text-anchor="end">${esc(e.rank ?? i + 1)}</text>` +
             `<text x="64" y="24" font-size="15" font-weight="600"><tspan fill="${MUTED}" font-weight="400">${esc(clip(owner, 24))}</tspan>${esc(clip(name, 40))}</text>` +
-            `<rect x="64" y="31" width="${bar}" height="2" rx="1" fill="${first ? "url(#g)" : "#3d444d"}"/>` +
+            `<rect x="64" y="31" width="${esc(bar)}" height="2" rx="1" fill="${first ? "url(#g)" : "#3d444d"}"/>` +
             `<g transform="translate(${W - 132} 13)" fill="${first ? ACC : MUTED}">${THUMB}</g>` +
-            `<text x="${W - 32}" y="24" font-size="14" font-weight="600" fill="${first ? ACC : FG}" text-anchor="end">${num(e.likes)}</text>` +
+            `<text x="${W - 32}" y="24" font-size="14" font-weight="600" fill="${first ? ACC : FG}" text-anchor="end">${esc(num(e.likes))}</text>` +
             `</g>`
           );
         })

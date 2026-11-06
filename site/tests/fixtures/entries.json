@@ -108,6 +108,18 @@
       "warned_at": null,
       "superseded_by": null,
       "added_by_seed": false
+    },
+    {
+      "repo": "evil/hostile-stats",
+      "category": "security",
+      "description": "Its stats file was tampered with, so every field is junk.",
+      "submitted_by": "mal",
+      "submitted_at": "2026-10-09T10:00:00Z",
+      "issue": 10,
+      "status": "live",
+      "warned_at": null,
+      "superseded_by": null,
+      "added_by_seed": false
     }
   ]
 }

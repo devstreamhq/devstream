@@ -32,6 +32,13 @@
     "language": null,
     "language_color": null,
     "pushed_at": "2026-10-20T10:00:00Z",
-    "avatar_url": "https://avatars.githubusercontent.com/u/5?v=4"
+    "avatar_url": "https://evil.example.com/a.png"
+  },
+  "evil/hostile-stats": {
+    "stars": "1e3<x>",
+    "language": "Go",
+    "language_color": "red\" onload=x",
+    "pushed_at": "<script>",
+    "avatar_url": "javascript:alert(1)"
   }
 }

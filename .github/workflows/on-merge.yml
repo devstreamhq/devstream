@@ -45,10 +45,3 @@ jobs:
       - run: python -m scripts.on_merge
         env:
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}
-
-  deploy:
-    needs: discussions
-    permissions:
-      contents: read
-    uses: ./.github/workflows/deploy.yml
-    secrets: inherit

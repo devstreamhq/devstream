@@ -60,6 +60,23 @@ function readJson<T>(path: string, fallback: T): T {
   }
 }
 
+// The stats branch is bot-written but still input: anything off-shape falls back to "no data".
+const COLOR = /^#[0-9a-f]{3,8}$/i;
+const finite = (v: unknown) =>
+  typeof v === "number" && Number.isFinite(v) ? v : null;
+const date = (v: unknown) =>
+  typeof v === "string" && !Number.isNaN(Date.parse(v)) ? v : null;
+function avatar(v: unknown) {
+  try {
+    const u = new URL(String(v));
+    return u.protocol === "https:" && u.host === "avatars.githubusercontent.com"
+      ? u.href
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 export function loadAll(opts: { dataDir?: string; statsDir?: string } = {}) {
   const dataDir = resolve(opts.dataDir ?? process.env.DATA_DIR ?? "../data");
   const statsDir = resolve(
@@ -72,7 +89,7 @@ export function loadAll(opts: { dataDir?: string; statsDir?: string } = {}) {
   const categories = readJson<Category[]>(join(dataDir, "categories.json"), []);
   const likes = readJson<Record<string, any>>(join(statsDir, "likes.json"), {});
   const meta = readJson<Record<string, any>>(join(statsDir, "meta.json"), {});
-  const discussions = readJson<Record<string, number>>(
+  const discussions = readJson<Record<string, unknown>>(
     join(statsDir, "discussions.json"),
     {},
   );
@@ -83,19 +100,21 @@ export function loadAll(opts: { dataDir?: string; statsDir?: string } = {}) {
       const k = normalizeRepo(e.repo);
       const l = likes[k] ?? {};
       const m = meta[k] ?? {};
+      const n = discussions[k];
       return {
         ...e,
-        likes: l.likes ?? 0,
-        delta_7d: l.delta_7d ?? 0,
-        rank: l.rank ?? null,
-        rank_delta_7d: l.rank_delta_7d ?? 0,
+        likes: finite(l.likes) ?? 0,
+        delta_7d: finite(l.delta_7d) ?? 0,
+        // Set by liveList from the Top order; the stats rank can be stale or count hidden entries.
+        rank: null,
+        rank_delta_7d: finite(l.rank_delta_7d) ?? 0,
         flagged: l.flagged === true,
-        stars: m.stars ?? null,
-        language: m.language ?? null,
-        language_color: m.language_color ?? null,
-        pushed_at: m.pushed_at ?? null,
-        avatar_url: m.avatar_url ?? null,
-        discussion_url: discussions[k] ? DISCUSSIONS + discussions[k] : null,
+        stars: finite(m.stars),
+        language: typeof m.language === "string" ? m.language : null,
+        language_color: COLOR.test(m.language_color) ? m.language_color : null,
+        pushed_at: date(m.pushed_at),
+        avatar_url: avatar(m.avatar_url),
+        discussion_url: Number.isInteger(n) && n > 0 ? DISCUSSIONS + n : null,
       };
     });
   return { entries: merged, categories };
@@ -117,7 +136,10 @@ const byTop = (a: SiteEntry, b: SiteEntry) =>
       : 0);
 
 export const liveList = (all: SiteEntry[]) =>
-  all.filter((e) => LIVE.has(e.status)).sort(byTop);
+  all
+    .filter((e) => LIVE.has(e.status))
+    .sort(byTop)
+    .map((e, i) => ({ ...e, rank: i + 1 }));
 
 export const trending = (all: SiteEntry[]) =>
   liveList(all)

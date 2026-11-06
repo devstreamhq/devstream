@@ -54,9 +54,21 @@ test("badge.json has the shields.io endpoint shape", () => {
   assert.deepEqual(badge(live), {
     schemaVersion: 1,
     label: "listed",
-    message: "6 repos",
+    message: "7 repos",
     color: BRAND_HEX,
   });
   assert.equal(badge(live.slice(0, 1)).message, "1 repo");
   assert.match(BRAND_HEX, /^#[0-9a-f]{6}$/i);
+});
+
+test("top10.svg leaves out flagged entries, as Trending does", () => {
+  const svg = top10Svg(live);
+  assert.ok(!svg.includes("tiny-queue"), "flagged by status");
+  assert.ok(!svg.includes("likes-spike"), "flagged by likes.json");
+  assert.ok(svg.includes("fast-cli"));
+});
+
+test("top10.svg escapes every interpolated value, numbers included", () => {
+  const svg = top10Svg([{ ...live[0], rank: "<script>", likes: "9<x>" }]);
+  assert.ok(!svg.includes("<script") && !svg.includes("<x>"));
 });

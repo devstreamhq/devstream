@@ -1,14 +1,12 @@
 # Contributing to DevStream
 
-Thanks for helping. There are three ways in, and each one has its own door.
-
 ## Submit a repo
 
 Use the [Submit a repo](https://github.com/devstreamhq/devstream/issues/new?template=submit-repo.yml) form. Please don't open a pull request that edits `data/entries.json`: the bot owns that file, and it only adds entries that come through the form.
 
 When you submit, the bot checks two things.
 
-Your account has to be more than 30 days old and show real activity. You can submit up to 3 repos a week.
+Your account has to be at least 30 days old, with some public activity. You can submit up to 3 repos a week.
 
 The repo has to:
 
@@ -20,7 +18,7 @@ If it passes, the bot opens a PR and the repo lands on its own. If it doesn't, t
 
 ## Report an entry
 
-Found spam, malware, a dead repo or something in the wrong category? Use the [Report an entry](https://github.com/devstreamhq/devstream/issues/new?template=report-entry.yml) form. A maintainer reads every report.
+Found spam, malware, a dead repo or something in the wrong category? Use the [Report an entry](https://github.com/devstreamhq/devstream/issues/new?template=report-entry.yml) form. Every report goes into the review queue.
 
 ## Contribute code
 

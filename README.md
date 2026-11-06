@@ -14,7 +14,7 @@
   <!-- OpenSSF badges (Scorecard, Best Practices) go here in Task 16. -->
 </p>
 
-Awesome lists rot. That link someone merged in 2019 is still sitting there, long after the repo's last commit, and the star count beside it only tells you who got excited once. DevStream checks every repo before it lands, checks it again every week, and ranks it by Likes from real developers, one per account.
+Awesome lists rot. That link someone merged in 2019 is still sitting there, long after the repo's last commit, and the star count beside it only tells you who got excited once. DevStream checks a repo before it lands and again every week. Then it ranks what survives by Likes, one per account.
 
 <h3 align="center">
   <a href="https://github.com/devstreamhq/devstream/issues/new?template=submit-repo.yml">Submit a repo</a>
@@ -46,9 +46,9 @@ Want what's climbing instead? The site has Trending and New too.
 
 ## How it works
 
-1. **You submit, a bot checks.** It wants 30 days of history, a push in the last 90, an OSI license, a real README and [a few more things](CONTRIBUTING.md#submit-a-repo). Pass, and a bot PR adds it. Nobody has to wake up and approve it.
-2. **You Like what you use.** A 👍 on the entry's Discussion counts once per account. Trust filters and burst detection keep the sock puppets out.
-3. **Dead repos leave.** A weekly health check warns the owner first, then archives or removes what's gone quiet.
+1. You submit, and a bot checks. It wants 30 days of history, a push in the last 90, an OSI license, a real README and [a few more things](CONTRIBUTING.md#submit-a-repo). Pass, and a bot PR adds it. Nobody has to wake up and approve it.
+2. You Like what you use. A 👍 on the entry's Discussion counts once per account, and trust filters and burst detection make sock puppets a waste of effort.
+3. Dead repos leave. A weekly health check warns the owner first, then archives or removes what's gone quiet.
 
 ## Get involved
 

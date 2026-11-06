@@ -163,3 +163,40 @@ test("a Discussion link needs a positive integer", () => {
     null,
   );
 });
+
+const mk = (repo, o) => ({
+  repo,
+  status: "live",
+  flagged: false,
+  added_by_seed: false,
+  submitted_at: "2026-09-01T00:00:00Z",
+  likes: 1,
+  stars: 0,
+  delta_7d: 0,
+  ...o,
+});
+const NOW = Date.parse("2026-11-05T12:00:00Z");
+
+test("trending needs delta >= 5 and age or seed, and no flag", () => {
+  const list = [
+    mk("new/community", { delta_7d: 20, submitted_at: "2026-11-03T00:00:00Z" }),
+    mk("new/seed", {
+      delta_7d: 6,
+      submitted_at: "2026-11-03T00:00:00Z",
+      added_by_seed: true,
+    }),
+    mk("old/four", { delta_7d: 4 }),
+    mk("old/five", { delta_7d: 5 }),
+    mk("old/flagged", { delta_7d: 50, flagged: true }),
+  ];
+  assert.deepEqual(names(trending(list, NOW)), ["new/seed", "old/five"]);
+  assert.equal(liveList(list).length, 5, "still listed and ranked");
+});
+
+test("trending age: exactly 7 days old qualifies", () => {
+  const e = mk("edge/seven", {
+    delta_7d: 9,
+    submitted_at: "2026-10-29T12:00:00Z",
+  });
+  assert.deepEqual(names(trending([e], NOW)), ["edge/seven"]);
+});

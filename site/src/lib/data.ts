@@ -141,9 +141,19 @@ export const liveList = (all: SiteEntry[]) =>
     .sort(byTop)
     .map((e, i) => ({ ...e, rank: i + 1 }));
 
-export const trending = (all: SiteEntry[]) =>
+// Trending needs a real climb, and a listing old enough (or curated) that a fresh account can't launch itself onto it.
+export const TRENDING_MIN_DELTA = 5;
+const TRENDING_MIN_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+export const trending = (all: SiteEntry[], now = Date.now()) =>
   liveList(all)
-    .filter((e) => !isFlagged(e) && e.delta_7d > 0)
+    .filter(
+      (e) =>
+        !isFlagged(e) &&
+        e.delta_7d >= TRENDING_MIN_DELTA &&
+        (e.added_by_seed ||
+          now - Date.parse(e.submitted_at) >= TRENDING_MIN_AGE_MS),
+    )
     .sort((a, b) => b.delta_7d - a.delta_7d);
 
 export const newest = (all: SiteEntry[]) =>

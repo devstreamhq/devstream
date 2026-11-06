@@ -63,6 +63,9 @@ class World:
         for path, data in self.stats.items():
             routes[f"GET {API}/contents/{path}"] = {
                 "content": base64.b64encode(json.dumps(data).encode()).decode(), "sha": f"sha-{path}"}
+        snaps = sorted(p for p in self.stats if p.startswith("snapshots/"))
+        if snaps:
+            routes[f"GET {API}/contents/snapshots"] = [{"name": p.split("/")[1], "type": "file"} for p in snaps]
         days = [f"snapshots/{NOW + timedelta(days=d):%Y-%m-%d}.json" for d in range(12)]
         for path in ("meta.json", "likes.json", "flags.json", "trust-cache.json", *days):
             routes[f"PUT {API}/contents/{path}"] = {}
@@ -513,7 +516,20 @@ class Burst(unittest.TestCase):
         self.assertEqual(sorted(issue["labels"]), ["needs-review", "report"])
         self.assertNotIn("zqx", issue["body"])
         self.assertNotIn("@", issue["body"])
-        self.assertIn("12", issue["body"])
+        for word in ("24", "hour", "7 day", "90", "days old"):
+            self.assertNotIn(word, issue["body"])
+
+    def test_issue_bodies_have_no_windows(self):
+        w = World([entry("o/a")], {"o/a": burst_nodes(10, 10)})
+        w.run()
+        [burst] = w.issues_opened()
+        self.assertIn("jumped quickly", burst["body"])
+        repos = [f"o/r{i}" for i in range(7)]
+        w2 = World([entry(r) for r in repos], {r: burst_nodes(10, 10, prefix=f"p{i}") for i, r in enumerate(repos)})
+        w2.run()
+        for issue in w2.issues_opened():
+            for word in ("24", "hour", "7 day", "90", "days old"):
+                self.assertNotIn(word, issue["body"])
 
     def test_burst_report_deduped(self):
         w = World([entry("o/a")], {"o/a": burst_nodes(10, 10)}, stats=self.flags(), issues=[{"number": 7}])
@@ -559,6 +575,62 @@ class Snapshots(unittest.TestCase):
         self.assertEqual((likes["o/a"]["delta_7d"], likes["o/a"]["rank_delta_7d"]), (2, 1))
         self.assertEqual((likes["o/b"]["delta_7d"], likes["o/b"]["rank_delta_7d"]), (-3, -1))
         self.assertEqual((likes["o/c"]["delta_7d"], likes["o/c"]["rank_delta_7d"]), (0, 0))
+
+    def snap(self, days_ago, data):
+        return {f"snapshots/{NOW - timedelta(days=days_ago):%Y-%m-%d}.json": data}
+
+    def likes_for(self, stats):
+        w = World([entry("o/a"), entry("o/new")],
+                  {"o/a": [node("x"), node("y"), node("z")], "o/new": [node("x"), node("y")]}, stats=stats)
+        w.run()
+        return w.written("likes.json")
+
+    def test_oldest_snapshot_used_when_no_7_day(self):
+        stats = {**self.snap(3, {"o/a": {"likes": 2, "rank": 2}}), **self.snap(1, {"o/a": {"likes": 3, "rank": 1}})}
+        a = self.likes_for(stats)["o/a"]
+        self.assertEqual((a["delta_7d"], a["rank_delta_7d"]), (1, 1))
+
+    def test_baseline_never_older_than_7_days(self):
+        stats = {**self.snap(10, {"o/a": {"likes": 0, "rank": 1}}), **self.snap(4, {"o/a": {"likes": 2, "rank": 3}})}
+        a = self.likes_for(stats)["o/a"]
+        self.assertEqual((a["delta_7d"], a["rank_delta_7d"]), (1, 2))
+
+    def test_impossible_and_non_ascii_dates_skipped(self):
+        stats = {**self.snap(3, {"o/a": {"likes": 2, "rank": 1}}),
+                 "snapshots/2026-10-35.json": {"o/a": {"likes": 0, "rank": 1}},
+                 "snapshots/2026-10-٣٠.json": {"o/a": {"likes": 0, "rank": 1}},
+                 "snapshots/2026-10-31.json.bak": {"o/a": {"likes": 0, "rank": 1}}}
+        self.assertEqual(self.likes_for(stats)["o/a"]["delta_7d"], 1)
+
+    def test_unreadable_baseline_raises_without_writes(self):
+        w = World([entry("o/a")], {"o/a": [node("x")]}, stats=self.snap(3, {}))
+        del w.routes[f"GET {API}/contents/snapshots/{NOW - timedelta(days=3):%Y-%m-%d}.json"]
+        with self.assertRaises(GitHubError):
+            w.run()
+        self.assertEqual(w.puts(), [])
+
+    def test_empty_baseline_file_counts_from_zero(self):
+        got = self.likes_for(self.snap(3, {}))
+        self.assertEqual(got["o/a"]["delta_7d"], 3)
+
+    def test_only_today_snapshot_gives_zero(self):
+        got = self.likes_for(self.snap(0, {"o/a": {"likes": 0, "rank": 1}}))
+        self.assertEqual((got["o/a"]["delta_7d"], got["o/a"]["rank_delta_7d"]), (0, 0))
+
+    def test_new_entry_delta_is_its_likes(self):
+        got = self.likes_for(self.snap(3, {"o/a": {"likes": 1, "rank": 1}}))
+        self.assertEqual((got["o/new"]["delta_7d"], got["o/new"]["rank_delta_7d"]), (2, 0))
+
+    def test_exact_7_day_snapshot_preferred(self):
+        stats = {**self.snap(7, {"o/a": {"likes": 2, "rank": 1}}), **self.snap(3, {"o/a": {"likes": 3, "rank": 1}})}
+        self.assertEqual(self.likes_for(stats)["o/a"]["delta_7d"], 1)
+
+    def test_listing_error_raises_without_writes(self):
+        w = World([entry("o/a")], {"o/a": [node("x")]})
+        w.routes[f"GET {API}/contents/snapshots"] = Status(500)
+        with self.assertRaises(GitHubError):
+            w.run()
+        self.assertEqual(w.puts(), [])
 
     def test_missing_snapshot_delta_zero(self):
         w = World([entry("o/a")], {"o/a": [node("x"), node("y")]})

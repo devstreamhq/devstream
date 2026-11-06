@@ -7,6 +7,7 @@ import copy
 import json
 import logging
 import os
+import re
 import tempfile
 from datetime import datetime, timedelta, timezone
 
@@ -14,16 +15,14 @@ from scripts.devstream import entries as entries_mod
 from scripts.devstream.entries import normalize_repo
 from scripts.devstream.gh import GitHub, GitHubError
 from scripts.devstream.likes import (
-    YOUNG_DAYS,
     count_likes,
     detect_burst,
     detect_drip,
     fetch_meta,
     fetch_reactors,
     rank_entries,
-    young_count,
 )
-from scripts.devstream.stats import API, ensure_branch, read_json, write_json
+from scripts.devstream.stats import API, ensure_branch, list_dir, read_json, write_json
 from scripts.devstream.trust import TrustCache, ensure_block_access
 
 # Flagged entries stay listed and ranked; only Trending hides them.
@@ -91,35 +90,49 @@ def _record(kind: str, issue: int, now: datetime, aggregate: bool = False) -> di
     return rec
 
 
-def _body(kind: str, repo: str, total: int, young: int) -> str:
-    # Fixed text and counts only: naming reactors would ping them.
+def _body(kind: str, repo: str) -> str:
+    # Fixed text only: naming reactors would ping them, and numbers or windows would show how to tune around the checks.
     if kind == "burst":
         return (
-            f"{repo} picked up {total} Likes in the last 24 hours, and {young} of them came from "
-            f"accounts under {YOUNG_DAYS} days old. That's what sock-puppet voting usually looks like, "
-            "so we've flagged the entry and opened this for a maintainer to check.\n\n"
-            "The flag stays on while this issue is open, so close it once you've checked. "
-            "The entry stays listed either way."
+            "Likes on this entry jumped quickly, and an unusual share came from newer accounts. "
+            "It's held out of Trending until a maintainer closes this issue."
         )
     return (
-        f"{repo} picked up {total} Likes over the last 7 days, and {young} of them came from "
-        f"accounts under {YOUNG_DAYS} days old. That's slower than a burst, but it's the same "
-        "pattern spread thin, so it's worth a maintainer's look.\n\n"
-        "Nothing is flagged for this one. Close the issue once it's been checked."
+        "A steady stream of Likes on this entry came mostly from newer accounts. "
+        "Nothing is hidden; this is for a maintainer to look at."
     )
 
 
 def _aggregate(listed: list[tuple[str, str]]) -> dict:
     n = len(listed)
-    lines = "\n".join(f"- {key} ({kind})" for key, kind in sorted(listed))
+    lines = "\n".join(f"- {key}" for key, _ in sorted(listed))
     return {
         "title": f"Like burst: {n} {'entry' if n == 1 else 'entries'}",
-        "body": (
-            "More entries showed a suspicious Like pattern than we open separate issues for, "
-            f"so they share this one:\n\n{lines}\n\n"
-            "Bursts stay flagged while this is open. Close it once they've all been checked."
-        ),
+        "body": f"Too many entries tripped the Like checks for one issue each, so they share this one:\n\n{lines}",
     }
+
+
+def _snapshot_date(name: str):
+    m = re.fullmatch(r"([0-9]{4}-[0-9]{2}-[0-9]{2})\.json", name)
+    try:
+        return datetime.strptime(m.group(1), "%Y-%m-%d").date() if m else None
+    except ValueError:
+        return None
+
+
+def _baseline(gh, now: datetime) -> dict | None:
+    """The snapshot from 7 days ago, else the oldest one between 1 and 7 days old, else None."""
+    week, day = (now - WEEK).date(), (now - DAY).date()
+    dates = sorted(d for n in list_dir(gh, "snapshots") if (d := _snapshot_date(n)))
+    old = [d for d in dates if week < d <= day]
+    pick = week if week in dates else (old[0] if old else None)
+    if pick is None:
+        return None
+    data = read_json(gh, f"snapshots/{pick:%Y-%m-%d}.json")[0]
+    if data is None:
+        # Listed but unreadable: fail closed rather than read it as an empty baseline.
+        raise GitHubError(404, f"snapshot {pick} is listed but could not be read")
+    return data
 
 
 def _report(gh, todo: list[tuple[str, str, str, str]], flags: dict, now: datetime) -> None:
@@ -200,19 +213,20 @@ def run(gh, entries, now: datetime, excluded: set[str]) -> None:
         if detect_burst(today, ages):
             bursts.add(k)
             if _due(flags, k, "burst", now):
-                candidates.append(("burst", k, repo, _body("burst", repo, len(today), young_count(today, ages))))
+                candidates.append(("burst", k, repo, _body("burst", repo)))
         elif detect_drip(week, ages) and _due(flags, k, "drip", now):
-            candidates.append(("drip", k, repo, _body("drip", repo, len(week), young_count(week, ages))))
+            candidates.append(("drip", k, repo, _body("drip", repo)))
     candidates.sort(key=lambda c: c[0] != "burst")
 
     ranks = rank_entries(likes, {k: m["stars"] for k, m in meta.items()})
-    old = read_json(gh, f"snapshots/{now - WEEK:%Y-%m-%d}.json")[0] or {}
+    old = _baseline(gh, now)
     out = {}
     for k in keys:
-        o = old.get(k)
+        o = (old or {}).get(k)
+        base = (o["likes"] if o else 0) if old is not None else likes[k]
         out[k] = {
             "likes": likes[k],
-            "delta_7d": likes[k] - o["likes"] if o else 0,
+            "delta_7d": likes[k] - base,
             "rank": ranks[k],
             "rank_delta_7d": o["rank"] - ranks[k] if o else 0,
             "flagged": ranked[k]["status"] == "flagged" or k in bursts or _under_review(flags, k),

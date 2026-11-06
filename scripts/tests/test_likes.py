@@ -52,7 +52,7 @@ class World:
                     users.setdefault(n["user"]["login"], n["user"]["createdAt"])
         routes = {
             f"GET {API}/git/ref/heads/stats": {"ref": "refs/heads/stats"},
-            "GET /orgs/devstreamhq/blocks?per_page=1": [],
+            "GET /orgs/devstreamhq/blocks": [],
             "GRAPHQL DiscussionReactors": self._reactors,
             "GRAPHQL RepoMeta": self._meta,
             f"POST {API}/issues": self._open_issue,

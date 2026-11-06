@@ -25,7 +25,7 @@ from scripts.devstream.gh import GitHub, GitHubError, RateLimited
 from scripts.devstream.issue_form import FormError, parse_submission
 from scripts.devstream.license_detect import extra_licenses_for
 from scripts.devstream.quality import check_repo
-from scripts.devstream.trust import check_user, ensure_block_access
+from scripts.devstream.trust import blocked_logins, check_user
 from scripts.validate_data import validate
 
 REPO = "devstreamhq/devstream"
@@ -71,8 +71,7 @@ def decide(issue: dict, gh, now: datetime, entries: list[Entry], excluded: set[s
     except FormError as e:
         return Decision(False, [str(e)])
 
-    ensure_block_access(gh)
-    reason = check_user(login, gh, now, excluded)
+    reason = check_user(login, gh, now, excluded | blocked_logins(gh))
     if reason:
         return Decision(False, [reason])
 

@@ -37,15 +37,16 @@ def _parse(s: str) -> datetime:
 
 
 def _check(login, gh, now, excluded):
-    """Return (reason or None, created_at or None). API errors propagate."""
+    """Return (reason or None, created_at or None). API errors propagate.
+
+    excluded must already hold the org's blocked logins (blocked_logins), which read as BLOCKED.
+    """
     if login.lower() in {e.lower() for e in excluded}:
         return BLOCKED, None
     if login.lower().endswith("[bot]"):
         return BOT, None
     if not LOGIN_RE.match(login):
         return NOT_FOUND, None
-    if gh.status(f"/orgs/{ORG}/blocks/{login}") == 204:
-        return BLOCKED, None
     user = gh.get(f"/users/{login}")
     if user is None:
         return NOT_FOUND, None
@@ -110,13 +111,8 @@ class TrustCache:
         if login.lower() not in {e.lower() for e in excluded} and LOGIN_RE.match(login):
             e = self.get(login, now)
             if e is not None:
-                if e.get("trusted") is not True:
-                    return False
-                # A block added since caching must take effect now, not after the TTL.
-                if gh.status(f"/orgs/{ORG}/blocks/{login}") != 204:
-                    return True
-                self.entries.pop(login.lower(), None)
-                return False
+                # A block added since caching is in excluded, so it took effect above.
+                return e.get("trusted") is True
         reason, created = _check(login, gh, now, excluded)
         if reason == BLOCKED:
             # Not cached, so an unblock applies on the next run.
@@ -133,7 +129,9 @@ class TrustCache:
             return None
 
 
-def ensure_block_access(gh) -> None:
-    """A token that can't read org blocks gets 404 per user, which would read as "not blocked"."""
+def blocked_logins(gh) -> set[str]:
+    """The org's blocked logins, lowercased: one listing per run instead of one lookup per account."""
+    # paginate reads a 404 as an empty list, which would read as "nobody blocked".
     if gh.get(f"/orgs/{ORG}/blocks?per_page=1") is None:
         raise GitHubError(404, "token can't read org blocks")
+    return {u["login"].lower() for u in gh.paginate(f"/orgs/{ORG}/blocks?per_page=100")}

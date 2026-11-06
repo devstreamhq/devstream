@@ -23,7 +23,7 @@ from scripts.devstream.likes import (
     rank_entries,
 )
 from scripts.devstream.stats import API, delete_file, ensure_branch, list_dir, read_json, update_json
-from scripts.devstream.trust import TrustCache, ensure_block_access
+from scripts.devstream.trust import TrustCache, blocked_logins
 
 # Flagged entries stay listed and ranked; only Trending hides them.
 RANKED = {"live", "warned", "flagged"}
@@ -237,11 +237,11 @@ def run(gh, entries, now: datetime, excluded: set[str]) -> None:
     _review(gh, flags, now)
 
     cache = _load_cache(read_json(gh, "trust-cache.json")[0])
-    ensure_block_access(gh)
+    excluded = excluded | blocked_logins(gh)
     seen = {}
 
     def trusted(login):
-        # One check per run; the cache re-checks blocks on every call otherwise.
+        # One check per login per run.
         if login not in seen:
             seen[login] = cache.trusted(login, gh, now, excluded)
         return seen[login]

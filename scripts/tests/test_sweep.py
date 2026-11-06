@@ -24,6 +24,10 @@ ROT_LATEST = f"GET {API}/actions/workflows/rot.yml/runs?per_page=100"
 ROT_DISPATCH = f"POST {API}/actions/workflows/rot.yml/dispatches"
 ROT_REFS = f"GET {API}/git/matching-refs/heads/rot/"
 OPEN_PRS = f"GET {API}/pulls?state=open&per_page=100"
+LIKES_RUNS = f"GET {API}/actions/workflows/likes.yml/runs?per_page=1"
+MERGE_RUNS = f"GET {API}/actions/workflows/on-merge.yml/runs?per_page=1"
+LIKES_DISPATCH = f"POST {API}/actions/workflows/likes.yml/dispatches"
+MERGE_DISPATCH = f"POST {API}/actions/workflows/on-merge.yml/dispatches"
 BOT = "devstreamhq-bot[bot]"
 
 
@@ -64,6 +68,8 @@ def gh(issues=(), refs=(), routes=None):
         REPORT_QUEUED: {"total_count": 0}, REPORT_PENDING: {"total_count": 0}, REPORT_DISPATCH: None,
         ROT_OK: runs(timedelta(days=2)), ROT_LATEST: runs(timedelta(days=2)),
         ROT_DISPATCH: None, ROT_REFS: [], OPEN_PRS: [],
+        LIKES_RUNS: runs(timedelta(minutes=20)), MERGE_RUNS: runs(timedelta(minutes=20)),
+        LIKES_DISPATCH: None, MERGE_DISPATCH: None,
     }
     r.update(routes or {})
     return FakeGitHub(r)
@@ -87,6 +93,10 @@ def report_dispatched(g):
 
 def rot_dispatched(g):
     return [b for m, p, b in g.calls if m == "POST" and "rot.yml" in p]
+
+
+def hourly_dispatched(g):
+    return [p.split("/")[-2] for m, p, b in g.calls if m == "POST" and ("likes.yml" in p or "on-merge.yml" in p)]
 
 
 def closed(g):
@@ -355,3 +365,36 @@ class SweepTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class HourlyWatchdogTest(unittest.TestCase):
+    # GitHub skips scheduled runs under load; a sweep that does run restarts a stalled hourly job.
+    def test_fresh_hourly_runs_are_left_alone(self):
+        g = gh()
+        sweep(g, NOW)
+        self.assertEqual(hourly_dispatched(g), [])
+
+    def test_stale_likes_is_dispatched_even_when_list_writes_is_busy(self):
+        g = gh(routes={LIKES_RUNS: runs(timedelta(hours=3)), MERGE_QUEUED: {"total_count": 1}})
+        sweep(g, NOW)
+        self.assertEqual(hourly_dispatched(g), ["likes.yml"])
+
+    def test_likes_with_no_runs_at_all_is_dispatched(self):
+        g = gh(routes={LIKES_RUNS: {"total_count": 0, "workflow_runs": []}})
+        sweep(g, NOW)
+        self.assertEqual(hourly_dispatched(g), ["likes.yml"])
+
+    def test_stale_on_merge_waits_for_a_free_list_writes_slot(self):
+        g = gh(routes={MERGE_RUNS: runs(timedelta(hours=3)), QUEUED: {"total_count": 1}})
+        sweep(g, NOW)
+        self.assertEqual(hourly_dispatched(g), [])
+
+    def test_stale_on_merge_is_dispatched_when_nothing_else_is(self):
+        g = gh(routes={MERGE_RUNS: runs(timedelta(hours=3))})
+        sweep(g, NOW)
+        self.assertEqual(hourly_dispatched(g), ["on-merge.yml"])
+
+    def test_a_pending_submission_goes_before_a_stale_on_merge(self):
+        g = gh([issue(9)], routes={MERGE_RUNS: runs(timedelta(hours=3))})
+        sweep(g, NOW)
+        self.assertEqual((dispatched(g), hourly_dispatched(g)), (["9"], []))

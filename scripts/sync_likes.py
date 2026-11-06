@@ -202,8 +202,17 @@ def _report(gh, todo: list[tuple[str, str, str, str]], flags: dict, now: datetim
             flags[key][kind] = _record(kind, agg, now, aggregate=True)
 
 
-def _merge_flags(flags: dict, before: dict):
-    """A mutate for update_json: lay this run's new and changed records over the stored copy.
+def _spent(key: str, kind: str, rec: dict, listed: set[str], now: datetime) -> bool:
+    """A record nothing reads again: its entry left the list, or it was reviewed and its cooldown has
+    run out, which _due already treats the same as no record."""
+    if key not in listed:
+        return True
+    reviewed = rec.get("reviewed_at")
+    return reviewed is not None and now - _parse(reviewed) >= COOLDOWN.get(kind, WEEK)
+
+
+def _merge_flags(flags: dict, before: dict, listed: set[str], now: datetime):
+    """A mutate for update_json: lay this run's new and changed records over the stored copy, then drop spent ones.
 
     Re-read on a 409, so records another writer stored survive, and so do the issue numbers
     this run opened: losing one would open the same issue again next hour.
@@ -213,6 +222,13 @@ def _merge_flags(flags: dict, before: dict):
             for kind, r in recs.items():
                 if before.get(k, {}).get(kind) != r:
                     cur.setdefault(k, {})[kind] = r
+        # Only records this run has seen: one another writer added since (rot moving a renamed
+        # entry's key, say) may belong to a name this run's list doesn't know yet.
+        for k in list(cur):
+            cur[k] = {kind: r for kind, r in cur[k].items()
+                      if not (flags.get(k, {}).get(kind) == r and _spent(k, kind, r, listed, now))}
+            if not cur[k]:
+                del cur[k]
         return cur
     return mutate
 
@@ -330,7 +346,9 @@ def run(gh, entries, now: datetime, excluded: set[str]) -> None:
         }
 
     snap_path = f"snapshots/{now:%Y-%m-%d}.json"
-    flags_write = ("flags.json", _merge_flags(flags, prev_flags or {}), "chore(stats): record Like reviews")
+    # Every entry, hidden ones included: only a removed entry's records go.
+    on_list = {normalize_repo(e["repo"]) for e in entries}
+    flags_write = ("flags.json", _merge_flags(flags, prev_flags or {}, on_list, now), "chore(stats): record Like reviews")
 
     if candidates:
         try:

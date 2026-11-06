@@ -194,7 +194,7 @@ class LicenseSearchTest(unittest.TestCase):
         self.passes(lic_gh({"Artistic": t}))
 
     def test_filename_stems(self):
-        for n in ("COPYRIGHT", "Artistic", "BSDL", "GPL", "COPYRIGHT.txt", "GPL-2", "LICENSE", "LICENSE.py", "COPYING.md"):
+        for n in ("COPYRIGHT", "Artistic", "BSDL", "GPL", "COPYRIGHT.txt", "GPL-2", "GPL-3.0", "gpl-3.0.txt", "Artistic-2.0", "COPYRIGHT-2024", "LICENSE", "LICENSE.py", "COPYING.md"):
             self.assertTrue(FILE_RE.match(n), n)
         for n in ("copyright.py", "gpl.js", "Copyright.h", "copyright-header.txt", "artistic.c", "bsdl.rb"):
             self.assertFalse(FILE_RE.match(n), n)

@@ -16,7 +16,7 @@ DEPRECATED = re.compile(r"\b(deprecated|unmaintained|no longer maintained)\b", r
 # emoji or one-level HTML tags), a "Status:" line, "this/the <project> is <marker>", or a
 # marker after a dash, colon or bracket on the first line. Every repeat is capped, so no ReDoS.
 _MARK = r"deprecated|unmaintained|no\s{1,3}longer\s{1,3}(?:actively\s{1,3})?maintained"
-_END = r"(?![A-Za-z0-9])"
+_END = r"(?![A-Za-z0-9-])"
 README_DEPRECATED = re.compile(
     r"^(?:<[^<>\n]{1,100}>|[^A-Za-z0-9\n<]){0,10}(?P<a>" + _MARK + r")" + _END
     + r"|^[^A-Za-z0-9\n<]{0,10}status[ \t]{0,3}:[^A-Za-z0-9\n]{0,10}(?P<c>" + _MARK + r")" + _END

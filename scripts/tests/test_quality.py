@@ -262,6 +262,9 @@ class SubmitTest(unittest.TestCase):
             with self.subTest(head):
                 self.assertEqual(len(run(gh(readme=head + pad)).failures), 1)
 
+    def test_readme_deprecated_word_before_hyphen_is_not_a_marker(self):
+        self.assertEqual(run(gh(readme="The library is deprecated-aware and fast. " + README)).failures, [])
+
     def test_readme_deprecated_regex_is_fast_on_hostile_input(self):
         for unit in ("<", "<a ", "_", "# ", "this ", "\n>", "[!x", "- (", "the project is now "):
             g = gh(readme=(unit * 500)[:500] + README)

@@ -11,7 +11,7 @@ from scripts.devstream.gh import GitHubError
 OSI = frozenset(json.loads((Path(__file__).parents[2] / "data" / "osi-licenses.json").read_text()))
 LICENSE_RE = re.compile(r"^(licen[cs]e|copying|unlicense)([-._][\w.-]+)?(\.(md|txt|rst))?$", re.I)
 # Narrower than LICENSE_RE: these stems also name source files (copyright.py, gpl.js).
-OTHER_RE = re.compile(r"^(copyright|artistic|bsdl|gpl)(-[\w-]+|\.(md|txt|rst))?$", re.I)
+OTHER_RE = re.compile(r"^(copyright|artistic|bsdl|gpl)(\.(md|txt|rst)|-[\w-]+|-([\w-]*-)?\d+(\.\d+)*(\.(md|txt|rst))?)?$", re.I)
 
 
 class _FileRe:

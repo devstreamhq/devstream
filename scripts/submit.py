@@ -57,10 +57,12 @@ def _dup_reason(e: Entry) -> str:
     return ARCHIVED_DUP if e["status"] in ("archived", "superseded") else DUPLICATE
 
 
-def _recent_submissions(login: str, gh, now: datetime) -> int:
+def _other_recent_submissions(login: str, number: int, gh, now: datetime) -> int:
+    """Excludes the current issue, so search lag can't let an extra one through."""
     since = (now - timedelta(days=7)).strftime("%Y-%m-%d")
     q = f"repo:{REPO}+label:submission+author:{login}+created:>={since}"
-    return gh.get(f"/search/issues?q={q}")["total_count"]
+    # shortcut: one page of 100 is plenty to see 3.
+    return sum(1 for i in gh.get(f"/search/issues?q={q}&per_page=100")["items"] if i["number"] != number)
 
 
 def decide(issue: dict, gh, now: datetime, entries: list[Entry], excluded: set[str]) -> Decision:
@@ -77,7 +79,7 @@ def decide(issue: dict, gh, now: datetime, entries: list[Entry], excluded: set[s
 
     reasons = []
     # check_user has already rejected logins outside [A-Za-z0-9-], so the query is safe.
-    if _recent_submissions(login, gh, now) > WEEKLY_LIMIT:
+    if _other_recent_submissions(login, issue["number"], gh, now) >= WEEKLY_LIMIT:
         reasons.append(RATE_LIMIT)
 
     more, canonical, description, repo_id = _check(form["repository"], form["description"], gh, now, entries,

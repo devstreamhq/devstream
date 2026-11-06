@@ -27,7 +27,7 @@ NOW = datetime(2026, 11, 5, 12, 0, tzinfo=timezone.utc)
 R = "/repos/alice/tool"
 SEARCH = (
     "GET /search/issues?q=repo:devstreamhq/devstream+label:submission"
-    "+author:carol+created:>=2026-10-29"
+    "+author:carol+created:>=2026-10-29&per_page=100"
 )
 
 
@@ -45,10 +45,11 @@ def issue(b=None, title="Submit: alice/tool"):
 
 
 def gh(count=1, repo_kw=None, extra=None):
+    """count: the author's submissions this week, the current issue (7) included."""
     routes = {
         "GET /orgs/devstreamhq/blocks": [],
         "GET /users/carol": {"created_at": iso(NOW - timedelta(days=400)), "public_repos": 3, "type": "User"},
-        SEARCH: {"total_count": count, "items": []},
+        SEARCH: {"total_count": count, "items": [{"number": 7}] + [{"number": 100 + k} for k in range(count - 1)]},
         f"GET {R}": repo(**(repo_kw or {})),
         f"GET {R}/community/profile": {"files": {"contributing": {}, "code_of_conduct": {}}},
         f"GET {R}/readme": b64(README),
@@ -112,6 +113,12 @@ class DecideTest(unittest.TestCase):
         self.assertFalse(d.ok)
         self.assertEqual(d.reasons, [RATE_LIMIT])
         self.assertEqual(RATE_LIMIT, "You've hit the limit of 3 submissions a week. Try again in a few days.")
+
+    def test_weekly_limit_does_not_rely_on_search_seeing_this_issue(self):
+        # Search lags: three earlier submissions, and this one not indexed yet.
+        lagging = {"total_count": 3, "items": [{"number": 100}, {"number": 101}, {"number": 102}]}
+        d = run(g=gh(extra={SEARCH: lagging}))
+        self.assertEqual(d.reasons, [RATE_LIMIT])
 
     def test_collects_multiple_repo_failures(self):
         g = gh(repo_kw={"archived": True, "license": None, "pushed_at": iso(NOW - timedelta(days=200))})

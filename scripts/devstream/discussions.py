@@ -69,7 +69,9 @@ def ensure_discussion(entry, gh, repo_id: str, category_id: str, existing: dict[
     body = (
         f"{entry['description'].replace('@', '@' + chr(0x200b))}\n\n"
         f"**Repo:** https://github.com/{repo}\n\n"
-        "React with 👍 to Like it. Every GitHub account counts once.\n\n"
+        # Matches trust.py: newer or inactive accounts (and blocked ones) count zero.
+        "React with 👍 to Like it. Each GitHub account counts once, "
+        "as long as it's at least 30 days old and has some public activity.\n\n"
         f"See where it ranks: {SITE}"
     )
     data = gh.graphql(

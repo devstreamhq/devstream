@@ -23,7 +23,7 @@ class EnsureDiscussion(unittest.TestCase):
         self.assertEqual(
             v["body"],
             "A tidy tool for tidy people\n\n**Repo:** https://github.com/octo/tool\n\n"
-            "React with 👍 to Like it. Every GitHub account counts once.\n\n"
+            "React with 👍 to Like it. Each GitHub account counts once, as long as it's at least 30 days old and has some public activity.\n\n"
             "See where it ranks: https://devstream.jamesconway.dev",
         )
 

@@ -3,7 +3,7 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 255,
+    "rank": 256,
     "rank_delta_7d": 0
   },
   "acassen/keepalived": {
@@ -94,7 +94,7 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 256,
+    "rank": 255,
     "rank_delta_7d": 0
   },
   "alpinejs/alpine": {
@@ -283,7 +283,7 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 134,
+    "rank": 133,
     "rank_delta_7d": 0
   },
   "astral-sh/uv": {
@@ -437,7 +437,7 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 176,
+    "rank": 177,
     "rank_delta_7d": 0
   },
   "chalarangelo/30-seconds-of-code": {
@@ -1053,7 +1053,7 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 112,
+    "rank": 113,
     "rank_delta_7d": 0
   },
   "goauthentik/authentik": {
@@ -1144,7 +1144,7 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 155,
+    "rank": 156,
     "rank_delta_7d": 0
   },
   "hasura/graphql-engine": {
@@ -1389,7 +1389,7 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 156,
+    "rank": 155,
     "rank_delta_7d": 0
   },
   "juliangarnier/anime": {
@@ -1921,7 +1921,7 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 244,
+    "rank": 245,
     "rank_delta_7d": 0
   },
   "ohmyzsh/ohmyzsh": {
@@ -2138,7 +2138,7 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 177,
+    "rank": 176,
     "rank_delta_7d": 0
   },
   "pixijs/pixijs": {
@@ -2334,7 +2334,7 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 113,
+    "rank": 112,
     "rank_delta_7d": 0
   },
   "rancher/rancher": {
@@ -2761,7 +2761,7 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 245,
+    "rank": 243,
     "rank_delta_7d": 0
   },
   "syncthing/syncthing": {
@@ -2796,7 +2796,7 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 133,
+    "rank": 134,
     "rank_delta_7d": 0
   },
   "tanstack/table": {
@@ -3027,7 +3027,7 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 243,
+    "rank": 244,
     "rank_delta_7d": 0
   },
   "vitejs/vite": {

@@ -1,5 +1,3 @@
-import base64
-import binascii
 import json
 import re
 from dataclasses import dataclass, field
@@ -8,7 +6,7 @@ from pathlib import Path
 from typing import Literal
 
 from scripts.devstream.gh import GitHubError
-from scripts.devstream.license_detect import OSI, Undecided, find_license
+from scripts.devstream.license_detect import OSI, Undecided, file_bytes, find_license
 
 NO_LICENSE = {None, "NOASSERTION", "NONE"}
 DEPRECATED = re.compile(r"\b(deprecated|unmaintained|no longer maintained)\b", re.I)
@@ -87,18 +85,12 @@ def _license(repo, gh, r, readme_text, allowed=frozenset(), mode="submit") -> st
     return MSG_NOT_FOUND_CC if cc_only and mode == "submit" else MSG_NOT_FOUND
 
 
-def _readme(gh, r) -> tuple[str | None, int] | None:
-    """None for no README, else (text, length). text is None when GitHub withholds it (over 1 MB)."""
+def _readme(gh, r) -> tuple[str, int] | None:
+    """None for no README, else (text, length)."""
     data = gh.get(f"/repos/{r}/readme")
     if data is None:
         return None
-    if data.get("encoding") == "none":
-        return None, data.get("size") or 0
-    try:
-        raw = base64.b64decode("".join((data.get("content") or "").split()), validate=False)
-    except (binascii.Error, ValueError) as e:
-        raise Undecided(0, f"README of {r} could not be decoded: {e}") from e
-    text = raw.decode("utf-8", errors="replace")[:README_SCAN]
+    text = file_bytes(gh, r, data, "README").decode("utf-8", errors="replace")[:README_SCAN]
     return text, _readme_text_length(text)
 
 

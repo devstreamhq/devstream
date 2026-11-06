@@ -313,11 +313,23 @@ class SubmitTest(unittest.TestCase):
         self.assertEqual(len(r.failures), 1)
         self.assertIn('"Deprecated"', r.failures[0])
 
-    def test_readme_encoding_none_uses_size(self):
-        big = {"encoding": "none", "content": "", "size": 2_000_000}
-        self.assertEqual(run(gh(extra={f"GET {R}/readme": big})).failures, [])
-        small = {"encoding": "none", "content": "", "size": 100}
-        self.assertEqual(run(gh(extra={f"GET {R}/readme": small})).failures, [MSG_SHORT])
+    def test_readme_over_1mb_is_read_through_the_blob(self):
+        def big(text):
+            return {f"GET {R}/readme": {"encoding": "none", "content": "", "size": len(text), "sha": "big"},
+                    f"GET {R}/git/blobs/big": {"encoding": "base64", "sha": "big", "content": b64(text)["content"]}}
+
+        # 2 MB of headings is measured as empty, not passed on its size.
+        self.assertEqual(run(gh(extra=big("# heading\n" * 200_000))).failures, [MSG_SHORT])
+        g = gh(extra=big(README * 5_000))
+        self.assertEqual(run(g).failures, [])
+        self.assertIn(("GET", f"{R}/git/blobs/big", None), g.calls)
+        # A deprecation marker in a big README is seen too.
+        self.assertEqual(len(run(gh(extra=big("This project is no longer maintained. " + README * 5_000))).failures), 1)
+
+    def test_readme_encoding_none_without_sha_is_undecided(self):
+        bad = {"encoding": "none", "content": "", "size": 2_000_000}
+        with self.assertRaises(Undecided):
+            run(gh(extra={f"GET {R}/readme": bad}))
 
     def test_bad_base64_is_undecided(self):
         bad = {"encoding": "base64", "content": "abcde"}

@@ -123,6 +123,14 @@ class DecideTest(unittest.TestCase):
         self.assertIn("This repo hasn't had a push in the last 90 days.", d.reasons)
         self.assertTrue(any("license" in r for r in d.reasons))
 
+    def test_dmca_blocked_repo_is_rejected_not_parked(self):
+        def blocked(_):
+            raise GitHubError(451, '{"message":"Repository access blocked","block":{"reason":"dmca"}}')
+
+        d = run(g=gh(extra={f"GET {R}": blocked}))
+        self.assertFalse(d.ok)
+        self.assertIn(NOT_FOUND, d.reasons)
+
     def test_form_failure_stops_early(self):
         g = gh()
         d = run(issue("### Repository\n\nalice/tool\n"), g)

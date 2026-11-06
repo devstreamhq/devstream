@@ -318,6 +318,17 @@ class PrepareTest(unittest.TestCase):
         self.assertEqual(kinds([Action(**a) for a in plan["actions"]]), [("warn", "bob/other")])
         self.assertEqual({e["repo"]: e["status"] for e in load(self.path)}, {"alice/tool": "live", "bob/other": "warned"})
 
+    def test_dmca_or_tos_blocked_repo_gets_the_gone_notice_not_an_abort(self):
+        for code in (451, 403):
+            def blocked(_, code=code):
+                raise GitHubError(code, '{"message":"Repository access blocked","block":{"reason":"dmca"}}')
+
+            save([entry()], self.path)
+            plan = self.run_prepare(FakeGitHub(routes(extra={"GET /repos/alice/tool": blocked})), check_repo)
+            self.assertEqual(kinds([Action(**a) for a in plan["actions"]]), [("notice", "alice/tool")], code)
+            self.assertIn("no longer exists", plan["actions"][0]["message"])
+            self.assertEqual(plan["review"], [])
+
     def test_other_403_still_aborts(self):
         def check(full, gh, now, mode, **kw):
             raise GitHubError(403, "Resource not accessible by integration")

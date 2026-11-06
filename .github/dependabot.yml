@@ -1,0 +1,43 @@
+version: 2
+
+# No pip entry: the bot is standard library only, so there is no manifest
+# for Dependabot to read.
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    # A release has to survive a week in the wild before we take it.
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      tooling:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /site
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      site:
+        update-types: [minor, patch]
+
+  # The ClusterFuzzLite base image is pinned by digest.
+  - package-ecosystem: docker
+    directory: /.clusterfuzzlite
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7

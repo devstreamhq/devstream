@@ -47,5 +47,12 @@
     "rank": "<script>",
     "rank_delta_7d": "NaN",
     "flagged": "yes"
+  },
+  "future/fresh-entry": {
+    "likes": 12,
+    "delta_7d": 9,
+    "rank": 10,
+    "rank_delta_7d": 0,
+    "flagged": false
   }
 }

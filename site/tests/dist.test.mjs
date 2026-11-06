@@ -105,7 +105,7 @@ test("top10.svg and badge.json are built", () => {
   assert.ok(
     svg.startsWith("<svg") && !/<script/i.test(svg) && svg.length < 30 * 1024,
   );
-  assert.equal(JSON.parse(read("badge.json")).message, "7 repos");
+  assert.equal(JSON.parse(read("badge.json")).message, "8 repos");
 });
 
 test("hostile stats are neutralised in the HTML and the SVG", () => {
@@ -139,6 +139,14 @@ test("the Trending tab marks exactly the rows trending() allows", async () => {
     assert.ok(rows.length > 0, page);
     // zz-tie/same-likes climbs by 3, under TRENDING_MIN_DELTA, so the hero would skip it.
     assert.ok(!marked.includes("zz-tie/same-likes"), page);
+    // future/fresh-entry climbs by 9 but isn't 7 days old and has no seed flag: the age gate.
+    if (page === "index.html") {
+      assert.ok(
+        rows.some((r) => r.includes('data-q="future/fresh-entry ')),
+        page,
+      );
+    }
+    assert.ok(!marked.includes("future/fresh-entry"), page);
     assert.deepEqual(
       marked.sort(),
       want.filter((r) => rows.some((x) => x.includes(`data-q="${r} `))).sort(),

@@ -120,6 +120,18 @@
       "warned_at": null,
       "superseded_by": null,
       "added_by_seed": false
+    },
+    {
+      "repo": "future/fresh-entry",
+      "category": "testing",
+      "description": "Climbing fast but too new for Trending.",
+      "submitted_by": "fay",
+      "submitted_at": "2999-01-01T00:00:00Z",
+      "issue": 11,
+      "status": "live",
+      "warned_at": null,
+      "superseded_by": null,
+      "added_by_seed": false
     }
   ]
 }

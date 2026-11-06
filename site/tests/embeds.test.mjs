@@ -54,7 +54,7 @@ test("badge.json has the shields.io endpoint shape", () => {
   assert.deepEqual(badge(live), {
     schemaVersion: 1,
     label: "listed",
-    message: "7 repos",
+    message: "8 repos",
     color: BRAND_HEX,
   });
   assert.equal(badge(live.slice(0, 1)).message, "1 repo");

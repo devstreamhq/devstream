@@ -31,8 +31,6 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
-          cache: npm
-          cache-dependency-path: site/package-lock.json
       - name: Build the source tarball
         run: git archive --format=tar.gz --prefix="devstream-$GITHUB_REF_NAME/" -o "devstream-$GITHUB_REF_NAME.tar.gz" "$GITHUB_SHA"
       - run: npm ci --ignore-scripts

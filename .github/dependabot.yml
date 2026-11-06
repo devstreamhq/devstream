@@ -28,6 +28,10 @@ updates:
     directory: /site
     schedule:
       interval: weekly
+    # Wrangler is pinned in three places (site/package.json, its lockfile and
+    # WRANGLER_VERSION in deploy.yml), so we bump it by hand to keep them in step.
+    ignore:
+      - dependency-name: wrangler
     cooldown:
       default-days: 7
     groups:

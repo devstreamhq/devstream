@@ -20,26 +20,24 @@ We use GitHub's private vulnerability reporting, so there's no email address to 
 2. Select **Report a vulnerability**.
 3. Tell us what you found, how to reproduce it and what an attacker could do with it.
 
-Only you and the maintainers can see the report. We talk it through in the advisory, and you can watch the fix take shape there.
+Only you and the maintainers can see the report, and we'll talk it through with you in the advisory.
 
 ## What happens next
 
-- **Within 48 hours**, we acknowledge your report.
-- **Within 7 days**, you get our first assessment: whether we can reproduce it, how serious we think it is and what we plan to do.
-- **Within 90 days**, we fix it and publish the advisory together. If a fix needs longer, we'll say why and agree a new date with you rather than go quiet.
+We acknowledge every report within 48 hours. Within 7 days you get our first assessment: whether we can reproduce it, how serious we think it is and what we plan to do. Disclosure is coordinated with you and happens within 90 days of your report.
 
-We credit you in the advisory unless you'd rather we didn't.
+We'll credit you in the advisory if you'd like.
 
 ## What's in scope
 
-- **The bot and its workflows.** Anything in `scripts/` or `.github/workflows/` that lets someone run code, read secrets, write to the repo or push the bot into a decision it shouldn't make.
-- **The site.** Script injection, broken escaping of entry data, or anything that turns the leaderboard against the people reading it.
-- **Data integrity.** Ranking manipulation counts. If you can get an entry listed past the quality bar, keep one alive that should be removed, or remove someone else's, we want to hear about it.
-- **Likes gaming.** A way to inflate Likes that slips past the burst check and the trust rule is a vulnerability, even when no code misbehaves.
+- The bot and its workflows: anything in `scripts/` or `.github/workflows/` that lets someone run code, read secrets, write to the repo or push the bot into a decision it shouldn't make.
+- The site: script injection, broken escaping of entry data, or anything that turns the leaderboard against the people reading it.
+- Data integrity, because ranking manipulation counts. If you can get an entry listed past the quality bar, keep one alive that should be removed, or remove someone else's, we want to hear about it.
+- Likes gaming. A way to inflate Likes that slips past the burst check and the trust rule is a vulnerability, even when no code misbehaves.
 
 ## What's out of scope
 
-The repos listed on DevStream belong to their own maintainers. If you find a hole in one of them, report it to that project through its own security policy. If a listed repo is malicious, use the report form on its entry and we'll pull it.
+The repos listed on DevStream belong to their own maintainers. If you find a hole in one of them, report it to that project through its own security policy. If a listed repo is malicious, use the [Report an entry](https://github.com/devstreamhq/devstream/issues/new?template=report-entry.yml) form and pick "Malicious". A report from an established account hides the entry while we look.
 
 Denial of service by flooding the issue tracker, and findings that need a compromised maintainer account, are out of scope too.
 

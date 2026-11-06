@@ -23,7 +23,7 @@ from scripts.devstream.attempts import note_failure, record_from_file, spends_at
 from scripts.devstream.entries import DEFAULT_PATH, find, load, normalize_repo, save
 from scripts.devstream.gh import GitHub
 from scripts.devstream.issue_form import FormError, _repo, parse_report
-from scripts.devstream.trust import ACTIVITY_QUERY, LOGIN_RE, check_user, ensure_block_access
+from scripts.devstream.trust import ACTIVITY_QUERY, LOGIN_RE, blocked_logins, check_user
 from scripts.validate_data import validate
 
 REPO = "devstreamhq/devstream"
@@ -161,7 +161,7 @@ def handle_report(issue: dict, gh, entries: list, open_reports: list[dict],
     # Before the trust lookups, so a flood costs one search per report.
     if _other_recent_reports(login, issue["number"], gh, now) >= DAILY_LIMIT:
         return _close(RATE_LIMIT)
-    ensure_block_access(gh)
+    excluded = set(excluded) | blocked_logins(gh)
     if check_user(login, gh, now, excluded):
         return _reply(UNTRUSTED, "needs-review")
 

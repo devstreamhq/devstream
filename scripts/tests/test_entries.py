@@ -1,5 +1,6 @@
 import json
 import tempfile
+import zlib
 import unittest
 from pathlib import Path
 
@@ -10,6 +11,7 @@ from scripts.validate_data import validate
 def make(repo="foo/bar", **kw):
     e = {
         "repo": repo,
+        "repo_id": zlib.crc32(repo.encode()),
         "category": "testing",
         "description": "A thing that does a thing.",
         "submitted_by": "someone",
@@ -61,6 +63,18 @@ class EntriesTest(unittest.TestCase):
         e = make()
         del e["description"]
         self.assertTrue(validate([e]))
+
+    def test_validate_requires_a_positive_repo_id(self):
+        e = make()
+        del e["repo_id"]
+        self.assertTrue(any("missing repo_id" in m for m in validate([e])))
+        for bad in (None, 0, -3, True, "123", 1.5):
+            self.assertTrue(validate([make(repo_id=bad)]), bad)
+
+    def test_validate_rejects_duplicate_repo_id(self):
+        errs = validate([make("a/x", repo_id=7), make("b/y", repo_id=7)])
+        self.assertTrue(any("duplicate repo_id" in m for m in errs))
+        self.assertEqual(validate([make("a/x", repo_id=7), make("b/y", repo_id=8)]), [])
 
     def test_validate_rejects_description_the_filter_would_change(self):
         self.assertEqual(validate([make()]), [])

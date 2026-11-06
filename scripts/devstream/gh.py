@@ -151,13 +151,14 @@ class GitHub:
             return 404
         return 200 if r[1] is not None else 204
 
-    def paginate(self, path, params=None) -> Iterator[dict]:
+    def paginate(self, path, params=None, must_exist=False) -> Iterator[dict]:
+        """must_exist: a 404 on the first page raises instead of reading as an empty list."""
         self.last_redirect = None
         first = True
         while path:
             r = self._request("GET", path, params)
             if r is None:
-                if first:
+                if first and not must_exist:
                     return
                 # A vanished page would silently truncate the results.
                 raise GitHubError(404, f"page not found: {path}")

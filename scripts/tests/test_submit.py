@@ -6,6 +6,7 @@ import sys
 import tempfile
 import time
 import unittest
+import zlib
 from unittest import mock
 from datetime import datetime, timedelta, timezone
 
@@ -58,7 +59,7 @@ def gh(count=1, repo_kw=None, extra=None):
 
 def entry(repo_="alice/tool", status="live"):
     return {
-        "repo": repo_, "category": "developer-tools", "description": "An older tool that still works.",
+        "repo": repo_, "repo_id": zlib.crc32(repo_.encode()), "category": "developer-tools", "description": "An older tool that still works.",
         "submitted_by": "dave", "submitted_at": "2026-01-01T00:00:00Z", "issue": 1,
         "status": status, "warned_at": None, "superseded_by": None, "added_by_seed": False,
     }
@@ -74,7 +75,7 @@ class DecideTest(unittest.TestCase):
         self.assertTrue(d.ok)
         self.assertEqual(d.reasons, [])
         self.assertEqual(d.entry, {
-            "repo": "alice/tool", "category": "developer-tools",
+            "repo": "alice/tool", "repo_id": 4242, "category": "developer-tools",
             "description": "A small tool that does one thing well.",
             "submitted_by": "carol", "submitted_at": "2026-11-05T12:00:00Z", "issue": 7,
             "status": "live", "warned_at": None, "superseded_by": None, "added_by_seed": False,
@@ -444,7 +445,7 @@ class CliTest(unittest.TestCase):
 
 
 class SeedCliTest(unittest.TestCase):
-    CLI = {"repo": "cli/cli", "category": "developer-tools",
+    CLI = {"repo": "cli/cli", "repo_id": 212613049, "category": "developer-tools",
            "description": "GitHub on the command line, so you can open PRs from the terminal.",
            "submitted_by": "jamesconwaydev", "submitted_at": "2026-11-05T00:00:00Z", "issue": 8,
            "status": "live", "warned_at": None, "superseded_by": None, "added_by_seed": False}
@@ -508,7 +509,7 @@ class SeedCliTest(unittest.TestCase):
         ])
         rows = self.rows()
         self.assertEqual(rows["alice/tool", "ok"]["entry"], {
-            "repo": "alice/tool", "category": "developer-tools",
+            "repo": "alice/tool", "repo_id": 4242, "category": "developer-tools",
             "description": "A small tool that does one thing well.",
             "submitted_by": "jamesconwaydev", "submitted_at": "2026-11-05T12:00:00Z", "issue": 0,
             "status": "live", "warned_at": None, "superseded_by": None, "added_by_seed": True,

@@ -5,24 +5,22 @@ import unittest
 from datetime import datetime, timedelta, timezone
 
 from scripts.devstream.gh import GitHubError
-from scripts.devstream.trust import TrustCache, check_user, ensure_block_access
+from scripts.devstream.trust import TrustCache, blocked_logins, check_user
 from scripts.tests.fake_gh import FakeGitHub, Status
 
 NOW = datetime(2026, 11, 5, 12, 0, tzinfo=timezone.utc)
-BLOCK = "GET /orgs/devstreamhq/blocks/alice"
+BLOCKS = "GET /orgs/devstreamhq/blocks"
 
 
 def iso(d):
     return d.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def gh(age=timedelta(days=400), repos=1, contribs=0, blocked=False, type_="User", extra=None):
+def gh(age=timedelta(days=400), repos=1, contribs=0, type_="User", extra=None):
     routes = {
         "GET /users/alice": {"created_at": iso(NOW - age), "public_repos": repos, "type": type_},
         "GRAPHQL UserActivity": {"user": {"contributionsCollection": {"contributionCalendar": {"totalContributions": contribs}}}},
     }
-    if blocked:
-        routes[BLOCK] = Status(204)
     routes.update(extra or {})
     return FakeGitHub(routes)
 
@@ -58,17 +56,17 @@ class CheckUserTest(unittest.TestCase):
         self.check(g)
         self.assertFalse([c for c in g.calls if c[0] == "GRAPHQL"])
 
-    def test_blocked_rejected(self):
-        self.assertEqual(self.check(gh(blocked=True)), "This account can't submit to DevStream.")
+    def test_blocked_rejected_without_api_call(self):
+        # Callers fold the org block list into excluded, so no per-login block lookup is made.
+        g = gh()
+        self.assertEqual(self.check(g, excluded=blocked_logins(FakeGitHub({BLOCKS: [{"login": "Alice"}]}))),
+                         "This account can't submit to DevStream.")
+        self.assertEqual(g.calls, [])
 
     def test_excluded_rejected_without_api_call(self):
         g = gh()
         self.assertEqual(self.check(g, excluded={"ALICE"}), "This account can't submit to DevStream.")
         self.assertEqual(g.calls, [])
-
-    def test_blocked_beats_age(self):
-        r = self.check(gh(blocked=True, age=timedelta(days=1)))
-        self.assertEqual(r, "This account can't submit to DevStream.")
 
     def test_bot_type_and_suffix(self):
         msg = "Bot accounts can't submit or Like."
@@ -86,9 +84,8 @@ class CheckUserTest(unittest.TestCase):
         self.assertEqual(r, "We couldn't find that GitHub account.")
 
     def test_api_error_propagates(self):
-        for extra in ({"GET /users/alice": Status(500)}, {BLOCK: Status(500)}):
-            with self.assertRaises(GitHubError):
-                self.check(gh(extra=extra))
+        with self.assertRaises(GitHubError):
+            self.check(gh(extra={"GET /users/alice": Status(500)}))
 
         def boom(v):
             raise GitHubError(502, "x")
@@ -97,18 +94,29 @@ class CheckUserTest(unittest.TestCase):
             self.check(gh(repos=0, extra={"GRAPHQL UserActivity": boom}))
 
 
-class EnsureBlockAccessTest(unittest.TestCase):
-    def test_list_ok(self):
-        self.assertIsNone(ensure_block_access(FakeGitHub({"GET /orgs/devstreamhq/blocks": []})))
+class BlockedLoginsTest(unittest.TestCase):
+    def test_lowercased_set_from_one_listing(self):
+        g = FakeGitHub({BLOCKS: [{"login": "Alice"}, {"login": "bob"}]})
+        self.assertEqual(blocked_logins(g), {"alice", "bob"})
+        self.assertEqual([c[1] for c in g.calls], ["/orgs/devstreamhq/blocks?per_page=100"])
+
+    def test_404_on_the_listing_itself_raises(self):
+        # Only the listing answers 404: it must never read as "nobody blocked".
+        with self.assertRaises(GitHubError) as c:
+            blocked_logins(FakeGitHub({"GET /orgs/devstreamhq/blocks?per_page=1": []}))
+        self.assertEqual(c.exception.status, 404)
+
+    def test_empty_list_ok(self):
+        self.assertEqual(blocked_logins(FakeGitHub({BLOCKS: []})), set())
 
     def test_404_raises(self):
         with self.assertRaises(GitHubError) as c:
-            ensure_block_access(FakeGitHub({}))
+            blocked_logins(FakeGitHub({}))
         self.assertEqual(c.exception.status, 404)
 
     def test_other_error_propagates(self):
         with self.assertRaises(GitHubError) as c:
-            ensure_block_access(FakeGitHub({"GET /orgs/devstreamhq/blocks": Status(500)}))
+            blocked_logins(FakeGitHub({BLOCKS: Status(500)}))
         self.assertEqual(c.exception.status, 500)
 
 
@@ -124,8 +132,8 @@ class TrustCacheTest(unittest.TestCase):
         self.assertTrue(c.trusted("alice", g, NOW, set()))
         n = len(g.calls)
         self.assertTrue(c.trusted("alice", g, NOW + timedelta(days=6), set()))
-        # Only the block re-check; no user or activity lookups.
-        self.assertEqual(g.calls[n:], [("GET", "/orgs/devstreamhq/blocks/alice", None)])
+        # The block list is fetched once per run by the caller, so a hit costs nothing.
+        self.assertEqual(g.calls[n:], [])
 
     def test_ttl_expiry(self):
         c = TrustCache(self.path)
@@ -145,14 +153,9 @@ class TrustCacheTest(unittest.TestCase):
         self.assertFalse(c.trusted("alice", gh(), NOW, {"alice"}))
         self.assertFalse((c.get("alice", NOW) or {}).get("trusted"))
 
-    def test_blocked_not_cached_as_trusted(self):
-        c = TrustCache(self.path)
-        self.assertFalse(c.trusted("alice", gh(blocked=True), NOW, set()))
-        self.assertFalse((c.get("alice", NOW) or {}).get("trusted"))
-
     def test_blocked_result_not_stored(self):
         c = TrustCache(self.path)
-        self.assertFalse(c.trusted("alice", gh(blocked=True), NOW, set()))
+        self.assertFalse(c.trusted("alice", gh(), NOW, {"alice"}))
         self.assertIsNone(c.get("alice", NOW))
         self.assertTrue(c.trusted("alice", gh(), NOW, set()))
 
@@ -162,19 +165,13 @@ class TrustCacheTest(unittest.TestCase):
             c.trusted("alice", gh(extra={"GET /users/alice": Status(500)}), NOW, set())
         self.assertIsNone(c.get("alice", NOW))
 
-    def test_cached_trusted_rechecks_block(self):
+    def test_cached_trusted_then_blocked(self):
         c = TrustCache(self.path)
         self.assertTrue(c.trusted("alice", gh(), NOW, set()))
-        g = gh(blocked=True)
-        self.assertFalse(c.trusted("alice", g, NOW + timedelta(days=1), set()))
-        self.assertFalse((c.get("alice", NOW) or {}).get("trusted"))
-        self.assertFalse(c.trusted("alice", g, NOW + timedelta(days=2), set()))
-
-    def test_cached_trusted_block_check_error_propagates(self):
-        c = TrustCache(self.path)
-        self.assertTrue(c.trusted("alice", gh(), NOW, set()))
-        with self.assertRaises(GitHubError):
-            c.trusted("alice", gh(extra={BLOCK: Status(500)}), NOW, set())
+        g = gh()
+        self.assertFalse(c.trusted("alice", g, NOW + timedelta(days=1), {"alice"}))
+        self.assertIsNone(c.get("alice", NOW))
+        self.assertEqual(g.calls, [])
 
     def test_cache_hit_invalid_login_makes_no_call(self):
         c = TrustCache(self.path)

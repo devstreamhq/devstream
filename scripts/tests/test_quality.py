@@ -28,6 +28,7 @@ def b64(s):
 def repo(**kw):
     r = {
         "full_name": "alice/tool",
+        "id": 4242,
         "description": "A handy tool",
         "fork": False,
         "archived": False,
@@ -283,6 +284,7 @@ class SubmitTest(unittest.TestCase):
         g.routes["GET /repos/alice/tool/readme"] = b64(README)
         r = run(g, full="old/name")
         self.assertEqual(r.canonical, "alice/tool")
+        self.assertEqual(r.repo_id, 4242)
         self.assertEqual(r.failures, [])
         self.assertTrue(all(c[1].startswith("/repos/alice/tool") or c[1] in ("/repos/old/name", "/repositories/99") for c in g.calls))
         self.assertIn(("GET", f"{R}/readme", None), g.calls)

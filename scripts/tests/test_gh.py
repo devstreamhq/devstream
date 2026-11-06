@@ -247,6 +247,11 @@ class GitHubTest(unittest.TestCase):
     def test_paginate_first_404_is_empty(self):
         self.assertEqual(list(self.gh.paginate("/missing")), [])
 
+    def test_paginate_first_404_raises_when_it_must_exist(self):
+        with self.assertRaises(GitHubError) as c:
+            list(self.gh.paginate("/missing", must_exist=True))
+        self.assertEqual(c.exception.status, 404)
+
     def test_graphql_rate_limited(self):
         with self.assertRaises(RateLimited) as c:
             self.gh.graphql("query Q { viewer }", {"rl": 1})
@@ -448,6 +453,8 @@ class FakeTest(unittest.TestCase):
 
     def test_paginate_missing_first_page_empty(self):
         self.assertEqual(list(FakeGitHub({}).paginate("/x")), [])
+        with self.assertRaises(GitHubError):
+            list(FakeGitHub({}).paginate("/x", must_exist=True))
 
     def test_routes(self):
         seen = []

@@ -25,7 +25,7 @@ from scripts.devstream.gh import GitHub, GitHubError, RateLimited
 from scripts.devstream.issue_form import FormError, parse_submission
 from scripts.devstream.license_detect import extra_licenses_for
 from scripts.devstream.quality import check_repo
-from scripts.devstream.trust import check_user, ensure_block_access
+from scripts.devstream.trust import blocked_logins, check_user
 from scripts.validate_data import validate
 
 REPO = "devstreamhq/devstream"
@@ -71,8 +71,7 @@ def decide(issue: dict, gh, now: datetime, entries: list[Entry], excluded: set[s
     except FormError as e:
         return Decision(False, [str(e)])
 
-    ensure_block_access(gh)
-    reason = check_user(login, gh, now, excluded)
+    reason = check_user(login, gh, now, excluded | blocked_logins(gh))
     if reason:
         return Decision(False, [reason])
 
@@ -81,18 +80,20 @@ def decide(issue: dict, gh, now: datetime, entries: list[Entry], excluded: set[s
     if _recent_submissions(login, gh, now) > WEEKLY_LIMIT:
         reasons.append(RATE_LIMIT)
 
-    more, canonical, description = _check(form["repository"], form["description"], gh, now, entries, form["category"])
+    more, canonical, description, repo_id = _check(form["repository"], form["description"], gh, now, entries,
+                                                   form["category"])
     reasons += more
     if reasons:
         return Decision(False, reasons)
-    return Decision(True, [], _entry(canonical, form["category"], description, login, now, issue["number"]))
+    return Decision(True, [], _entry(canonical, repo_id, form["category"], description, login, now, issue["number"]))
 
 
-def _check(link: str, text: str, gh, now: datetime, entries: list[Entry], category: str) -> tuple[list[str], str, str | None]:
-    """The repo and description checks: (reasons, canonical repo, cleaned description)."""
+def _check(link: str, text: str, gh, now: datetime, entries: list[Entry],
+           category: str) -> tuple[list[str], str, str | None, int | None]:
+    """The repo and description checks: (reasons, canonical repo, cleaned description, repo ID)."""
     dup = find(entries, link)
     if dup:
-        return [_dup_reason(dup)], link, None
+        return [_dup_reason(dup)], link, None, None
 
     reasons = []
     result = check_repo(link, gh, now, "submit", allowed_extra=extra_licenses_for(category))
@@ -101,7 +102,7 @@ def _check(link: str, text: str, gh, now: datetime, entries: list[Entry], catego
     else:
         dup = find(entries, result.canonical)
         if dup:
-            return [_dup_reason(dup)], result.canonical, None
+            return [_dup_reason(dup)], result.canonical, None, None
         reasons += result.failures
 
     description, why = clean_description(text)
@@ -109,13 +110,14 @@ def _check(link: str, text: str, gh, now: datetime, entries: list[Entry], catego
         description = clean_description(result.meta["description"])[0]
     if description is None:
         reasons.append(why)
-    return reasons, result.canonical, description
+    return reasons, result.canonical, description, result.repo_id
 
 
-def _entry(repo: str, category: str, description: str, login: str, now: datetime, issue: int,
+def _entry(repo: str, repo_id: int, category: str, description: str, login: str, now: datetime, issue: int,
            seed: bool = False) -> Entry:
     return {
         "repo": repo,
+        "repo_id": repo_id,
         "category": category,
         "description": description,
         "submitted_by": login,
@@ -243,7 +245,8 @@ def _seed_row(row: dict, gh, now: datetime, entries: list[Entry], seen: set[str]
         out["reasons"] = [f"unknown category {row['category']!r}"]
         return out
     try:
-        reasons, canonical, description = _check(row["repo"], row["description"], gh, now, entries, row["category"])
+        reasons, canonical, description, repo_id = _check(row["repo"], row["description"], gh, now, entries,
+                                                          row["category"])
     except (GitHubError, RateLimited, OSError) as e:
         # Undecided is a GitHubError; none of these say anything about the repo.
         return out | {"status": "undecided", "reasons": [str(e)]}
@@ -251,7 +254,7 @@ def _seed_row(row: dict, gh, now: datetime, entries: list[Entry], seen: set[str]
         reasons = [SEED_DUP]
     if reasons:
         return out | {"reasons": reasons}
-    return out | {"status": "ok", "entry": _entry(canonical, row["category"], description, SEED_BY, now,
+    return out | {"status": "ok", "entry": _entry(canonical, repo_id, row["category"], description, SEED_BY, now,
                                                    SEED_ISSUE, seed=True)}
 
 

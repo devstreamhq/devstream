@@ -30,7 +30,7 @@ def iso(d):
 
 def entry(repo="alice/tool", status="live", warned_at=None, submitted_at="2026-01-01T00:00:00Z", issue=1):
     return {
-        "repo": repo, "category": "developer-tools", "description": "An older tool that still works.",
+        "repo": repo, "repo_id": issue, "category": "developer-tools", "description": "An older tool that still works.",
         "submitted_by": "dave", "submitted_at": submitted_at, "issue": issue,
         "status": status, "warned_at": warned_at, "superseded_by": None, "added_by_seed": False,
     }
@@ -472,6 +472,58 @@ class PrepareTest(unittest.TestCase):
         self.assertEqual(kinds([Action(**a) for a in plan["actions"]]), [("rename", "alice/tool-ng")])
         self.assertEqual(plan["rot_state"], {})
         self.assertEqual(load(self.path)[0]["repo"], "alice/tool-ng")
+
+    def test_replaced_repo_gets_a_removal_notice_and_review_not_an_update(self):
+        # A squatter's repo at the listed name: different ID, and it would pass every check.
+        def check(full, gh, now, mode, **kw):
+            r = ok("Alice/Tool" if full == "alice/tool" else full)
+            r.repo_id = 999 if full == "alice/tool" else 2
+            return r
+
+        g = FakeGitHub(routes())
+        for repo in (None, "alice/tool"):
+            plan = self.run_prepare(g, check, repo)
+            self.assertEqual(kinds([Action(**a) for a in plan["actions"]]), [("notice", "alice/tool")], repo)
+            self.assertIn("A different repo now", plan["actions"][0]["message"])
+            self.assertEqual(plan["review"], [{"repo": "alice/tool", "kind": "replaced", "want": 1, "got": 999}])
+            self.assertFalse(plan["changed"])
+            self.assertEqual(load(self.path)[0]["repo"], "alice/tool")
+
+        issues = []
+        r, _ = store(extra={f"GET {API}/issues": lambda _: issues,
+                            f"POST {API}/issues": lambda b: issues.append({**b, "user": {"login": "devstreamhq-bot[bot]"}}) or b})
+        open_reviews(FakeGitHub(r), plan["review"])
+        open_reviews(FakeGitHub(r), plan["review"])
+        self.assertEqual(len(issues), 1)
+        self.assertEqual(issues[0]["labels"], ["needs-review"])
+        self.assertIn("`alice/tool`", issues[0]["body"])
+        self.assertIn("999", issues[0]["body"])
+
+    def test_missing_repo_id_warns_and_carries_on(self):
+        e = entry()
+        del e["repo_id"]
+        save([e], self.path)
+
+        def check(full, gh, now, mode, **kw):
+            r = ok(full)
+            r.repo_id = 1
+            return r
+
+        with self.assertLogs(level="WARNING") as logs:
+            plan = self.run_prepare(FakeGitHub(routes()), check)
+        self.assertTrue(any("alice/tool" in m and "repo_id" in m for m in logs.output))
+        self.assertEqual(plan["review"], [])
+
+    def test_matching_repo_id_follows_a_rename(self):
+        def check(full, gh, now, mode, **kw):
+            r = ok("alice/tool-ng" if full == "alice/tool" else full)
+            r.repo_id = 1 if full == "alice/tool" else 2
+            return r
+
+        plan = self.run_prepare(FakeGitHub(routes()), check)
+        self.assertEqual(kinds([Action(**a) for a in plan["actions"]]), [("rename", "alice/tool-ng")])
+        self.assertEqual(plan["review"], [])
+        self.assertEqual(load(self.path)[0]["repo_id"], 1)
 
     def test_cc_licence_kept_only_in_learning_resources(self):
         readme = base64.b64encode(("A shelf of guides and handbooks for people. " * 10).encode()).decode()

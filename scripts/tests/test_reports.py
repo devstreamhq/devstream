@@ -4,6 +4,7 @@ import os
 import tempfile
 import time
 import unittest
+import zlib
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
@@ -39,7 +40,7 @@ def report(n=7, login="carol", user_type="User", **kw):
 
 def entry(repo="alice/tool", status="live"):
     return {
-        "repo": repo, "category": "developer-tools", "description": "An older tool that still works.",
+        "repo": repo, "repo_id": zlib.crc32(repo.encode()), "category": "developer-tools", "description": "An older tool that still works.",
         "submitted_by": "dave", "submitted_at": "2026-01-01T00:00:00Z", "issue": 1,
         "status": status, "warned_at": None, "superseded_by": None, "added_by_seed": False,
     }

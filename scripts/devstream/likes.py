@@ -15,7 +15,7 @@ _REACTIONS = (
     "reactions(content: THUMBS_UP, first: 100{after}) "
     "{{ nodes {{ createdAt user {{ login createdAt }} }} pageInfo {{ hasNextPage endCursor }} }}"
 )
-_META = "nameWithOwner stargazerCount primaryLanguage { name color } pushedAt owner { avatarUrl }"
+_META = "nameWithOwner databaseId stargazerCount primaryLanguage { name color } pushedAt owner { avatarUrl }"
 
 
 def count_likes(reactors: list[str], trusted: Callable[[str], bool]) -> int:
@@ -104,5 +104,6 @@ def fetch_meta(gh, repos: list[str]) -> dict[str, dict]:
                 "language_color": lang.get("color"),
                 "pushed_at": m["pushedAt"],
                 "avatar_url": m["owner"]["avatarUrl"],
+                "repo_id": m["databaseId"],
             }
     return out

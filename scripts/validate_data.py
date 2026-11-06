@@ -18,6 +18,8 @@ TS_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$")
 # name -> (type, nullable)
 FIELDS = {
     "repo": (str, False),
+    # GitHub never reuses an ID, so a squatter at the same name can't pass for the listed repo.
+    "repo_id": (int, False),
     "category": (str, False),
     "description": (str, False),
     "submitted_by": (str, False),
@@ -43,6 +45,7 @@ def _ts_ok(v) -> bool:
 def validate(entries: list[dict]) -> list[str]:
     errors: list[str] = []
     seen: dict[str, int] = {}
+    ids: dict[int, int] = {}
     for i, e in enumerate(entries):
         if not isinstance(e, dict):
             errors.append(f"entry {i}: not an object")
@@ -68,6 +71,13 @@ def validate(entries: list[dict]) -> list[str]:
             if key in seen:
                 errors.append(f"{at}: duplicate of entry {seen[key]}")
             seen.setdefault(key, i)
+        rid = e.get("repo_id")
+        if isinstance(rid, int) and not isinstance(rid, bool):
+            if rid < 1:
+                errors.append(f"{at}: repo_id must be positive")
+            if rid in ids:
+                errors.append(f"{at}: duplicate repo_id of entry {ids[rid]}")
+            ids.setdefault(rid, i)
         desc = e.get("description")
         # Backstop for anything that reaches main without passing the submission filter.
         if isinstance(desc, str) and clean_description(desc) != (desc, None):

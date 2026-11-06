@@ -21,6 +21,7 @@ from scripts.devstream.gh import GitHub, GitHubError
 from scripts.devstream.license_detect import extra_licenses_for
 from scripts.devstream.quality import (
     MSG_GONE,
+    RepoResult,
     MSG_LICENSE,
     MSG_NO_README,
     MSG_SHORT_README,
@@ -37,7 +38,8 @@ CONFIRM = timedelta(days=6)
 # An older sighting is a different episode, so it starts the week of grace again.
 STALE = timedelta(days=14)
 RENAME_KEEP = timedelta(days=8)
-REMOVAL_REASONS = (MSG_GONE, MSG_LICENSE, MSG_NO_README, MSG_SHORT_README)
+MSG_REPLACED = "A different repo now lives at this name, not the one that was listed."
+REMOVAL_REASONS = (MSG_GONE, MSG_REPLACED, MSG_LICENSE, MSG_NO_README, MSG_SHORT_README)
 REPO_INPUT = re.compile(r"[A-Za-z0-9-]{1,39}/[A-Za-z0-9._-]{1,100}")
 API = "/repos/devstreamhq/devstream"
 BOT = "devstreamhq-bot[bot]"
@@ -47,6 +49,14 @@ REVIEW_TITLE = "Health check can't decide on {repo}"
 REVIEW_BODY = (
     "The weekly health check couldn't decide on `{repo}` for {weeks} weeks running, "
     "so it isn't being warned or removed. Could someone take a look?\n\nLast error: `{error}`\n"
+)
+REPLACED_TITLE = "A different repo now answers to {repo}"
+REPLACED_BODY = (
+    "`{repo}` was listed as GitHub repo {want}, but that name now belongs to repo {got}. "
+    "Usually that means the owner renamed or deleted their account and someone else took the name.\n\n"
+    "The entry has a removal notice, and the hourly Likes sync keeps its old card and holds it out of Trending. "
+    "It still links to that name until it comes off the list, "
+    "so could someone check which repo is the real one before then?\n"
 )
 
 WARN = (
@@ -211,9 +221,17 @@ def prepare(gh, now, path=DEFAULT_PATH, repo=None, check=check_repo) -> dict:
     rot_state = rot_state or {}
     results = {}
     undecided = {}
+    replaced = []
     for e in targets:
         try:
-            results[e["repo"]] = check(e["repo"], gh, now, "rot", allowed_extra=extra_licenses_for(e["category"]))
+            r = check(e["repo"], gh, now, "rot", allowed_extra=extra_licenses_for(e["category"]))
+            if e.get("repo_id") is None:
+                logging.warning("%s has no repo_id, so a replaced repo can't be caught", e["repo"])
+            elif r.exists and r.repo_id is not None and r.repo_id != e["repo_id"]:
+                # Someone else's repo at the listed name inherits nothing: it reads as gone, and a person decides.
+                replaced.append({"repo": e["repo"], "kind": "replaced", "want": e["repo_id"], "got": r.repo_id})
+                r = RepoResult(False, e["repo"], [MSG_REPLACED], "remove")
+            results[e["repo"]] = r
         except GitHubError as exc:
             # An owner's IP allow list hides the repo from our token; that says nothing about the repo.
             if not isinstance(exc, Undecided) and not (exc.status == 403 and "IP allow list" in exc.message):
@@ -227,6 +245,7 @@ def prepare(gh, now, path=DEFAULT_PATH, repo=None, check=check_repo) -> dict:
         except Exception:
             # The weeks are only a review prompt; failing to record them mustn't stop the check.
             logging.exception("could not record undecided repos")
+    review += replaced
     new, actions, rot = plan_rot(entries, results, now, rot_state)
     changed = new != sorted(entries, key=sort_key)
     if changed:
@@ -272,10 +291,11 @@ def open_reviews(gh, review: list[dict]) -> None:
     for r in review:
         if not REPO_INPUT.fullmatch(r["repo"]):
             raise ValueError(f"not an owner/name: {r['repo']!r}")
-        title = REVIEW_TITLE.format(repo=r["repo"])
+        title, body = (REPLACED_TITLE, REPLACED_BODY) if r.get("kind") == "replaced" else (REVIEW_TITLE, REVIEW_BODY)
+        title = title.format(repo=r["repo"])
         if title in open_titles:
             continue
-        gh.post(f"{API}/issues", {"title": title, "body": REVIEW_BODY.format(**r), "labels": ["needs-review"]})
+        gh.post(f"{API}/issues", {"title": title, "body": body.format(**r), "labels": ["needs-review"]})
 
 
 def pr_body(actions) -> str:

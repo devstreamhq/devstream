@@ -6,7 +6,9 @@ import { GET as scorecard } from "../src/pages/scorecard.svg.ts";
 
 const realFetch = globalThis.fetch;
 const mock = (fn) => (globalThis.fetch = fn);
-const json = (body, ok = true) => async () => ({ ok, json: async () => body });
+const json =
+  (body, ok = true) =>
+  async () => ({ ok, json: async () => body });
 const text = async (r) => r.text();
 const checks = (svg) => {
   assert.ok(!/<script/i.test(svg), "no script");
@@ -35,7 +37,9 @@ test("scorecard.svg renders the numeric score", async () => {
 
 test("scorecard.svg says pending on throw or garbage", async () => {
   for (const f of [
-    async () => { throw new Error("down"); },
+    async () => {
+      throw new Error("down");
+    },
     json({ score: "9" }),
     json({ score: NaN }),
     json(null),
@@ -50,9 +54,13 @@ test("scorecard.svg says pending on throw or garbage", async () => {
 });
 
 test("both SVGs escape their input", () => {
-  const svg = flatBadge('<b>"', '<script>&', '"><x');
-  assert.ok(!svg.includes("<script>") && !svg.includes("<b>") && !svg.includes('"><x'));
+  const svg = flatBadge('<b>"', "<script>&", '"><x');
+  assert.ok(
+    !svg.includes("<script>") && !svg.includes("<b>") && !svg.includes('"><x'),
+  );
   assert.ok(svg.includes("&lt;script&gt;&amp;"));
 });
 
-test.after(() => { globalThis.fetch = realFetch; });
+test.after(() => {
+  globalThis.fetch = realFetch;
+});

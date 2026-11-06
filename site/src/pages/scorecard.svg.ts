@@ -1,6 +1,7 @@
 import { flatBadge } from "../lib/embeds.ts";
 
-const URL_ = "https://api.scorecard.dev/projects/github.com/devstreamhq/devstream";
+const URL_ =
+  "https://api.scorecard.dev/projects/github.com/devstreamhq/devstream";
 
 export async function GET() {
   let msg = "pending";

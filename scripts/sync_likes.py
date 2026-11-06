@@ -279,10 +279,11 @@ def run(gh, entries, now: datetime, excluded: set[str]) -> None:
 
     prev_meta = read_json(gh, "meta.json")[0]
     # A repo GitHub hides from us this hour keeps its last card rather than losing stars and avatar.
-    # Every entry gets one, so the Archive page shows stars for archived and superseded entries too.
+    # Every shown entry gets one, so the Archive page has stars for archived and superseded entries too.
     carded = {}
     for e in entries:
-        carded.setdefault(normalize_repo(e["repo"]), e)
+        if e["status"] != "hidden":
+            carded.setdefault(normalize_repo(e["repo"]), e)
     fetched = fetch_meta(gh, sorted(carded))
     replaced = set()
     for k, m in list(fetched.items()):

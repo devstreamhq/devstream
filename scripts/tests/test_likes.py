@@ -892,11 +892,15 @@ class Writes(unittest.TestCase):
         # The Archive page shows their stars; only an entry gone from entries.json loses its card.
         old = {"stars": 9, "language": "Go", "language_color": "#00ADD8",
                "pushed_at": "2026-10-01T00:00:00Z", "avatar_url": "https://a/old.png"}
-        w = World([entry("o/a"), entry("o/arch", "archived"), entry("o/sup", "superseded")], {"o/a": [node("x")]},
-                  stars={"o/a": 3, "o/arch": 7, "o/sup": 4}, stats={"meta.json": {"o/removed": old}})
+        # A hidden entry is off every page while a maintainer reviews it, so it gets no card.
+        w = World([entry("o/a"), entry("o/arch", "archived"), entry("o/sup", "superseded"), entry("o/hid", "hidden")],
+                  {"o/a": [node("x")]}, stars={"o/a": 3, "o/arch": 7, "o/sup": 4, "o/hid": 5},
+                  stats={"meta.json": {"o/removed": old, "o/hid": old}})
         w.run()
         meta = w.written("meta.json")
         self.assertEqual({k: v["stars"] for k, v in meta.items()}, {"o/a": 3, "o/arch": 7, "o/sup": 4})
+        [(_, _, variables)] = [c for c in w.gh.calls if c[1] == "RepoMeta"]
+        self.assertNotIn("hid", variables.values())
         self.assertEqual(set(w.written("likes.json")), {"o/a"})
 
     def test_meta_batched_per_50(self):

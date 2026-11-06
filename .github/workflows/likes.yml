@@ -3,8 +3,7 @@ name: Sync Likes
 # Counts trusted thumbs-ups on each entry's Discussion, ranks entries, flags
 # Like bursts and writes likes.json, meta.json and daily snapshots to stats.
 on:
-  schedule:
-    - cron: "17 * * * *"
+  # Started on time by the scheduler Worker (scheduler/); a stalled one is restarted by the sweep.
   workflow_dispatch:
 
 permissions: {}

@@ -233,7 +233,9 @@ class Workflows(unittest.TestCase):
         text = (WORKFLOWS / "on-merge.yml").read_text()
         on = text[text.index("\non:\n"):text.index("\npermissions:")]
         self.assertNotIn("push:", on)
-        self.assertIn("schedule:", on)
+        # Started hourly by the scheduler Worker; a GitHub schedule too would queue a second run in list-writes.
+        self.assertNotIn("schedule:", on)
+        self.assertIn("workflow_dispatch:", on)
         self.assertIn("group: list-writes", text)
 
     def test_site_redeploys_after_the_runs_that_make_threads(self):

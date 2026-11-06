@@ -5,8 +5,7 @@ name: Create entry Discussions
 # hourly run is the backstop for the 40-per-run cap, failed creates and any
 # other change to the list.
 on:
-  schedule:
-    - cron: "23 * * * *"
+  # Started on time by the scheduler Worker (scheduler/); a stalled one is restarted by the sweep.
   workflow_dispatch:
 
 permissions: {}

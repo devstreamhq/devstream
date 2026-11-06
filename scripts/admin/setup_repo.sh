@@ -64,7 +64,8 @@ RULESET=$(cat <<'J'
           { "context": "lint", "integration_id": 15368 },
           { "context": "analyze (python)", "integration_id": 15368 },
           { "context": "analyze (javascript-typescript)", "integration_id": 15368 },
-          { "context": "analyze (actions)", "integration_id": 15368 }
+          { "context": "analyze (actions)", "integration_id": 15368 },
+          { "context": "site", "integration_id": 15368 }
         ]
       }
     },

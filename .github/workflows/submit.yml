@@ -47,7 +47,8 @@ jobs:
           permission-organization-user-blocking: read
           permission-issues: read
       # An API failure exits non-zero with no result file, so nothing is accepted or rejected.
-      # A repo that can't be decided also writes undecided.json, counted by the steps below.
+      # Any failure (an undecidable repo, an API error) also writes undecided.json, counted below.
+      # A rate limit that hasn't reset yet writes nothing, so waiting for it spends no attempt.
       # A dispatched issue that is already decided exits 0 with no result file, so nothing runs.
       - env:
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}
@@ -59,7 +60,7 @@ jobs:
           else
             python -m scripts.submit decide --event "$GITHUB_EVENT_PATH" --out result.json --undecided undecided.json
           fi
-      # After 3 undecided runs the issue is parked as needs-review, so the sweeper moves on.
+      # After 3 runs without a decision the issue is parked as needs-review, so the sweeper moves on.
       - id: undecided_token
         if: failure() && hashFiles('undecided.json') != ''
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0

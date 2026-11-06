@@ -2,7 +2,7 @@
 
 python -m scripts.submit decide (--event EVENT.json | --issue N) --out result.json
 python -m scripts.submit apply --result result.json
-python -m scripts.submit decide ... --undecided undecided.json   (exits 3 when the repo can't be decided)
+python -m scripts.submit decide ... --undecided undecided.json   (exits 3 when the run reached no decision)
 python -m scripts.submit undecided --file undecided.json   (counts it, and parks the issue after 3)
 python -m scripts.submit comment --result result.json --kind {accepted,rejected,pr,error}
 python -m scripts.submit seed --file seeds.csv --out report.json [--apply]
@@ -14,25 +14,21 @@ import json
 import os
 import re
 import sys
+import traceback
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta, timezone
 
+from scripts.devstream.attempts import note_failure, record_from_file, spends_attempt
 from scripts.devstream.description import clean_description
 from scripts.devstream.entries import CATEGORIES, DEFAULT_PATH, Entry, find, load, normalize_repo, save
 from scripts.devstream.gh import GitHub, GitHubError, RateLimited
 from scripts.devstream.issue_form import FormError, parse_submission
-from scripts.devstream.license_detect import Undecided, extra_licenses_for
+from scripts.devstream.license_detect import extra_licenses_for
 from scripts.devstream.quality import check_repo
 from scripts.devstream.trust import check_user, ensure_block_access
 from scripts.validate_data import validate
 
 REPO = "devstreamhq/devstream"
-API = f"/repos/{REPO}"
-BOT = "devstreamhq-bot[bot]"
-# Undecided runs before a submission is parked, so one stuck issue can't hold the sweeper.
-MAX_UNDECIDED = 3
-COUNTER = re.compile(r"<!-- devstream:undecided ([0-9]{1,4}) -->")
-RETRYING = "We couldn't finish checking this one yet, so we'll try again shortly.\n\n<!-- devstream:undecided {} -->\n"
 SITE = "https://devstream.jamesconway.dev"
 QUALITY_BAR = f"https://github.com/{REPO}/wiki/Quality-Bar"
 WEEKLY_LIMIT = 3
@@ -173,37 +169,29 @@ def _fetch_issue(gh, raw: str) -> dict | None:
     return issue
 
 
-def record_undecided(gh, n: int, error: str) -> bool:
-    """Count one more undecided run on issue n; at MAX_UNDECIDED, park it. True when parked.
-
-    The count lives in a hidden marker in the bot's own comment, so a submitter can't forge it.
-    """
-    mine = next((c for c in gh.paginate(f"{API}/issues/{n}/comments?per_page=100")
-                 if (c.get("user") or {}).get("login") == BOT and COUNTER.search(c.get("body") or "")), None)
-    count = int(COUNTER.search(mine["body"]).group(1)) + 1 if mine else 1
-    if mine:
-        gh.patch(f"{API}/issues/comments/{mine['id']}", {"body": RETRYING.format(count)})
-    else:
-        gh.post(f"{API}/issues/{n}/comments", {"body": RETRYING.format(count)})
-    if count != MAX_UNDECIDED:
-        return False
-    # The sweeper skips needs-review, so it moves on to the next issue.
-    gh.post(f"{API}/issues/{n}/labels", {"labels": ["needs-review"]})
-    detail = " ".join(error.replace("`", "'").split())[:300]
-    gh.post(f"{API}/issues/{n}/comments", {"body": comment({}, "error") + f"\n`{detail}`\n"})
-    return True
-
-
 def _undecided(args) -> int:
-    with open(args.file, encoding="utf-8") as f:
-        u = json.load(f)
-    if type(u["issue"]) is not int or u["issue"] <= 0:
-        raise SystemExit(f"bad issue number {u['issue']!r}")
-    record_undecided(GitHub(os.environ["GITHUB_TOKEN"]), u["issue"], str(u["error"]))
+    record_from_file(GitHub(os.environ["GITHUB_TOKEN"]), args.file, comment({}, "error"))
     return 0
 
 
 def _decide(args) -> int:
+    """Exit 3 with undecided.json on any failure, so the issue can be parked after a few."""
+    try:
+        return _decide_issue(args)
+    except Exception as e:
+        if args.undecided is None or not spends_attempt(e):
+            raise
+        traceback.print_exc()
+        if args.issue is not None:
+            n = int(args.issue)
+        else:
+            with open(args.event, encoding="utf-8") as f:
+                n = json.load(f)["issue"]["number"]
+        note_failure(args.undecided, n, e)
+        return 3
+
+
+def _decide_issue(args) -> int:
     gh = GitHub(os.environ["GITHUB_TOKEN"])
     if args.issue is not None:
         issue = _fetch_issue(gh, args.issue)
@@ -214,15 +202,7 @@ def _decide(args) -> int:
         with open(args.event, encoding="utf-8") as f:
             issue = json.load(f)["issue"]
     excluded = {u.strip() for u in os.environ.get("EXCLUDED_USERS", "").split(",") if u.strip()}
-    try:
-        d = decide(issue, gh, datetime.now(timezone.utc), load(), excluded)
-    except Undecided as e:
-        if args.undecided is None:
-            raise
-        with open(args.undecided, "w", encoding="utf-8") as f:
-            json.dump({"issue": issue["number"], "error": str(e)}, f)
-        print(e, file=sys.stderr)
-        return 3
+    d = decide(issue, gh, datetime.now(timezone.utc), load(), excluded)
     out = asdict(d) | {"issue": issue["number"], "author": issue["user"]["login"]}
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(out, f, indent=2, ensure_ascii=False)

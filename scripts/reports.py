@@ -5,6 +5,8 @@ python -m scripts.reports dispatch --result result.json
 python -m scripts.reports apply --result result.json
 python -m scripts.reports issue --result result.json [--error]
 python -m scripts.reports pr-body --result result.json
+python -m scripts.reports decide ... --undecided undecided.json   (exits 3 when the run reached no decision)
+python -m scripts.reports undecided --file undecided.json   (counts it, and parks the report after 3)
 """
 
 import argparse
@@ -12,10 +14,12 @@ import json
 import os
 import re
 import sys
+import traceback
 import urllib.parse
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 
+from scripts.devstream.attempts import note_failure, record_from_file, spends_attempt
 from scripts.devstream.entries import DEFAULT_PATH, find, load, normalize_repo, save
 from scripts.devstream.gh import GitHub
 from scripts.devstream.issue_form import FormError, _repo, parse_report
@@ -232,6 +236,24 @@ def _values(result: dict, kind: str) -> list:
 
 
 def _decide(args) -> int:
+    """Exit 3 with undecided.json on any failure, so the report can be parked after a few."""
+    try:
+        return _decide_issue(args)
+    except Exception as e:
+        if args.undecided is None or not spends_attempt(e):
+            raise
+        traceback.print_exc()
+        n = int(args.issue) if args.issue is not None else _read(args.event)["issue"]["number"]
+        note_failure(args.undecided, n, e)
+        return 3
+
+
+def _undecided(args) -> int:
+    record_from_file(GitHub(os.environ["GITHUB_TOKEN"]), args.file, ERROR)
+    return 0
+
+
+def _decide_issue(args) -> int:
     gh = GitHub(os.environ["GITHUB_TOKEN"])
     if args.issue is not None:
         issue = _fetch_issue(gh, args.issue)
@@ -251,9 +273,18 @@ def _decide(args) -> int:
 
 
 def _dispatch(args) -> int:
-    for repo in _values(_read(args.result), "dispatch_rot"):
-        GitHub(os.environ["GITHUB_TOKEN"]).post(
-            f"{API}/actions/workflows/rot.yml/dispatches", {"ref": "main", "inputs": {"repo": repo}})
+    result = _read(args.result)
+    try:
+        for repo in _values(result, "dispatch_rot"):
+            GitHub(os.environ["GITHUB_TOKEN"]).post(
+                f"{API}/actions/workflows/rot.yml/dispatches", {"ref": "main", "inputs": {"repo": repo}})
+    except Exception as e:
+        # No comment has gone out yet, so this run reached no decision either.
+        if args.undecided is None or not spends_attempt(e):
+            raise
+        traceback.print_exc()
+        note_failure(args.undecided, result["issue"], e)
+        return 3
     return 0
 
 
@@ -311,14 +342,17 @@ def main(argv: list[str]) -> int:
     src.add_argument("--event")
     src.add_argument("--issue")
     d.add_argument("--out", required=True)
+    d.add_argument("--undecided")
+    sub.add_parser("undecided").add_argument("--file", required=True)
     for name in ("dispatch", "apply", "issue", "pr-body"):
         s = sub.add_parser(name)
         s.add_argument("--result", required=True)
     sub.choices["apply"].add_argument("--entries", default=DEFAULT_PATH)
     sub.choices["issue"].add_argument("--error", action="store_true")
+    sub.choices["dispatch"].add_argument("--undecided")
     args = p.parse_args(argv)
     return {"decide": _decide, "dispatch": _dispatch, "apply": _apply, "issue": _issue,
-            "pr-body": _pr_body}[args.cmd](args)
+            "pr-body": _pr_body, "undecided": _undecided}[args.cmd](args)
 
 
 if __name__ == "__main__":

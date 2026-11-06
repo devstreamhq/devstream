@@ -1,14 +1,16 @@
+import io
 import json
 import os
 import tempfile
+import time
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
 from scripts.devstream.entries import load, save
-from scripts.devstream.gh import RateLimited
-from scripts.reports import handle_report, main
+from scripts.devstream.gh import GitHubError, RateLimited
+from scripts.reports import ERROR, handle_report, main
 from scripts.tests.fake_gh import FakeGitHub
 
 NOW = datetime(2026, 11, 5, 12, 0, tzinfo=timezone.utc)
@@ -360,6 +362,66 @@ class ReasonTest(unittest.TestCase):
 def write(path, obj):
     with open(path, "w") as f:
         json.dump(obj, f)
+
+
+class FailedDecideTest(unittest.TestCase):
+    def decide(self, exc, tmp):
+        def stuck(*a, **kw):
+            raise exc
+
+        with mock.patch("scripts.reports.GitHub", lambda token: gh()), \
+                mock.patch("scripts.reports.handle_report", stuck), \
+                mock.patch("scripts.reports.load", lambda: [entry()]), \
+                mock.patch.dict(os.environ, {"GITHUB_TOKEN": "t"}), \
+                mock.patch("sys.stderr", io.StringIO()):
+            ev, out, und = (os.path.join(tmp, f) for f in ("event.json", "result.json", "undecided.json"))
+            write(ev, {"issue": report()})
+            code = main(["decide", "--event", ev, "--out", out, "--undecided", und])
+            self.assertFalse(os.path.exists(out))
+            return code, und
+
+    def test_failed_decide_is_counted_and_parked_after_three(self):
+        comments, labels = [], []
+
+        def post(b):
+            comments.append({"id": 100 + len(comments), "user": {"login": BOT}, "body": b["body"]})
+
+        def patch(b):
+            comments[0]["body"] = b["body"]
+
+        g = FakeGitHub({f"GET {API}/issues/7/comments": lambda _: list(comments),
+                        f"POST {API}/issues/7/comments": post,
+                        f"PATCH {API}/issues/comments/100": patch,
+                        f"POST {API}/issues/7/labels": lambda b: labels.extend(b["labels"])})
+        for k in (1, 2, 3):
+            with tempfile.TemporaryDirectory() as tmp:
+                self.assertEqual(self.decide(GitHubError(502, "bad gateway"), tmp)[0], 3)
+                with mock.patch("scripts.reports.GitHub", lambda token: g), \
+                        mock.patch.dict(os.environ, {"GITHUB_TOKEN": "t"}):
+                    self.assertEqual(main(["undecided", "--file", os.path.join(tmp, "undecided.json")]), 0)
+        self.assertEqual(labels, ["needs-review"])
+        self.assertTrue(comments[1]["body"].startswith(ERROR))
+
+    def test_failed_rot_dispatch_is_counted_too(self):
+        def boom(_):
+            raise GitHubError(502, "bad gateway")
+
+        g = FakeGitHub({f"POST {API}/actions/workflows/rot.yml/dispatches": boom})
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch("scripts.reports.GitHub", lambda token: g), \
+                mock.patch.dict(os.environ, {"GITHUB_TOKEN": "t"}), \
+                mock.patch("sys.stderr", io.StringIO()):
+            res, und = os.path.join(tmp, "result.json"), os.path.join(tmp, "undecided.json")
+            write(res, {"issue": 7, "actions": [{"kind": "dispatch_rot", "value": "alice/tool"}]})
+            self.assertEqual(main(["dispatch", "--result", res, "--undecided", und]), 3)
+            with open(und) as f:
+                self.assertEqual(json.load(f), {"issue": 7, "error": "GitHub API 502: bad gateway"})
+
+    def test_rate_limit_still_in_force_spends_no_attempt(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(RateLimited):
+                self.decide(RateLimited(int(time.time()) + 600), tmp)
+            self.assertFalse(os.path.exists(os.path.join(tmp, "undecided.json")))
 
 
 class CliTest(unittest.TestCase):

@@ -314,9 +314,39 @@ class Retries(unittest.TestCase):
             gh.post("/a", {})
         self.assertEqual(len(sent), 1)
 
-    def test_post_502_retried(self):
+    def test_post_502_not_retried(self):
+        # The issue or comment may already exist; a second POST would duplicate it.
         gh, sent, _ = self.gh(502, 200)
-        self.assertEqual(gh.post("/a", {}), {"ok": True})
+        with self.assertRaises(GitHubError):
+            gh.post("/a", {})
+        self.assertEqual(len(sent), 1)
+
+    def test_put_patch_delete_502_retried(self):
+        for m, args in (("put", ({},)), ("patch", ({},)), ("delete", ())):
+            gh, sent, _ = self.gh(502, 200)
+            self.assertEqual(getattr(gh, m)("/a", *args), {"ok": True})
+            self.assertEqual(len(sent), 2, m)
+
+    def test_graphql_query_502_retried(self):
+        gh, sent, _ = self.gh(502, 200)
+        gh.graphql("query Q { x }", {})
+        self.assertEqual(len(sent), 2)
+
+    def test_graphql_query_timeout_retried(self):
+        gh, sent, _ = self.gh(TimeoutError(), 200)
+        gh.graphql("  query Q { x }", {})
+        self.assertEqual(len(sent), 2)
+
+    def test_graphql_mutation_502_not_retried(self):
+        for err in (502, TimeoutError()):
+            gh, sent, _ = self.gh(err, 200)
+            with self.assertRaises((GitHubError, TimeoutError)):
+                gh.graphql("mutation M { x }", {})
+            self.assertEqual(len(sent), 1)
+
+    def test_graphql_mutation_retried_when_never_sent(self):
+        gh, sent, _ = self.gh(urllib.error.URLError(ConnectionRefusedError()), 200)
+        gh.graphql("\n  mutation M { x }", {})
         self.assertEqual(len(sent), 2)
 
     def test_get_network_error_retried(self):

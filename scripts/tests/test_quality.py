@@ -431,6 +431,32 @@ class RotTest(unittest.TestCase):
         r = run(FakeGitHub({}), "rot")
         self.assertEqual((r.exists, r.rot), (False, "remove"))
 
+    def test_dmca_or_tos_blocked_repo_reads_as_gone(self):
+        # Bodies GitHub sends for a DMCA takedown (451) and a terms-of-service block (403).
+        for code, body in ((451, '{"message":"Repository access blocked","block":{"reason":"dmca"}}'),
+                           (403, '{"message":"Repository access blocked","block":{"reason":"tos"}}'),
+                           (403, '{"message":"REPOSITORY ACCESS BLOCKED"}'),
+                           (403, '{"message":"Forbidden","block":{"reason":"tos"}}')):
+            def blocked(_, code=code, body=body):
+                raise GitHubError(code, body)
+
+            for mode in ("submit", "rot"):
+                r = run(FakeGitHub({f"GET {R}": blocked}), mode)
+                self.assertEqual((r.exists, r.failures, r.rot), (False, ["This repo no longer exists."], "remove"))
+
+    def test_other_403_on_the_repo_still_raises(self):
+        # A false match would remove a live repo, so only GitHub's exact takedown phrase or block object counts.
+        for msg in ('{"message":"Resource not accessible by integration"}',
+                    "the `alice` organization has an IP allow list enabled",
+                    '{"message":"You have exceeded a secondary rate limit. Please wait a few minutes."}',
+                    '{"message":"Access to this repository has been disabled by GitHub Staff."}',
+                    '{"message":"Repository access blocked-ish"}', '{"message":"x","block":null}'):
+            def e403(_, msg=msg):
+                raise GitHubError(403, msg)
+
+            with self.assertRaises(GitHubError):
+                run(FakeGitHub({f"GET {R}": e403}), "rot")
+
     def test_rot_skips_entry_rules(self):
         g = gh({"fork": True, "parent": {"full_name": "b/o", "default_branch": "m"}, "description": ""},
                topics=(), contributing=False, coc=False)

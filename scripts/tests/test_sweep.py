@@ -1,5 +1,6 @@
 import unittest
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 from scripts.devstream.gh import GitHubError
 from scripts.sweep import sweep
@@ -18,6 +19,9 @@ MERGE_QUEUED = f"GET {API}/actions/workflows/on-merge.yml/runs?status=queued"
 MERGE_PENDING = f"GET {API}/actions/workflows/on-merge.yml/runs?status=pending"
 REPORT_QUEUED = f"GET {API}/actions/workflows/reports.yml/runs?status=queued"
 REPORT_PENDING = f"GET {API}/actions/workflows/reports.yml/runs?status=pending"
+# A run that has started still holds list-writes, and its issue isn't labelled yet.
+RUNNING = {wf: f"GET {API}/actions/workflows/{wf}/runs?status=in_progress"
+           for wf in ("submit.yml", "rot.yml", "on-merge.yml", "reports.yml")}
 REPORT_DISPATCH = f"POST {API}/actions/workflows/reports.yml/dispatches"
 ROT_OK = f"GET {API}/actions/workflows/rot.yml/runs?status=success&per_page=100"
 ROT_LATEST = f"GET {API}/actions/workflows/rot.yml/runs?per_page=100"
@@ -66,6 +70,7 @@ def gh(issues=(), refs=(), routes=None):
         ROT_QUEUED: {"total_count": 0}, ROT_PENDING: {"total_count": 0},
         MERGE_QUEUED: {"total_count": 0}, MERGE_PENDING: {"total_count": 0},
         REPORT_QUEUED: {"total_count": 0}, REPORT_PENDING: {"total_count": 0}, REPORT_DISPATCH: None,
+        **{k: {"total_count": 0} for k in RUNNING.values()},
         ROT_OK: runs(timedelta(days=2)), ROT_LATEST: runs(timedelta(days=2)),
         ROT_DISPATCH: None, ROT_REFS: [], OPEN_PRS: [],
         LIKES_RUNS: runs(timedelta(minutes=20)), MERGE_RUNS: runs(timedelta(minutes=20)),
@@ -109,7 +114,8 @@ def deleted(g):
 
 class SweepTest(unittest.TestCase):
     def test_listed_submission_is_finished_not_redispatched(self):
-        # 9's branch is merged and won't delete; 8 already got its label; 7 merged too recently to touch.
+        # 9's branch is merged and won't delete; 8 already got its label; 7 merged too recently to touch,
+        # and is never dispatched: deciding it again would reject a listed repo as a duplicate.
         def boom(b):
             raise GitHubError(422, "nope")
         g = gh([issue(9, age=timedelta(hours=2)), issue(8, labels=("submission", "accepted")),
@@ -124,12 +130,11 @@ class SweepTest(unittest.TestCase):
             ("POST", f"{API}/issues/9/labels"), ("POST", f"{API}/issues/9/comments"),
             ("PATCH", f"{API}/issues/9"),
             ("PATCH", f"{API}/issues/8"),
-            ("POST", f"{API}/actions/workflows/submit.yml/dispatches"),
         ])
         body = {p: b for m, p, b in g.calls}
         self.assertIn("`o/r` is on the list", body[f"{API}/issues/9/comments"]["body"])
         self.assertEqual(body[f"{API}/issues/9"], {"state": "closed", "state_reason": "completed"})
-        self.assertEqual(dispatched(g), ["7"])
+        self.assertEqual(dispatched(g), [])
 
     def test_failed_comment_is_not_sent_again(self):
         def boom(b):
@@ -213,6 +218,12 @@ class SweepTest(unittest.TestCase):
             g = gh([issue(1)], routes={key: {"total_count": 1}})
             sweep(g, NOW)
             self.assertEqual(dispatched(g), [], key)
+
+    def test_no_dispatch_while_a_list_writes_run_is_in_progress(self):
+        for key in RUNNING.values():
+            g = gh([issue(1)], routes={key: {"total_count": 1}, ROT_OK: runs(), ROT_LATEST: runs()})
+            sweep(g, NOW)
+            self.assertEqual((dispatched(g), rot_dispatched(g)), ([], []), key)
 
     def test_no_dispatch_while_a_rot_run_waits(self):
         # Both share the list-writes group, so a new dispatch would cancel the waiting rot run.
@@ -398,3 +409,17 @@ class HourlyWatchdogTest(unittest.TestCase):
         g = gh([issue(9)], routes={MERGE_RUNS: runs(timedelta(hours=3))})
         sweep(g, NOW)
         self.assertEqual((dispatched(g), hourly_dispatched(g)), (["9"], []))
+
+
+class WorkflowTest(unittest.TestCase):
+    def test_sweep_runs_when_a_submission_or_report_finishes(self):
+        wf = Path(__file__).resolve().parents[2] / ".github" / "workflows"
+        text = (wf / "sweep.yml").read_text()
+        on = text[text.index("workflow_run:"):text.index("types: [completed]")]
+        for name, file in (("Submit", "submit.yml"), ("Reports", "reports.yml")):
+            self.assertIn(name, on)
+            self.assertTrue((wf / file).read_text().startswith(f"name: {name}\n"), file)
+        # Never the triggering run's code, and never a loop on a failing run.
+        self.assertIn("github.event.workflow_run.conclusion == 'success'", text)
+        self.assertNotIn("workflow_run.head_sha", text)
+        self.assertIn("ref: main", text)

@@ -7,6 +7,7 @@ import tempfile
 import time
 import unittest
 import zlib
+from pathlib import Path
 from unittest import mock
 from datetime import datetime, timedelta, timezone
 
@@ -27,7 +28,7 @@ NOW = datetime(2026, 11, 5, 12, 0, tzinfo=timezone.utc)
 R = "/repos/alice/tool"
 SEARCH = (
     "GET /search/issues?q=repo:devstreamhq/devstream+label:submission"
-    "+author:carol+created:>=2026-10-29"
+    "+author:carol+created:>=2026-10-29&per_page=100"
 )
 
 
@@ -45,10 +46,11 @@ def issue(b=None, title="Submit: alice/tool"):
 
 
 def gh(count=1, repo_kw=None, extra=None):
+    """count: the author's submissions this week, the current issue (7) included."""
     routes = {
         "GET /orgs/devstreamhq/blocks": [],
         "GET /users/carol": {"created_at": iso(NOW - timedelta(days=400)), "public_repos": 3, "type": "User"},
-        SEARCH: {"total_count": count, "items": []},
+        SEARCH: {"total_count": count, "items": [{"number": 7}] + [{"number": 100 + k} for k in range(count - 1)]},
         f"GET {R}": repo(**(repo_kw or {})),
         f"GET {R}/community/profile": {"files": {"contributing": {}, "code_of_conduct": {}}},
         f"GET {R}/readme": b64(README),
@@ -113,6 +115,12 @@ class DecideTest(unittest.TestCase):
         self.assertEqual(d.reasons, [RATE_LIMIT])
         self.assertEqual(RATE_LIMIT, "You've hit the limit of 3 submissions a week. Try again in a few days.")
 
+    def test_weekly_limit_does_not_rely_on_search_seeing_this_issue(self):
+        # Search lags: three earlier submissions, and this one not indexed yet.
+        lagging = {"total_count": 3, "items": [{"number": 100}, {"number": 101}, {"number": 102}]}
+        d = run(g=gh(extra={SEARCH: lagging}))
+        self.assertEqual(d.reasons, [RATE_LIMIT])
+
     def test_collects_multiple_repo_failures(self):
         g = gh(repo_kw={"archived": True, "license": None, "pushed_at": iso(NOW - timedelta(days=200))})
         d = run(issue(body(description="short")), g)
@@ -122,6 +130,14 @@ class DecideTest(unittest.TestCase):
         self.assertIn("This repo is archived. Unarchive it to be listed.", d.reasons)
         self.assertIn("This repo hasn't had a push in the last 90 days.", d.reasons)
         self.assertTrue(any("license" in r for r in d.reasons))
+
+    def test_dmca_blocked_repo_is_rejected_not_parked(self):
+        def blocked(_):
+            raise GitHubError(451, '{"message":"Repository access blocked","block":{"reason":"dmca"}}')
+
+        d = run(g=gh(extra={f"GET {R}": blocked}))
+        self.assertFalse(d.ok)
+        self.assertIn(NOT_FOUND, d.reasons)
 
     def test_form_failure_stops_early(self):
         g = gh()
@@ -289,6 +305,17 @@ class DecideCliTest(unittest.TestCase):
         self.assertEqual(self.main(g, "--issue", "7"), 0)
         self.assertFalse(self.wrote)
 
+    def test_issue_already_on_the_list_is_skipped(self):
+        listed = [dict(entry(), issue=7)]
+        with mock.patch("scripts.submit.load", lambda: listed):
+            g = gh(extra={"GET /repos/devstreamhq/devstream/issues/7": issue_api()})
+            with tempfile.TemporaryDirectory() as tmp, mock.patch("scripts.submit.GitHub", lambda token: g), \
+                    mock.patch.dict(os.environ, {"GITHUB_TOKEN": "t"}):
+                out = os.path.join(tmp, "result.json")
+                self.assertEqual(main(["decide", "--issue", "7", "--out", out]), 0)
+                self.assertFalse(os.path.exists(out))
+        self.assertEqual([c[1] for c in g.calls], ["/repos/devstreamhq/devstream/issues/7"])
+
 
 API = "/repos/devstreamhq/devstream"
 BOT = "devstreamhq-bot[bot]"
@@ -408,6 +435,28 @@ class CliTest(unittest.TestCase):
                 with open(result) as f:
                     self.assertEqual(json.load(f), {"ok": False, "reasons": [reason], "entry": None,
                                                     "issue": 7, "author": "carol"})
+
+    def test_apply_of_an_issue_already_on_main_is_done_not_rejected(self):
+        # A duplicate dispatch of the same submission: the first run already added it.
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "entries.json")
+            save([dict(entry("Alice/Tool"), issue=7)], path)
+            before = open(path).read()
+            result = os.path.join(tmp, "result.json")
+            accepted = {"ok": True, "reasons": [], "entry": run().entry, "issue": 7, "author": "carol"}
+            write(result, accepted)
+            p = subprocess.run([sys.executable, "-m", "scripts.submit", "apply", "--result", result,
+                                "--entries", path], capture_output=True, text=True)
+            self.assertEqual((p.returncode, p.stdout.strip()), (0, "done"), p.stderr)
+            self.assertEqual(open(path).read(), before)
+            with open(result) as f:
+                self.assertEqual(json.load(f), accepted)
+
+    def test_workflow_skips_the_reject_step_when_apply_is_done(self):
+        text = (Path(__file__).resolve().parents[2] / ".github" / "workflows" / "submit.yml").read_text()
+        apply = text[text.index("\n  apply:\n"):text.index("\n  reject:\n")]
+        step = apply[apply.rindex("- if:", 0, apply.index("--kind rejected")):]
+        self.assertIn("steps.apply.outputs.done != 'true'", step[:step.index("run:")])
 
     def test_apply_appends_and_validates(self):
         with tempfile.TemporaryDirectory() as tmp:

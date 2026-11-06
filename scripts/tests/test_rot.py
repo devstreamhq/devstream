@@ -318,6 +318,17 @@ class PrepareTest(unittest.TestCase):
         self.assertEqual(kinds([Action(**a) for a in plan["actions"]]), [("warn", "bob/other")])
         self.assertEqual({e["repo"]: e["status"] for e in load(self.path)}, {"alice/tool": "live", "bob/other": "warned"})
 
+    def test_dmca_or_tos_blocked_repo_gets_the_gone_notice_not_an_abort(self):
+        for code in (451, 403):
+            def blocked(_, code=code):
+                raise GitHubError(code, '{"message":"Repository access blocked","block":{"reason":"dmca"}}')
+
+            save([entry()], self.path)
+            plan = self.run_prepare(FakeGitHub(routes(extra={"GET /repos/alice/tool": blocked})), check_repo)
+            self.assertEqual(kinds([Action(**a) for a in plan["actions"]]), [("notice", "alice/tool")], code)
+            self.assertIn("no longer exists", plan["actions"][0]["message"])
+            self.assertEqual(plan["review"], [])
+
     def test_other_403_still_aborts(self):
         def check(full, gh, now, mode, **kw):
             raise GitHubError(403, "Resource not accessible by integration")
@@ -498,6 +509,40 @@ class PrepareTest(unittest.TestCase):
         self.assertEqual(issues[0]["labels"], ["needs-review"])
         self.assertIn("`alice/tool`", issues[0]["body"])
         self.assertIn("999", issues[0]["body"])
+
+    def test_owner_rename_with_a_squatter_at_the_old_name_follows_the_rename(self):
+        def check(full, gh, now, mode, **kw):
+            r = ok(full)
+            r.repo_id = {"alice/tool": 999, "alice2/tool": 1}.get(full, 2)
+            return r
+
+        g = FakeGitHub(routes(extra={"GET /repositories/1": {"id": 1, "full_name": "alice2/tool"}}))
+        plan = self.run_prepare(g, check)
+        self.assertEqual(kinds([Action(**a) for a in plan["actions"]]), [("rename", "alice2/tool")])
+        self.assertEqual(plan["review"], [])
+        self.assertEqual(load(self.path)[0]["repo"], "alice2/tool")
+
+        # finish moves the Likes onto the new name, as for any rename.
+        r, state = store({"likes.json": {"alice/tool": {"likes": 5}}, "discussions.json": {"alice/tool": 3}},
+                         extra=threads({3: "alice/tool"}))
+        finish(FakeGitHub(r), plan, NOW)
+        self.assertEqual(state["likes.json"], {"alice2/tool": {"likes": 5}})
+
+    def test_squatter_at_the_name_of_a_gone_or_blocked_repo_is_replaced(self):
+        def check(full, gh, now, mode, **kw):
+            r = ok(full)
+            r.repo_id = 999 if full == "alice/tool" else 2
+            return r
+
+        def blocked(_):
+            raise GitHubError(451, '{"message":"Repository access blocked"}')
+
+        for gone_route in ({}, {"GET /repositories/1": blocked}):
+            save([entry(), entry("bob/other", issue=2)], self.path)
+            plan = self.run_prepare(FakeGitHub(routes(extra=gone_route)), check)
+            self.assertEqual(kinds([Action(**a) for a in plan["actions"]]), [("notice", "alice/tool")])
+            self.assertIn("A different repo now", plan["actions"][0]["message"])
+            self.assertEqual(plan["review"], [{"repo": "alice/tool", "kind": "replaced", "want": 1, "got": 999}])
 
     def test_missing_repo_id_warns_and_carries_on(self):
         e = entry()

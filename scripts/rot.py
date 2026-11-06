@@ -27,6 +27,7 @@ from scripts.devstream.quality import (
     MSG_SHORT_README,
     Undecided,
     check_repo,
+    get_repo,
 )
 from scripts.devstream.stats import ensure_branch, read_json, update_json
 from scripts.validate_data import validate
@@ -228,9 +229,14 @@ def prepare(gh, now, path=DEFAULT_PATH, repo=None, check=check_repo) -> dict:
             if e.get("repo_id") is None:
                 logging.warning("%s has no repo_id, so a replaced repo can't be caught", e["repo"])
             elif r.exists and r.repo_id is not None and r.repo_id != e["repo_id"]:
-                # Someone else's repo at the listed name inherits nothing: it reads as gone, and a person decides.
-                replaced.append({"repo": e["repo"], "kind": "replaced", "want": e["repo_id"], "got": r.repo_id})
-                r = RepoResult(False, e["repo"], [MSG_REPLACED], "remove")
+                got = r.repo_id
+                # The owner may have moved (an account rename) and someone took the old name: follow the ID.
+                moved = get_repo(gh, f"/repositories/{e['repo_id']}")
+                r = moved and check(moved["full_name"], gh, now, "rot", allowed_extra=extra_licenses_for(e["category"]))
+                if not (r and r.exists and r.repo_id == e["repo_id"]):
+                    # Someone else's repo at the listed name inherits nothing: it reads as gone, and a person decides.
+                    replaced.append({"repo": e["repo"], "kind": "replaced", "want": e["repo_id"], "got": got})
+                    r = RepoResult(False, e["repo"], [MSG_REPLACED], "remove")
             results[e["repo"]] = r
         except GitHubError as exc:
             # An owner's IP allow list hides the repo from our token; that says nothing about the repo.

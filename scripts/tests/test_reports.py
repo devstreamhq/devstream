@@ -167,10 +167,13 @@ class ThresholdTest(unittest.TestCase):
         g = gh(extra=hidden_json({"alice/other": {"hidden": True, "unhidden_at": None, "seen_at": iso(NOW)}}))
         self.assertIn("hide", kinds(run(g=g, open_reports=[report(8, "dave"), report(9, "erin")])))
 
-    def test_something_else_counts_the_same_way(self):
+    def test_something_else_never_hides_but_goes_to_review(self):
         others = [report(8, "dave"), report(9, "erin")]
         actions = run(report(reason="Something else"), open_reports=others)
-        self.assertIn("hide", kinds(actions))
+        self.assertNotIn("hide", kinds(actions))
+        self.assertEqual(labels(actions), {"needs-review"})
+        self.assertIn("a maintainer will take a look", comments(actions)[0])
+        self.assertNotIn("close", kinds(actions))
 
     def test_same_reporter_thrice_does_not_hide(self):
         others = [report(8, "carol"), report(9, "Carol")]
@@ -197,12 +200,12 @@ class ThresholdTest(unittest.TestCase):
         self.assertNotIn("hide", kinds(actions))
         self.assertEqual(labels(actions), {"needs-review"})
 
-    def test_only_spam_and_other_reports_count(self):
+    def test_only_spam_reports_count(self):
         for reason in ("Wrong category", "Dead or abandoned", "Replaced by something better",
-                       "Malicious (malware, phishing, stolen code)"):
+                       "Malicious (malware, phishing, stolen code)", "Something else"):
             others = [report(8, "dave", reason=reason), report(9, "erin")]
             self.assertNotIn("hide", kinds(run(open_reports=others)), reason)
-        others = [report(8, "dave", reason="Something else"), report(9, "erin")]
+        others = [report(8, "dave", reason="Spam or SEO"), report(9, "erin")]
         self.assertIn("hide", kinds(run(open_reports=others)))
 
     def test_edited_report_does_not_count(self):

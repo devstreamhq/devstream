@@ -1,6 +1,6 @@
 import unittest
 
-from scripts.devstream.discussions import ensure_discussion, likes_category, list_discussions
+from scripts.devstream.discussions import COUNTS, COUNTS_OLD, ensure_discussion, likes_category, list_discussions
 from scripts.devstream.gh import GitHubError
 from scripts.tests.fake_gh import FakeGitHub
 
@@ -23,9 +23,20 @@ class EnsureDiscussion(unittest.TestCase):
         self.assertEqual(
             v["body"],
             "A tidy tool for tidy people\n\n**Repo:** https://github.com/octo/tool\n\n"
-            "React with 👍 to Like it. Every GitHub account counts once.\n\n"
+            "React with 👍 to Like it. Each account counts once, if it's at least 30 days old "
+            "and has a public repo or a contribution in the last year.\n\n"
             "See where it ranks: https://devstream.jamesconway.dev",
         )
+
+    def test_old_trust_line_is_exposed_for_a_backfill(self):
+        # Threads made before the wording fix say this; a one-off edit swaps it for COUNTS.
+        self.assertEqual(COUNTS_OLD, "Every GitHub account counts once.")
+        old_body = "d\n\n**Repo:** https://github.com/o/r\n\nReact with 👍 to Like it. Every GitHub account counts once.\n\n"
+        self.assertIn(COUNTS_OLD, old_body)
+        g = gh(7)
+        ensure_discussion(ENTRY, g, "R1", "C1", {})
+        self.assertIn(COUNTS, g.calls[0][2]["body"])
+        self.assertNotIn(COUNTS_OLD, g.calls[0][2]["body"])
 
     def test_idempotent_when_existing(self):
         g = gh()

@@ -25,6 +25,8 @@ README_DEPRECATED = re.compile(
 )
 # Title lines like "foo - DEPRECATED" or "# foo (deprecated)"; first non-blank line only.
 README_TITLE_DEPRECATED = re.compile(r"[-\u2013\u2014:|(\[][ \t]{0,3}(?P<d>" + _MARK + r")" + _END, re.I)
+# GitHub's whole takedown message: an IP allow list or a token problem is also a 403, and a false match removes a live repo.
+BLOCKED = "repository access blocked"
 README_MIN = 300
 README_SCAN = 200_000
 
@@ -168,9 +170,33 @@ def _old_enough(created_at, now) -> bool:
         return False
 
 
+def blocked(e: GitHubError) -> bool:
+    """A repo GitHub itself took down (DMCA 451, or a terms-of-service block): gone for good, like a 404."""
+    if e.status == 451:
+        return True
+    if e.status != 403:
+        return False
+    try:
+        body = json.loads(e.message)
+    except ValueError:
+        body = {"message": e.message}
+    if not isinstance(body, dict):
+        return False
+    return isinstance(body.get("block"), dict) or str(body.get("message") or "").strip().lower() == BLOCKED
+
+
+def get_repo(gh, path: str) -> dict | None:
+    try:
+        return gh.get(path)
+    except GitHubError as e:
+        if blocked(e):
+            return None
+        raise
+
+
 def check_repo(full: str, gh, now: datetime, mode: Literal["submit", "rot"],
                allowed_extra: frozenset = frozenset()) -> RepoResult:
-    repo = gh.get(f"/repos/{full}")
+    repo = get_repo(gh, f"/repos/{full}")
     if repo is None:
         return RepoResult(False, full, [MSG_GONE], "remove")
     # A redirect's final path is often /repositories/{id}, so the name comes from the body.

@@ -8,6 +8,12 @@ on:
   schedule:
     - cron: "*/15 * * * *"
   workflow_dispatch:
+  # A finished submission or report frees list-writes, so the next one is dispatched now,
+  # not at the next 15-minute slot. Neither workflow runs on pull requests, and this job
+  # checks out main and never reads the triggering run's head.
+  workflow_run:
+    workflows: [Submit, Reports]
+    types: [completed]
 
 permissions: {}
 
@@ -17,6 +23,11 @@ concurrency:
 
 jobs:
   sweep:
+    # Only after a success: a failed or rate-limited run would otherwise re-dispatch in a tight loop.
+    if: >-
+      github.event_name != 'workflow_run' || (
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

@@ -65,7 +65,7 @@ def _emoji_run_too_long(t: str) -> bool:
             run += 1
             if run > 2:
                 return True
-        elif ch != "️":  # variation selector rides along with its emoji
+        elif not VARIATION.match(ch):  # variation selectors ride along with their emoji
             run = 0
     return False
 
@@ -83,6 +83,8 @@ def clean_description(text: str) -> tuple[str | None, str | None]:
     # would be stored at 141, and "Toolkit!!!" shrinks to an 8-character "Toolkit.".
     if not MIN_LEN <= len(final) <= MAX_LEN:
         return None, f"Descriptions need to be between {MIN_LEN} and {MAX_LEN} characters."
+    # Check the text we store: the added period turns a trailing "www" into "www.".
+    t = final
     if _mixed_script(t):
         return None, "Please use one alphabet per word."
     if _has_url(t):

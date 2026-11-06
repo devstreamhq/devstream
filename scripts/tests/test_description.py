@@ -48,6 +48,8 @@ class DescriptionTest(unittest.TestCase):
             "y" * 139, "z" * 140, "w" * 139 + ".", "v" * 141, "short", "abcdefghi!", "abcdefghij!",
             "Mixed ending?.!", "Tabs\tand\nnewlines in it", "Dots... in the middle... end...",
             "Questions? Yes, answered here?", "Ending with spaces and bang !  ",
+            # The added period turns a trailing "www" into "www.", a link on the re-check.
+            "A short history of the www", "Mirror of the WWW!",
         ]
         self.assertGreaterEqual(len(inputs), 30)
         for x in inputs:
@@ -168,6 +170,8 @@ class DescriptionTest(unittest.TestCase):
     def test_emoji_run_with_variation_selector(self):
         bad("Stars \u2728\ufe0f\u2728\ufe0f\u2728\ufe0f everywhere here")
         ok("Stars \u2728\ufe0f\u2728\ufe0f everywhere here")
+        # Any selector, not only U+FE0F: they are all dropped before storing.
+        bad("Stars \u2728\u2728\ufe08\u2728\u2728 everywhere here")
 
     def test_removed_terms_allowed(self):
         ok("Work from home setup scripts for devs")

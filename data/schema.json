@@ -23,6 +23,7 @@
       "additionalProperties": false,
       "required": [
         "repo",
+        "repo_id",
         "category",
         "description",
         "submitted_by",
@@ -37,6 +38,11 @@
         "repo": {
           "type": "string",
           "pattern": "^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$"
+        },
+        "repo_id": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "GitHub's numeric repo ID, which never changes or gets reused. The health check compares it to catch a different repo at the same name."
         },
         "category": {
           "enum": [

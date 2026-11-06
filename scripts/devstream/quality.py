@@ -56,6 +56,7 @@ class RepoResult:
     failures: list[str] = field(default_factory=list)
     rot: Literal["ok", "warn", "remove"] = "ok"
     meta: dict = field(default_factory=dict)
+    repo_id: int | None = None
 
 
 def _readme_text_length(text: str) -> int:
@@ -197,7 +198,7 @@ def check_repo(full: str, gh, now: datetime, mode: Literal["submit", "rot"],
             rot = "warn"
         else:
             rot = "ok"
-        return RepoResult(True, r, failures, rot, meta)
+        return RepoResult(True, r, failures, rot, meta, repo.get("id"))
 
     if age is None or age > timedelta(days=90):
         failures.append(MSG_STALE)
@@ -214,4 +215,4 @@ def check_repo(full: str, gh, now: datetime, mode: Literal["submit", "rot"],
     missing = _extras_missing(repo, gh, r)
     if missing:
         failures.append("Add at least two of these to the repo: " + ", ".join(missing) + ".")
-    return RepoResult(True, r, failures, "ok", meta)
+    return RepoResult(True, r, failures, "ok", meta, repo.get("id"))

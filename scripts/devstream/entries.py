@@ -10,6 +10,7 @@ STATUSES = ("live", "warned", "flagged", "hidden", "archived", "superseded")
 
 class Entry(TypedDict):
     repo: str
+    repo_id: int
     category: str
     description: str
     submitted_by: str

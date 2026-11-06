@@ -3,6 +3,7 @@
   "entries": [
     {
       "repo": "academic/awesome-datascience",
+      "repo_id": 21515044,
       "category": "learning-resources",
       "description": "A big, practical stack of courses, tools and books for learning data science by doing real work.",
       "submitted_by": "jamesconwaydev",
@@ -15,6 +16,7 @@
     },
     {
       "repo": "acassen/keepalived",
+      "repo_id": 4988795,
       "category": "devops-infra",
       "description": "Lets two servers share one floating IP address, so a failure does not take your site down.",
       "submitted_by": "jamesconwaydev",
@@ -27,6 +29,7 @@
     },
     {
       "repo": "actions/runner",
+      "repo_id": 184286875,
       "category": "devops-infra",
       "description": "The agent that lets your own machines run GitHub Actions jobs when hosted runners fall short.",
       "submitted_by": "jamesconwaydev",
@@ -39,6 +42,7 @@
     },
     {
       "repo": "actix/actix-web",
+      "repo_id": 105379569,
       "category": "backend-apis",
       "description": "A powerful, very fast Rust web framework for services that must handle serious load.",
       "submitted_by": "jamesconwaydev",
@@ -51,6 +55,7 @@
     },
     {
       "repo": "actualbudget/actual",
+      "repo_id": 486815039,
       "category": "self-hosted",
       "description": "A fast personal budgeting app that keeps your finances local and under your control.",
       "submitted_by": "jamesconwaydev",
@@ -63,6 +68,7 @@
     },
     {
       "repo": "AdguardTeam/AdGuardHome",
+      "repo_id": 62712899,
       "category": "self-hosted",
       "description": "A network-wide ad blocker that sits on your DNS and quietly stops the junk before it loads.",
       "submitted_by": "jamesconwaydev",
@@ -75,6 +81,7 @@
     },
     {
       "repo": "adobe/react-spectrum",
+      "repo_id": 208362715,
       "category": "design-ui",
       "description": "Accessible components and hooks from Adobe that handle keyboards and screen readers properly.",
       "submitted_by": "jamesconwaydev",
@@ -87,6 +94,7 @@
     },
     {
       "repo": "AdrienTorris/awesome-blazor",
+      "repo_id": 127247098,
       "category": "learning-resources",
       "description": "Where to start with Blazor: libraries, samples and tutorials for building web apps in C Sharp instead of JavaScript.",
       "submitted_by": "jamesconwaydev",
@@ -99,6 +107,7 @@
     },
     {
       "repo": "airbnb/lottie-ios",
+      "repo_id": 70198664,
       "category": "mobile",
       "description": "Play designer made After Effects animations in your iOS app as real vector graphics.",
       "submitted_by": "jamesconwaydev",
@@ -111,6 +120,7 @@
     },
     {
       "repo": "ajeetdsouza/zoxide",
+      "repo_id": 245166720,
       "category": "cli-terminal",
       "description": "A smarter cd that learns where you go and jumps there from a few letters.",
       "submitted_by": "jamesconwaydev",
@@ -123,6 +133,7 @@
     },
     {
       "repo": "akullpp/awesome-java",
+      "repo_id": 21648001,
       "category": "learning-resources",
       "description": "A hand-picked map of the Java frameworks, libraries and tools worth your time.",
       "submitted_by": "jamesconwaydev",
@@ -135,6 +146,7 @@
     },
     {
       "repo": "alacritty/alacritty",
+      "repo_id": 51980455,
       "category": "cli-terminal",
       "description": "A GPU accelerated terminal that opens instantly and stays simple.",
       "submitted_by": "jamesconwaydev",
@@ -147,6 +159,7 @@
     },
     {
       "repo": "Alamofire/Alamofire",
+      "repo_id": 22458259,
       "category": "mobile",
       "description": "Network requests in Swift that are short to write and easy to read.",
       "submitted_by": "jamesconwaydev",
@@ -159,6 +172,7 @@
     },
     {
       "repo": "AllThingsSmitty/css-protips",
+      "repo_id": 41592744,
       "category": "learning-resources",
       "description": "Short, practical CSS tricks you can lift straight into your next stylesheet.",
       "submitted_by": "jamesconwaydev",
@@ -171,6 +185,7 @@
     },
     {
       "repo": "alpinejs/alpine",
+      "repo_id": 224663696,
       "category": "frontend-web",
       "description": "Sprinkle behavior into your HTML with a few attributes, no build step required.",
       "submitted_by": "jamesconwaydev",
@@ -183,6 +198,7 @@
     },
     {
       "repo": "analysis-tools-dev/static-analysis",
+      "repo_id": 48246447,
       "category": "learning-resources",
       "description": "Find the linter or static analysis tool that catches bugs early in whatever language you write.",
       "submitted_by": "jamesconwaydev",
@@ -195,6 +211,7 @@
     },
     {
       "repo": "android/architecture-samples",
+      "repo_id": 51148780,
       "category": "mobile",
       "description": "Official examples showing how to structure an Android app in a way that scales.",
       "submitted_by": "jamesconwaydev",
@@ -207,6 +224,7 @@
     },
     {
       "repo": "android/compose-samples",
+      "repo_id": 211288349,
       "category": "mobile",
       "description": "Official Jetpack Compose apps you can read and borrow patterns from.",
       "submitted_by": "jamesconwaydev",
@@ -219,6 +237,7 @@
     },
     {
       "repo": "android/nowinandroid",
+      "repo_id": 483402734,
       "category": "mobile",
       "description": "A complete Android app built with current best practices that you can study line by line.",
       "submitted_by": "jamesconwaydev",
@@ -231,6 +250,7 @@
     },
     {
       "repo": "angular/angular",
+      "repo_id": 24195339,
       "category": "frontend-web",
       "description": "Google's full framework for large web apps, with routing, forms and testing included.",
       "submitted_by": "jamesconwaydev",
@@ -243,6 +263,7 @@
     },
     {
       "repo": "angular/angular-cli",
+      "repo_id": 36891867,
       "category": "frontend-web",
       "description": "Scaffold, build, test and deploy Angular projects from a few commands.",
       "submitted_by": "jamesconwaydev",
@@ -255,6 +276,7 @@
     },
     {
       "repo": "aniftyco/awesome-tailwindcss",
+      "repo_id": 109994573,
       "category": "learning-resources",
       "description": "Plugins, templates, tools and tutorials to help you get further with Tailwind CSS.",
       "submitted_by": "jamesconwaydev",
@@ -267,6 +289,7 @@
     },
     {
       "repo": "ant-design/ant-design",
+      "repo_id": 34526884,
       "category": "design-ui",
       "description": "A big, polished React component library built for enterprise dashboards and admin tools.",
       "submitted_by": "jamesconwaydev",
@@ -279,6 +302,7 @@
     },
     {
       "repo": "apache/airflow",
+      "repo_id": 33884891,
       "category": "databases-data",
       "description": "Schedule and monitor your data pipelines as Python code, with a UI that shows what failed.",
       "submitted_by": "jamesconwaydev",
@@ -291,6 +315,7 @@
     },
     {
       "repo": "apache/arrow",
+      "repo_id": 51905353,
       "category": "databases-data",
       "description": "A shared in memory columnar format so data tools can swap tables without copying.",
       "submitted_by": "jamesconwaydev",
@@ -303,6 +328,7 @@
     },
     {
       "repo": "apache/cassandra",
+      "repo_id": 206424,
       "category": "databases-data",
       "description": "A distributed database built to keep answering when nodes die, for data that outgrows one machine.",
       "submitted_by": "jamesconwaydev",
@@ -315,6 +341,7 @@
     },
     {
       "repo": "apache/couchdb",
+      "repo_id": 206417,
       "category": "databases-data",
       "description": "A document database you talk to over a plain web API with JSON, which syncs well even on flaky connections.",
       "submitted_by": "jamesconwaydev",
@@ -327,6 +354,7 @@
     },
     {
       "repo": "apache/doris",
+      "repo_id": 99919302,
       "category": "databases-data",
       "description": "A fast analytics database that answers real time dashboard queries over large data.",
       "submitted_by": "jamesconwaydev",
@@ -339,6 +367,7 @@
     },
     {
       "repo": "apache/echarts",
+      "repo_id": 9185792,
       "category": "design-ui",
       "description": "A rich charting library for interactive dashboards, with maps, heatmaps and big data support.",
       "submitted_by": "jamesconwaydev",
@@ -351,6 +380,7 @@
     },
     {
       "repo": "apache/flink",
+      "repo_id": 20587599,
       "category": "databases-data",
       "description": "Process streams of events in real time, with state that survives failures.",
       "submitted_by": "jamesconwaydev",
@@ -363,6 +393,7 @@
     },
     {
       "repo": "apache/httpd",
+      "repo_id": 205423,
       "category": "devops-infra",
       "description": "The old reliable web server that has been serving pages since before most of us had broadband.",
       "submitted_by": "jamesconwaydev",
@@ -375,6 +406,7 @@
     },
     {
       "repo": "apache/jmeter",
+      "repo_id": 688352,
       "category": "testing",
       "description": "Load test web apps and APIs with a long proven Java tool and a GUI.",
       "submitted_by": "jamesconwaydev",
@@ -387,6 +419,7 @@
     },
     {
       "repo": "apache/kafka",
+      "repo_id": 2211243,
       "category": "backend-apis",
       "description": "Move huge streams of events between systems and replay them whenever you need.",
       "submitted_by": "jamesconwaydev",
@@ -399,6 +432,7 @@
     },
     {
       "repo": "apache/spark",
+      "repo_id": 17165658,
       "category": "databases-data",
       "description": "Crunch very large datasets across a cluster using SQL, Python or Scala.",
       "submitted_by": "jamesconwaydev",
@@ -411,6 +445,7 @@
     },
     {
       "repo": "apache/superset",
+      "repo_id": 39464018,
       "category": "databases-data",
       "description": "Build dashboards and explore data in the browser, connected to nearly any SQL database.",
       "submitted_by": "jamesconwaydev",
@@ -423,6 +458,7 @@
     },
     {
       "repo": "AppFlowy-IO/AppFlowy",
+      "repo_id": 377496562,
       "category": "self-hosted",
       "description": "A notes, wiki and project workspace you can own and run yourself, as an alternative to Notion.",
       "submitted_by": "jamesconwaydev",
@@ -435,6 +471,7 @@
     },
     {
       "repo": "appium/appium",
+      "repo_id": 7530570,
       "category": "testing",
       "description": "Automate native, hybrid and mobile web apps on iOS and Android with one API.",
       "submitted_by": "jamesconwaydev",
@@ -447,6 +484,7 @@
     },
     {
       "repo": "aquasecurity/trivy",
+      "repo_id": 180687624,
       "category": "security",
       "description": "Scans container images, code and configs for known vulnerabilities in one quick command.",
       "submitted_by": "jamesconwaydev",
@@ -459,6 +497,7 @@
     },
     {
       "repo": "aristocratos/btop",
+      "repo_id": 365005377,
       "category": "cli-terminal",
       "description": "A good looking resource monitor that shows CPU, memory, disks and network at once.",
       "submitted_by": "jamesconwaydev",
@@ -471,6 +510,7 @@
     },
     {
       "repo": "ashishb/android-security-awesome",
+      "repo_id": 22117770,
       "category": "learning-resources",
       "description": "Tools, books and research for finding and fixing security holes in Android apps.",
       "submitted_by": "jamesconwaydev",
@@ -483,6 +523,7 @@
     },
     {
       "repo": "astral-sh/ruff",
+      "repo_id": 523043277,
       "category": "developer-tools",
       "description": "A Python linter and formatter so fast you will stop noticing it runs.",
       "submitted_by": "jamesconwaydev",
@@ -495,6 +536,7 @@
     },
     {
       "repo": "astral-sh/uv",
+      "repo_id": 699532645,
       "category": "developer-tools",
       "description": "Install Python packages and manage environments many times faster than pip.",
       "submitted_by": "jamesconwaydev",
@@ -507,6 +549,7 @@
     },
     {
       "repo": "atuinsh/atuin",
+      "repo_id": 301244405,
       "category": "cli-terminal",
       "description": "Search your shell history across machines, with context like directory and exit code.",
       "submitted_by": "jamesconwaydev",
@@ -519,6 +562,7 @@
     },
     {
       "repo": "avajs/ava",
+      "repo_id": 26820798,
       "category": "testing",
       "description": "A concurrent Node test runner with a minimal API and clean output.",
       "submitted_by": "jamesconwaydev",
@@ -531,6 +575,7 @@
     },
     {
       "repo": "avelino/awesome-go",
+      "repo_id": 21540759,
       "category": "learning-resources",
       "description": "A hand-picked map of the Go frameworks, libraries and tools worth your time.",
       "submitted_by": "jamesconwaydev",
@@ -543,6 +588,7 @@
     },
     {
       "repo": "awesomedata/awesome-public-datasets",
+      "repo_id": 26898879,
       "category": "learning-resources",
       "description": "Open datasets sorted by topic, for when you need real data to practise on or build with.",
       "submitted_by": "jamesconwaydev",
@@ -555,6 +601,7 @@
     },
     {
       "repo": "axios/axios",
+      "repo_id": 23088740,
       "category": "backend-apis",
       "description": "The HTTP client most JavaScript developers reach for first, in the browser and on the server.",
       "submitted_by": "jamesconwaydev",
@@ -567,6 +614,7 @@
     },
     {
       "repo": "babel/babel",
+      "repo_id": 24560307,
       "category": "developer-tools",
       "description": "Write the newest JavaScript today and have it compiled for older browsers.",
       "submitted_by": "jamesconwaydev",
@@ -579,6 +627,7 @@
     },
     {
       "repo": "bazelbuild/bazel",
+      "repo_id": 20773773,
       "category": "developer-tools",
       "description": "Build very large multi language codebases quickly, with caching you can trust.",
       "submitted_by": "jamesconwaydev",
@@ -591,6 +640,7 @@
     },
     {
       "repo": "BerriAI/litellm",
+      "repo_id": 671269505,
       "category": "ai-ml",
       "description": "One OpenAI style API in front of over a hundred LLM providers, with cost tracking and fallbacks.",
       "submitted_by": "jamesconwaydev",
@@ -603,6 +653,7 @@
     },
     {
       "repo": "binwiederhier/ntfy",
+      "repo_id": 420503947,
       "category": "self-hosted",
       "description": "Send a push notification to your phone with a simple HTTP request.",
       "submitted_by": "jamesconwaydev",
@@ -615,6 +666,7 @@
     },
     {
       "repo": "biomejs/biome",
+      "repo_id": 671654508,
       "category": "developer-tools",
       "description": "One quick tool that formats and lints your web project, in place of several slower ones.",
       "submitted_by": "jamesconwaydev",
@@ -627,6 +679,7 @@
     },
     {
       "repo": "blakeblackshear/frigate",
+      "repo_id": 167694194,
       "category": "self-hosted",
       "description": "A home camera recorder that detects people and cars locally, so footage stays private.",
       "submitted_by": "jamesconwaydev",
@@ -639,6 +692,7 @@
     },
     {
       "repo": "bridgecrewio/checkov",
+      "repo_id": 224386599,
       "category": "security",
       "description": "Scans your Terraform, Kubernetes and Docker files for misconfigurations before they reach production.",
       "submitted_by": "jamesconwaydev",
@@ -651,6 +705,7 @@
     },
     {
       "repo": "BurntSushi/ripgrep",
+      "repo_id": 53631945,
       "category": "cli-terminal",
       "description": "Searches your whole codebase in a blink and skips files your gitignore already ignores.",
       "submitted_by": "jamesconwaydev",
@@ -663,6 +718,7 @@
     },
     {
       "repo": "caddyserver/caddy",
+      "repo_id": 29207621,
       "category": "devops-infra",
       "description": "A web server that fetches your TLS certificates for you, so you never touch a renewal cron job again.",
       "submitted_by": "jamesconwaydev",
@@ -675,6 +731,7 @@
     },
     {
       "repo": "calcom/cal.diy",
+      "repo_id": 350360184,
       "category": "self-hosted",
       "description": "Let people book time with you, with scheduling you host yourself instead of paying per seat.",
       "submitted_by": "jamesconwaydev",
@@ -687,6 +744,7 @@
     },
     {
       "repo": "Calinou/awesome-godot",
+      "repo_id": 33825948,
       "category": "learning-resources",
       "description": "Free plugins, scripts and add-ons that make building games in Godot faster.",
       "submitted_by": "jamesconwaydev",
@@ -699,6 +757,7 @@
     },
     {
       "repo": "callstack/react-native-paper",
+      "repo_id": 71323749,
       "category": "mobile",
       "description": "Material Design components for React Native with theming that just works.",
       "submitted_by": "jamesconwaydev",
@@ -711,6 +770,7 @@
     },
     {
       "repo": "catchorg/Catch2",
+      "repo_id": 1062572,
       "category": "testing",
       "description": "C++ tests that read naturally, with minimal setup and clear failure messages.",
       "submitted_by": "jamesconwaydev",
@@ -723,6 +783,7 @@
     },
     {
       "repo": "certbot/certbot",
+      "repo_id": 26516210,
       "category": "security",
       "description": "The tool that fetches and renews free Let's Encrypt certificates so your sites keep their padlock.",
       "submitted_by": "jamesconwaydev",
@@ -735,6 +796,7 @@
     },
     {
       "repo": "chaijs/chai",
+      "repo_id": 2931111,
       "category": "testing",
       "description": "Assertion styles for JavaScript tests, from expect to should, to match how you write.",
       "submitted_by": "jamesconwaydev",
@@ -747,6 +809,7 @@
     },
     {
       "repo": "chakra-ui/chakra-ui",
+      "repo_id": 202890778,
       "category": "design-ui",
       "description": "Accessible React components you style with props, so building screens moves quickly.",
       "submitted_by": "jamesconwaydev",
@@ -759,6 +822,7 @@
     },
     {
       "repo": "Chalarangelo/30-seconds-of-code",
+      "repo_id": 112507086,
       "category": "learning-resources",
       "description": "Short, practical coding snippets and articles you can read in half a minute and use today.",
       "submitted_by": "jamesconwaydev",
@@ -771,6 +835,7 @@
     },
     {
       "repo": "charmbracelet/bubbletea",
+      "repo_id": 233130089,
       "category": "cli-terminal",
       "description": "Build polished terminal apps in Go with a simple model, update and view loop.",
       "submitted_by": "jamesconwaydev",
@@ -783,6 +848,7 @@
     },
     {
       "repo": "charmbracelet/glow",
+      "repo_id": 219616873,
       "category": "cli-terminal",
       "description": "Read Markdown in your terminal with proper styling instead of raw symbols.",
       "submitted_by": "jamesconwaydev",
@@ -795,6 +861,7 @@
     },
     {
       "repo": "charmbracelet/gum",
+      "repo_id": 502193049,
       "category": "cli-terminal",
       "description": "Add menus, prompts and spinners to your shell scripts without writing any Go.",
       "submitted_by": "jamesconwaydev",
@@ -807,6 +874,7 @@
     },
     {
       "repo": "chartjs/Chart.js",
+      "repo_id": 8843683,
       "category": "design-ui",
       "description": "Simple, good looking charts on a canvas, ready in a handful of lines.",
       "submitted_by": "jamesconwaydev",
@@ -819,6 +887,7 @@
     },
     {
       "repo": "chef/chef",
+      "repo_id": 108278,
       "category": "devops-infra",
       "description": "The free community build of Chef, for running your cookbooks without signing a licence agreement.",
       "submitted_by": "jamesconwaydev",
@@ -831,6 +900,7 @@
     },
     {
       "repo": "chentsulin/awesome-graphql",
+      "repo_id": 38958738,
       "category": "learning-resources",
       "description": "Libraries, tools and tutorials for building and querying GraphQL APIs.",
       "submitted_by": "jamesconwaydev",
@@ -843,6 +913,7 @@
     },
     {
       "repo": "CISOfy/lynis",
+      "repo_id": 15078635,
       "category": "security",
       "description": "Audit a Linux or Unix box and get a hardening checklist in a few minutes.",
       "submitted_by": "jamesconwaydev",
@@ -855,6 +926,7 @@
     },
     {
       "repo": "cli/cli",
+      "repo_id": 212613049,
       "category": "developer-tools",
       "description": "GitHub on the command line, so you can open PRs and issues without leaving your terminal.",
       "submitted_by": "jamesconwaydev",
@@ -867,6 +939,7 @@
     },
     {
       "repo": "ClickHouse/ClickHouse",
+      "repo_id": 60246359,
       "category": "databases-data",
       "description": "Run analytical queries over billions of rows and get answers back in a blink.",
       "submitted_by": "jamesconwaydev",
@@ -879,6 +952,7 @@
     },
     {
       "repo": "cline/cline",
+      "repo_id": 824874689,
       "category": "ai-ml",
       "description": "A coding assistant inside your editor that plans changes, edits files and asks before it touches anything.",
       "submitted_by": "jamesconwaydev",
@@ -891,6 +965,7 @@
     },
     {
       "repo": "cloudflare/cloudflared",
+      "repo_id": 106867604,
       "category": "devops-infra",
       "description": "Puts a Cloudflare Tunnel in front of your home server, so you can share it without opening a port.",
       "submitted_by": "jamesconwaydev",
@@ -903,6 +978,7 @@
     },
     {
       "repo": "cockpit-project/cockpit",
+      "repo_id": 14049216,
       "category": "devops-infra",
       "description": "A friendly web console for a Linux server, with logs, services and storage one click away.",
       "submitted_by": "jamesconwaydev",
@@ -915,6 +991,7 @@
     },
     {
       "repo": "coder/code-server",
+      "repo_id": 172953845,
       "category": "developer-tools",
       "description": "Run VS Code on a remote machine and code from any browser.",
       "submitted_by": "jamesconwaydev",
@@ -927,6 +1004,7 @@
     },
     {
       "repo": "coil-kt/coil",
+      "repo_id": 201684760,
       "category": "mobile",
       "description": "Load images in Android and Compose with a small Kotlin first library.",
       "submitted_by": "jamesconwaydev",
@@ -939,6 +1017,7 @@
     },
     {
       "repo": "colinhacks/zod",
+      "repo_id": 245704608,
       "category": "frontend-web",
       "description": "Describe your data once and get validation and TypeScript types together.",
       "submitted_by": "jamesconwaydev",
@@ -951,6 +1030,7 @@
     },
     {
       "repo": "Comfy-Org/ComfyUI",
+      "repo_id": 589831718,
       "category": "ai-ml",
       "description": "Build image and video generation pipelines by dragging nodes around a graph instead of writing glue code.",
       "submitted_by": "jamesconwaydev",
@@ -963,6 +1043,7 @@
     },
     {
       "repo": "containerd/containerd",
+      "repo_id": 46089560,
       "category": "devops-infra",
       "description": "The container runtime under Docker and Kubernetes, doing the unglamorous work of starting your containers.",
       "submitted_by": "jamesconwaydev",
@@ -975,6 +1056,7 @@
     },
     {
       "repo": "continuedev/continue",
+      "repo_id": 644686905,
       "category": "ai-ml",
       "description": "An open coding assistant for your editor that works with whichever model you prefer.",
       "submitted_by": "jamesconwaydev",
@@ -987,6 +1069,7 @@
     },
     {
       "repo": "conventional-changelog/commitlint",
+      "repo_id": 51575745,
       "category": "developer-tools",
       "description": "Keeps commit messages consistent by checking each one against your rules.",
       "submitted_by": "jamesconwaydev",
@@ -999,6 +1082,7 @@
     },
     {
       "repo": "coollabsio/coolify",
+      "repo_id": 332880689,
       "category": "self-hosted",
       "description": "Deploy your apps and databases to your own servers with a Heroku like experience.",
       "submitted_by": "jamesconwaydev",
@@ -1011,6 +1095,7 @@
     },
     {
       "repo": "crewAIInc/crewAI",
+      "repo_id": 710601088,
       "category": "ai-ml",
       "description": "Assemble a crew of role-playing AI agents that hand work to each other like a small team.",
       "submitted_by": "jamesconwaydev",
@@ -1023,6 +1108,7 @@
     },
     {
       "repo": "crowdsecurity/crowdsec",
+      "repo_id": 264154402,
       "category": "security",
       "description": "Spot attackers on your servers and share blocklists with a community that has seen them too.",
       "submitted_by": "jamesconwaydev",
@@ -1035,6 +1121,7 @@
     },
     {
       "repo": "cypress-io/cypress",
+      "repo_id": 31629751,
       "category": "testing",
       "description": "Run end to end tests in a real browser and watch every step as it happens.",
       "submitted_by": "jamesconwaydev",
@@ -1047,6 +1134,7 @@
     },
     {
       "repo": "d3/d3",
+      "repo_id": 943149,
       "category": "design-ui",
       "description": "The toolkit behind most of the clever data visualizations you have seen on the web.",
       "submitted_by": "jamesconwaydev",
@@ -1059,6 +1147,7 @@
     },
     {
       "repo": "dagster-io/dagster",
+      "repo_id": 131619646,
       "category": "databases-data",
       "description": "Build data pipelines around the assets they produce, with great visibility into each run.",
       "submitted_by": "jamesconwaydev",
@@ -1071,6 +1160,7 @@
     },
     {
       "repo": "dandavison/delta",
+      "repo_id": 193526915,
       "category": "cli-terminal",
       "description": "Makes git diffs readable with syntax highlighting and side by side views.",
       "submitted_by": "jamesconwaydev",
@@ -1083,6 +1173,7 @@
     },
     {
       "repo": "dani-garcia/vaultwarden",
+      "repo_id": 121898717,
       "category": "self-hosted",
       "description": "A light Bitwarden compatible server you can run on a small box for your family's passwords.",
       "submitted_by": "jamesconwaydev",
@@ -1095,6 +1186,7 @@
     },
     {
       "repo": "dart-lang/sdk",
+      "repo_id": 35726310,
       "category": "mobile",
       "description": "The language, tools and compilers behind Flutter, with fast builds and sound typing.",
       "submitted_by": "jamesconwaydev",
@@ -1107,6 +1199,7 @@
     },
     {
       "repo": "data-privacy-stack/presidio",
+      "repo_id": 132129752,
       "category": "security",
       "description": "Finds personal data like names and card numbers in text, then masks it before it travels further.",
       "submitted_by": "jamesconwaydev",
@@ -1119,6 +1212,7 @@
     },
     {
       "repo": "davidsonfellipe/awesome-wpo",
+      "repo_id": 25212911,
       "category": "learning-resources",
       "description": "Articles, tools and tricks for making web pages load faster.",
       "submitted_by": "jamesconwaydev",
@@ -1131,6 +1225,7 @@
     },
     {
       "repo": "dbeaver/dbeaver",
+      "repo_id": 44662669,
       "category": "databases-data",
       "description": "One desktop client for nearly every database, with an editor and a visual schema browser.",
       "submitted_by": "jamesconwaydev",
@@ -1143,6 +1238,7 @@
     },
     {
       "repo": "deepspeedai/DeepSpeed",
+      "repo_id": 235860204,
       "category": "ai-ml",
       "description": "Train and serve huge models with memory tricks that make big jobs fit on the hardware you have.",
       "submitted_by": "jamesconwaydev",
@@ -1155,6 +1251,7 @@
     },
     {
       "repo": "denoland/deno",
+      "repo_id": 133442384,
       "category": "developer-tools",
       "description": "A secure JavaScript and TypeScript runtime with tooling built in and no config files.",
       "submitted_by": "jamesconwaydev",
@@ -1167,6 +1264,7 @@
     },
     {
       "repo": "derailed/k9s",
+      "repo_id": 167596393,
       "category": "cli-terminal",
       "description": "A terminal dashboard for Kubernetes that lets you browse, log and debug clusters quickly.",
       "submitted_by": "jamesconwaydev",
@@ -1179,6 +1277,7 @@
     },
     {
       "repo": "DevExpress/testcafe",
+      "repo_id": 34262857,
       "category": "testing",
       "description": "Automate end to end web tests with no browser plugins or drivers to install.",
       "submitted_by": "jamesconwaydev",
@@ -1191,6 +1290,7 @@
     },
     {
       "repo": "dhamaniasad/awesome-postgres",
+      "repo_id": 40072159,
       "category": "learning-resources",
       "description": "Extensions, tools, libraries and guides for getting more out of PostgreSQL.",
       "submitted_by": "jamesconwaydev",
@@ -1203,6 +1303,7 @@
     },
     {
       "repo": "direnv/direnv",
+      "repo_id": 1219305,
       "category": "cli-terminal",
       "description": "Loads the right environment variables when you step into a project folder.",
       "submitted_by": "jamesconwaydev",
@@ -1215,6 +1316,7 @@
     },
     {
       "repo": "django/django",
+      "repo_id": 4164482,
       "category": "backend-apis",
       "description": "The batteries included Python framework that gets a serious web app live quickly.",
       "submitted_by": "jamesconwaydev",
@@ -1227,6 +1329,7 @@
     },
     {
       "repo": "dokku/dokku",
+      "repo_id": 10567197,
       "category": "self-hosted",
       "description": "Your own tiny Heroku, deploying apps to a single server with a git push.",
       "submitted_by": "jamesconwaydev",
@@ -1239,6 +1342,7 @@
     },
     {
       "repo": "dolthub/dolt",
+      "repo_id": 198683574,
       "category": "databases-data",
       "description": "A SQL database you can fork, branch and merge like a git repository.",
       "submitted_by": "jamesconwaydev",
@@ -1251,6 +1355,7 @@
     },
     {
       "repo": "dotnet/aspnetcore",
+      "repo_id": 17620347,
       "category": "backend-apis",
       "description": "Microsoft's framework for fast web APIs and apps on .NET that run on Windows, Linux and Mac.",
       "submitted_by": "jamesconwaydev",
@@ -1263,6 +1368,7 @@
     },
     {
       "repo": "dotnet/maui",
+      "repo_id": 262395224,
       "category": "mobile",
       "description": "Build native mobile and desktop apps from one C sharp codebase.",
       "submitted_by": "jamesconwaydev",
@@ -1275,6 +1381,7 @@
     },
     {
       "repo": "dotnet/runtime",
+      "repo_id": 210716005,
       "category": "developer-tools",
       "description": "The runtime and libraries behind .NET apps, from small command line tools to big web services.",
       "submitted_by": "jamesconwaydev",
@@ -1287,6 +1394,7 @@
     },
     {
       "repo": "drizzle-team/drizzle-orm",
+      "repo_id": 379865325,
       "category": "backend-apis",
       "description": "A TypeScript ORM that feels like writing SQL, with types that catch your mistakes.",
       "submitted_by": "jamesconwaydev",
@@ -1299,6 +1407,7 @@
     },
     {
       "repo": "duckdb/duckdb",
+      "repo_id": 138754790,
       "category": "databases-data",
       "description": "Run fast analytical SQL right inside your app or notebook, with no server to manage.",
       "submitted_by": "jamesconwaydev",
@@ -1311,6 +1420,7 @@
     },
     {
       "repo": "EbookFoundation/free-programming-books",
+      "repo_id": 13491895,
       "category": "learning-resources",
       "description": "A huge shelf of free programming books, courses and tutorials in many languages.",
       "submitted_by": "jamesconwaydev",
@@ -1323,6 +1433,7 @@
     },
     {
       "repo": "electron/electron",
+      "repo_id": 9384267,
       "category": "frontend-web",
       "description": "Build desktop apps for Windows, Mac and Linux using the web skills you already have.",
       "submitted_by": "jamesconwaydev",
@@ -1335,6 +1446,7 @@
     },
     {
       "repo": "element-hq/synapse",
+      "repo_id": 731190011,
       "category": "self-hosted",
       "description": "Synapse, the reference Matrix server, for running your own chat that still talks to everyone else.",
       "submitted_by": "jamesconwaydev",
@@ -1347,6 +1459,7 @@
     },
     {
       "repo": "ellisonleao/magictools",
+      "repo_id": 21958186,
       "category": "learning-resources",
       "description": "Tools, engines and learning material for anyone making games, from first prototype to release.",
       "submitted_by": "jamesconwaydev",
@@ -1359,6 +1472,7 @@
     },
     {
       "repo": "emacs-tw/awesome-emacs",
+      "repo_id": 22493222,
       "category": "learning-resources",
       "description": "Packages and resources for making Emacs your favourite editor.",
       "submitted_by": "jamesconwaydev",
@@ -1371,6 +1485,7 @@
     },
     {
       "repo": "emberjs/ember.js",
+      "repo_id": 1801829,
       "category": "frontend-web",
       "description": "A framework with strong conventions for ambitious web apps that last for years.",
       "submitted_by": "jamesconwaydev",
@@ -1383,6 +1498,7 @@
     },
     {
       "repo": "emilkowalski/sonner",
+      "repo_id": 605531164,
       "category": "design-ui",
       "description": "A toast component for React that looks lovely and is easy to drop in.",
       "submitted_by": "jamesconwaydev",
@@ -1395,6 +1511,7 @@
     },
     {
       "repo": "ente/ente",
+      "repo_id": 560284721,
       "category": "self-hosted",
       "description": "End to end encrypted photo storage you can also run yourself.",
       "submitted_by": "jamesconwaydev",
@@ -1407,6 +1524,7 @@
     },
     {
       "repo": "eslint/eslint",
+      "repo_id": 11061773,
       "category": "developer-tools",
       "description": "Find and fix problems in your JavaScript before they reach a code review.",
       "submitted_by": "jamesconwaydev",
@@ -1419,6 +1537,7 @@
     },
     {
       "repo": "etcd-io/etcd",
+      "repo_id": 11225014,
       "category": "databases-data",
       "description": "A reliable key value store that holds the shared state behind Kubernetes and other clusters.",
       "submitted_by": "jamesconwaydev",
@@ -1431,6 +1550,7 @@
     },
     {
       "repo": "evanw/esbuild",
+      "repo_id": 61137153,
       "category": "developer-tools",
       "description": "A JavaScript bundler so fast that a build feels instant.",
       "submitted_by": "jamesconwaydev",
@@ -1443,6 +1563,7 @@
     },
     {
       "repo": "excalidraw/excalidraw",
+      "repo_id": 231283452,
       "category": "design-ui",
       "description": "A whiteboard that makes your diagrams look hand drawn, and it works right in the browser.",
       "submitted_by": "jamesconwaydev",
@@ -1455,6 +1576,7 @@
     },
     {
       "repo": "expo/expo",
+      "repo_id": 65750241,
       "category": "mobile",
       "description": "Build React Native apps without wrestling native tooling, from first run to the app store.",
       "submitted_by": "jamesconwaydev",
@@ -1467,6 +1589,7 @@
     },
     {
       "repo": "expressjs/express",
+      "repo_id": 237159,
       "category": "backend-apis",
       "description": "The minimalist Node web framework that taught a generation how to build a server.",
       "submitted_by": "jamesconwaydev",
@@ -1479,6 +1602,7 @@
     },
     {
       "repo": "fail2ban/fail2ban",
+      "repo_id": 2476162,
       "category": "security",
       "description": "Watches your logs for repeated failed logins and bans the offenders, so brute force attacks give up.",
       "submitted_by": "jamesconwaydev",
@@ -1491,6 +1615,7 @@
     },
     {
       "repo": "falcosecurity/falco",
+      "repo_id": 49986046,
       "category": "security",
       "description": "Watches what your containers and hosts are doing at runtime and shouts when something looks wrong.",
       "submitted_by": "jamesconwaydev",
@@ -1503,6 +1628,7 @@
     },
     {
       "repo": "fastapi/fastapi",
+      "repo_id": 160919119,
       "category": "backend-apis",
       "description": "Write plain typed Python and get a fast API with validation and interactive docs for free.",
       "submitted_by": "jamesconwaydev",
@@ -1515,6 +1641,7 @@
     },
     {
       "repo": "fastify/fastify",
+      "repo_id": 69495170,
       "category": "backend-apis",
       "description": "A low overhead Node web framework with schema validation and a friendly plugin system.",
       "submitted_by": "jamesconwaydev",
@@ -1527,6 +1654,7 @@
     },
     {
       "repo": "fastlane/fastlane",
+      "repo_id": 27442967,
       "category": "mobile",
       "description": "Automate screenshots, signing and store uploads, so releasing an app is a single command.",
       "submitted_by": "jamesconwaydev",
@@ -1539,6 +1667,7 @@
     },
     {
       "repo": "felangel/bloc",
+      "repo_id": 151977818,
       "category": "mobile",
       "description": "Predictable state management for Flutter with a clear pattern and good tooling.",
       "submitted_by": "jamesconwaydev",
@@ -1551,6 +1680,7 @@
     },
     {
       "repo": "fffaraz/awesome-cpp",
+      "repo_id": 21935031,
       "category": "learning-resources",
       "description": "Frameworks, libraries and learning material for C and C++ programmers.",
       "submitted_by": "jamesconwaydev",
@@ -1563,6 +1693,7 @@
     },
     {
       "repo": "FiloSottile/age",
+      "repo_id": 187403699,
       "category": "security",
       "description": "Encrypt a file with a short key and no config, a small and modern alternative to GPG.",
       "submitted_by": "jamesconwaydev",
@@ -1575,6 +1706,7 @@
     },
     {
       "repo": "fleetdm/fleet",
+      "repo_id": 309820286,
       "category": "devops-infra",
       "description": "Device management built on osquery, so you can ask every laptop and server questions from one place.",
       "submitted_by": "jamesconwaydev",
@@ -1587,6 +1719,7 @@
     },
     {
       "repo": "flutter/flutter",
+      "repo_id": 31792824,
       "category": "mobile",
       "description": "Build apps for phones, web and desktop from one Dart codebase that looks great everywhere.",
       "submitted_by": "jamesconwaydev",
@@ -1599,6 +1732,7 @@
     },
     {
       "repo": "fluxcd/flux2",
+      "repo_id": 258469100,
       "category": "devops-infra",
       "description": "Keeps your Kubernetes cluster matching what is in Git, so a merge is also a deploy.",
       "submitted_by": "jamesconwaydev",
@@ -1611,6 +1745,7 @@
     },
     {
       "repo": "freeipa/freeipa",
+      "repo_id": 4340318,
       "category": "security",
       "description": "One place for users, groups and sudo rules across your Linux machines, with Kerberos and LDAP built in.",
       "submitted_by": "jamesconwaydev",
@@ -1623,6 +1758,7 @@
     },
     {
       "repo": "frenck/awesome-home-assistant",
+      "repo_id": 142909126,
       "category": "learning-resources",
       "description": "Integrations, add-ons and guides for building a smarter home with Home Assistant.",
       "submitted_by": "jamesconwaydev",
@@ -1635,6 +1771,7 @@
     },
     {
       "repo": "garris/BackstopJS",
+      "repo_id": 25268795,
       "category": "testing",
       "description": "Catch visual regressions by comparing screenshots of your pages after each change.",
       "submitted_by": "jamesconwaydev",
@@ -1647,6 +1784,7 @@
     },
     {
       "repo": "gatling/gatling",
+      "repo_id": 1826128,
       "category": "testing",
       "description": "Load tests as code with clear reports on how your system holds up.",
       "submitted_by": "jamesconwaydev",
@@ -1659,6 +1797,7 @@
     },
     {
       "repo": "gatsbyjs/gatsby",
+      "repo_id": 36040894,
       "category": "frontend-web",
       "description": "Build fast React sites that pull content from anywhere into static pages.",
       "submitted_by": "jamesconwaydev",
@@ -1671,6 +1810,7 @@
     },
     {
       "repo": "gethomepage/homepage",
+      "repo_id": 528313152,
       "category": "self-hosted",
       "description": "A start page for your homelab that lists every service and shows which ones are actually up.",
       "submitted_by": "jamesconwaydev",
@@ -1683,6 +1823,7 @@
     },
     {
       "repo": "getredash/redash",
+      "repo_id": 13926404,
       "category": "databases-data",
       "description": "Query your databases, chart the results and share dashboards with the rest of your team.",
       "submitted_by": "jamesconwaydev",
@@ -1695,6 +1836,7 @@
     },
     {
       "repo": "getsops/sops",
+      "repo_id": 40684033,
       "category": "security",
       "description": "Keep secrets encrypted in git while still being able to edit them like normal files.",
       "submitted_by": "jamesconwaydev",
@@ -1707,6 +1849,7 @@
     },
     {
       "repo": "ggml-org/llama.cpp",
+      "repo_id": 612354784,
       "category": "ai-ml",
       "description": "Runs big language models on your own laptop, with no GPU cluster and no cloud bill.",
       "submitted_by": "jamesconwaydev",
@@ -1719,6 +1862,7 @@
     },
     {
       "repo": "ggml-org/whisper.cpp",
+      "repo_id": 541269386,
       "category": "ai-ml",
       "description": "Speech to text that runs on your own machine, even on a phone or a Raspberry Pi.",
       "submitted_by": "jamesconwaydev",
@@ -1731,6 +1875,7 @@
     },
     {
       "repo": "ghostty-org/ghostty",
+      "repo_id": 475553026,
       "category": "cli-terminal",
       "description": "A fast, polished terminal emulator that feels native on both Mac and Linux.",
       "submitted_by": "jamesconwaydev",
@@ -1743,6 +1888,7 @@
     },
     {
       "repo": "gin-gonic/gin",
+      "repo_id": 20904437,
       "category": "backend-apis",
       "description": "A speedy Go web framework with a small API that gets out of your way.",
       "submitted_by": "jamesconwaydev",
@@ -1755,6 +1901,7 @@
     },
     {
       "repo": "git-tips/tips",
+      "repo_id": 39122628,
       "category": "learning-resources",
       "description": "The git tricks you wish you had known sooner, ready to copy and paste.",
       "submitted_by": "jamesconwaydev",
@@ -1767,6 +1914,7 @@
     },
     {
       "repo": "gitlabhq/gitlabhq",
+      "repo_id": 2500088,
       "category": "devops-infra",
       "description": "A whole software team in one install, with Git hosting, issues, CI and a container registry.",
       "submitted_by": "jamesconwaydev",
@@ -1779,6 +1927,7 @@
     },
     {
       "repo": "gitleaks/gitleaks",
+      "repo_id": 119190187,
       "category": "security",
       "description": "Finds passwords and API keys hiding in your git history before an attacker does.",
       "submitted_by": "jamesconwaydev",
@@ -1791,6 +1940,7 @@
     },
     {
       "repo": "glanceapp/glance",
+      "repo_id": 792861139,
       "category": "self-hosted",
       "description": "One home page for your feeds, servers and weather, hosted by you.",
       "submitted_by": "jamesconwaydev",
@@ -1803,6 +1953,7 @@
     },
     {
       "repo": "go-gitea/gitea",
+      "repo_id": 72495579,
       "category": "self-hosted",
       "description": "A painless self hosted git service with issues, pull requests and CI, light enough for a Pi.",
       "submitted_by": "jamesconwaydev",
@@ -1815,6 +1966,7 @@
     },
     {
       "repo": "goauthentik/authentik",
+      "repo_id": 230885748,
       "category": "security",
       "description": "An identity provider that gives your self-hosted apps one login page and one place to manage access.",
       "submitted_by": "jamesconwaydev",
@@ -1827,6 +1979,7 @@
     },
     {
       "repo": "gofiber/fiber",
+      "repo_id": 234231371,
       "category": "backend-apis",
       "description": "A Go web framework with an Express feel, for people who want speed without the learning curve.",
       "submitted_by": "jamesconwaydev",
@@ -1839,6 +1992,7 @@
     },
     {
       "repo": "gohugoio/hugo",
+      "repo_id": 11180687,
       "category": "frontend-web",
       "description": "Builds a static website in milliseconds, even when it has thousands of pages.",
       "submitted_by": "jamesconwaydev",
@@ -1851,6 +2005,7 @@
     },
     {
       "repo": "golang/go",
+      "repo_id": 23096959,
       "category": "developer-tools",
       "description": "A small, fast language with a great standard library, built for servers and tools that just work.",
       "submitted_by": "jamesconwaydev",
@@ -1863,6 +2018,7 @@
     },
     {
       "repo": "golangci/golangci-lint",
+      "repo_id": 132145189,
       "category": "developer-tools",
       "description": "Runs dozens of Go linters in parallel and reports in one pass.",
       "submitted_by": "jamesconwaydev",
@@ -1875,6 +2031,7 @@
     },
     {
       "repo": "google-gemini/gemini-cli",
+      "repo_id": 968197216,
       "category": "ai-ml",
       "description": "Brings Gemini into your terminal, so you can ask about your code without leaving the shell.",
       "submitted_by": "jamesconwaydev",
@@ -1887,6 +2044,7 @@
     },
     {
       "repo": "google/googletest",
+      "repo_id": 39840932,
       "category": "testing",
       "description": "Google's C++ testing and mocking framework for writing clear unit tests.",
       "submitted_by": "jamesconwaydev",
@@ -1899,6 +2057,7 @@
     },
     {
       "repo": "google/material-design-icons",
+      "repo_id": 24953448,
       "category": "design-ui",
       "description": "Google's icon set in many styles and sizes, ready to drop into any interface.",
       "submitted_by": "jamesconwaydev",
@@ -1911,6 +2070,7 @@
     },
     {
       "repo": "GoogleChrome/lighthouse",
+      "repo_id": 53370988,
       "category": "frontend-web",
       "description": "Audit a page for speed, accessibility and SEO and get a list of what to fix.",
       "submitted_by": "jamesconwaydev",
@@ -1923,6 +2083,7 @@
     },
     {
       "repo": "grafana/grafana",
+      "repo_id": 15111821,
       "category": "devops-infra",
       "description": "The metrics and dashboards tool that most self-hosted stacks end up running.",
       "submitted_by": "jamesconwaydev",
@@ -1935,6 +2096,7 @@
     },
     {
       "repo": "grafana/k6",
+      "repo_id": 54400687,
       "category": "testing",
       "description": "Load testing you write as JavaScript, so you find out how your service behaves before your users do.",
       "submitted_by": "jamesconwaydev",
@@ -1947,6 +2109,7 @@
     },
     {
       "repo": "gravitational/teleport",
+      "repo_id": 31558937,
       "category": "security",
       "description": "Secure access to servers, databases and clusters, with short lived certificates in place of shared keys.",
       "submitted_by": "jamesconwaydev",
@@ -1959,6 +2122,7 @@
     },
     {
       "repo": "grpc/grpc",
+      "repo_id": 27729880,
       "category": "backend-apis",
       "description": "Fast, typed remote calls between services in a dozen languages from one shared contract.",
       "submitted_by": "jamesconwaydev",
@@ -1971,6 +2135,7 @@
     },
     {
       "repo": "hasura/graphql-engine",
+      "repo_id": 137724480,
       "category": "backend-apis",
       "description": "Point it at your database and get a GraphQL API with permissions, without writing resolvers.",
       "submitted_by": "jamesconwaydev",
@@ -1983,6 +2148,7 @@
     },
     {
       "repo": "Heapy/awesome-kotlin",
+      "repo_id": 40936978,
       "category": "learning-resources",
       "description": "Libraries, frameworks and learning material for writing Kotlin.",
       "submitted_by": "jamesconwaydev",
@@ -1995,6 +2161,7 @@
     },
     {
       "repo": "helix-editor/helix",
+      "repo_id": 268424739,
       "category": "cli-terminal",
       "description": "A modal editor that ships with language servers and syntax awareness ready to go.",
       "submitted_by": "jamesconwaydev",
@@ -2007,6 +2174,7 @@
     },
     {
       "repo": "helm/helm",
+      "repo_id": 43723161,
       "category": "devops-infra",
       "description": "The package manager for Kubernetes, so installing an app takes one command instead of twenty files.",
       "submitted_by": "jamesconwaydev",
@@ -2019,6 +2187,7 @@
     },
     {
       "repo": "heroui-inc/heroui",
+      "repo_id": 360522116,
       "category": "design-ui",
       "description": "Beautiful React components with sensible defaults, formerly known as NextUI.",
       "submitted_by": "jamesconwaydev",
@@ -2031,6 +2200,7 @@
     },
     {
       "repo": "heynickc/awesome-ddd",
+      "repo_id": 67043714,
       "category": "learning-resources",
       "description": "Books, talks and examples for learning domain-driven design and the ideas around it.",
       "submitted_by": "jamesconwaydev",
@@ -2043,6 +2213,7 @@
     },
     {
       "repo": "home-assistant/core",
+      "repo_id": 12888993,
       "category": "self-hosted",
       "description": "Home automation that runs in your house instead of someone else's cloud, and talks to nearly every gadget.",
       "submitted_by": "jamesconwaydev",
@@ -2055,6 +2226,7 @@
     },
     {
       "repo": "honojs/hono",
+      "repo_id": 438384984,
       "category": "backend-apis",
       "description": "A small, quick web framework that runs the same code on Cloudflare, Deno, Bun and Node.",
       "submitted_by": "jamesconwaydev",
@@ -2067,6 +2239,7 @@
     },
     {
       "repo": "huggingface/diffusers",
+      "repo_id": 498011141,
       "category": "ai-ml",
       "description": "Generate images, video and audio from text with ready made diffusion pipelines you can tweak.",
       "submitted_by": "jamesconwaydev",
@@ -2079,6 +2252,7 @@
     },
     {
       "repo": "huggingface/transformers",
+      "repo_id": 155220641,
       "category": "ai-ml",
       "description": "One library gives you thousands of pretrained text, vision and audio models that load in a few lines.",
       "submitted_by": "jamesconwaydev",
@@ -2091,6 +2265,7 @@
     },
     {
       "repo": "iconify/iconify",
+      "repo_id": 82819844,
       "category": "design-ui",
       "description": "One way to use icons from hundreds of sets, loaded only when needed.",
       "submitted_by": "jamesconwaydev",
@@ -2103,6 +2278,7 @@
     },
     {
       "repo": "igorbarinov/awesome-data-engineering",
+      "repo_id": 37680686,
       "category": "learning-resources",
       "description": "Tools and frameworks for moving, storing and wrangling data at scale.",
       "submitted_by": "jamesconwaydev",
@@ -2115,6 +2291,7 @@
     },
     {
       "repo": "immerjs/immer",
+      "repo_id": 115720575,
       "category": "frontend-web",
       "description": "Update immutable state by writing code that looks like plain mutation.",
       "submitted_by": "jamesconwaydev",
@@ -2127,6 +2304,7 @@
     },
     {
       "repo": "immich-app/immich",
+      "repo_id": 455229168,
       "category": "self-hosted",
       "description": "Back up and browse your photos and videos on your own server, with a Google Photos feel.",
       "submitted_by": "jamesconwaydev",
@@ -2139,6 +2317,7 @@
     },
     {
       "repo": "Infisical/infisical",
+      "repo_id": 521655652,
       "category": "security",
       "description": "A secrets manager where your team keeps API keys and passwords, instead of in chat history.",
       "submitted_by": "jamesconwaydev",
@@ -2151,6 +2330,7 @@
     },
     {
       "repo": "influxdata/influxdb",
+      "repo_id": 13124802,
       "category": "databases-data",
       "description": "A database built for time series data, like sensor readings and metrics that arrive by the second.",
       "submitted_by": "jamesconwaydev",
@@ -2163,6 +2343,7 @@
     },
     {
       "repo": "intuitem/ciso-assistant-community",
+      "repo_id": 694266896,
       "category": "security",
       "description": "A compliance and risk tracker that replaces the audit prep spreadsheets nobody enjoys keeping.",
       "submitted_by": "jamesconwaydev",
@@ -2175,6 +2356,7 @@
     },
     {
       "repo": "ionic-team/capacitor",
+      "repo_id": 111241370,
       "category": "mobile",
       "description": "Wrap a web app in a native shell and reach device features like camera and files.",
       "submitted_by": "jamesconwaydev",
@@ -2187,6 +2369,7 @@
     },
     {
       "repo": "ionic-team/ionic-framework",
+      "repo_id": 12256376,
       "category": "mobile",
       "description": "Build mobile apps with web skills, using UI components that feel native on each platform.",
       "submitted_by": "jamesconwaydev",
@@ -2199,6 +2382,7 @@
     },
     {
       "repo": "isc-projects/bind9",
+      "repo_id": 112236924,
       "category": "devops-infra",
       "description": "The DNS server that answers for your own zones, from the people who have run internet DNS for decades.",
       "submitted_by": "jamesconwaydev",
@@ -2211,6 +2395,7 @@
     },
     {
       "repo": "istio/istio",
+      "repo_id": 74175805,
       "category": "devops-infra",
       "description": "A service mesh that adds encryption, traffic control and visibility between your Kubernetes services.",
       "submitted_by": "jamesconwaydev",
@@ -2223,6 +2408,7 @@
     },
     {
       "repo": "JakeWharton/timber",
+      "repo_id": 11495787,
       "category": "mobile",
       "description": "A tiny, extensible logger for Android that keeps debug output out of release builds.",
       "submitted_by": "jamesconwaydev",
@@ -2235,6 +2421,7 @@
     },
     {
       "repo": "jasmine/jasmine",
+      "repo_id": 84009,
       "category": "testing",
       "description": "A behavior driven test framework for JavaScript with no dependencies.",
       "submitted_by": "jamesconwaydev",
@@ -2247,6 +2434,7 @@
     },
     {
       "repo": "jax-ml/jax",
+      "repo_id": 154739597,
       "category": "ai-ml",
       "description": "NumPy that runs on GPUs and differentiates itself, a favorite for fast research code.",
       "submitted_by": "jamesconwaydev",
@@ -2259,6 +2447,7 @@
     },
     {
       "repo": "jaywcjlove/awesome-mac",
+      "repo_id": 63539055,
       "category": "learning-resources",
       "description": "High-quality macOS apps sorted by what they do, so you can find the right one fast.",
       "submitted_by": "jamesconwaydev",
@@ -2271,6 +2460,7 @@
     },
     {
       "repo": "jekyll/jekyll",
+      "repo_id": 65252,
       "category": "frontend-web",
       "description": "Turn Markdown into a static site, the engine behind GitHub Pages.",
       "submitted_by": "jamesconwaydev",
@@ -2283,6 +2473,7 @@
     },
     {
       "repo": "jellyfin/jellyfin",
+      "repo_id": 161012019,
       "category": "self-hosted",
       "description": "A media server for your films, shows and music, with no subscription and no tracking.",
       "submitted_by": "jamesconwaydev",
@@ -2295,6 +2486,7 @@
     },
     {
       "repo": "jenkinsci/jenkins",
+      "repo_id": 1103607,
       "category": "devops-infra",
       "description": "The automation server that has built and tested software for countless teams, with a plugin for everything.",
       "submitted_by": "jamesconwaydev",
@@ -2307,6 +2499,7 @@
     },
     {
       "repo": "jesseduffield/lazygit",
+      "repo_id": 134017286,
       "category": "cli-terminal",
       "description": "A terminal screen for git, so staging, rebasing and resolving conflicts take a few keystrokes.",
       "submitted_by": "jamesconwaydev",
@@ -2319,6 +2512,7 @@
     },
     {
       "repo": "jestjs/jest",
+      "repo_id": 15062869,
       "category": "testing",
       "description": "A JavaScript test runner with snapshots, mocks and a friendly watch mode.",
       "submitted_by": "jamesconwaydev",
@@ -2331,6 +2525,7 @@
     },
     {
       "repo": "JetBrains/compose-multiplatform",
+      "repo_id": 293498508,
       "category": "mobile",
       "description": "Share one Kotlin UI across Android, iOS, desktop and web.",
       "submitted_by": "jamesconwaydev",
@@ -2343,6 +2538,7 @@
     },
     {
       "repo": "jgthms/bulma",
+      "repo_id": 50264296,
       "category": "design-ui",
       "description": "A CSS only framework with readable class names and no JavaScript to wrangle.",
       "submitted_by": "jamesconwaydev",
@@ -2355,6 +2551,7 @@
     },
     {
       "repo": "jonataslaw/getx",
+      "repo_id": 221583387,
       "category": "mobile",
       "description": "A Flutter helper for state, routes and dependencies without much ceremony.",
       "submitted_by": "jamesconwaydev",
@@ -2367,6 +2564,7 @@
     },
     {
       "repo": "jquery/jquery",
+      "repo_id": 167174,
       "category": "frontend-web",
       "description": "The library that made the DOM bearable and still runs on a huge share of the web.",
       "submitted_by": "jamesconwaydev",
@@ -2379,6 +2577,7 @@
     },
     {
       "repo": "juanfont/headscale",
+      "repo_id": 273871859,
       "category": "self-hosted",
       "description": "A self hosted Tailscale control server, so you keep your private network and your data.",
       "submitted_by": "jamesconwaydev",
@@ -2391,6 +2590,7 @@
     },
     {
       "repo": "juliangarnier/anime",
+      "repo_id": 53809090,
       "category": "design-ui",
       "description": "A light JavaScript animation engine for moving anything on the page.",
       "submitted_by": "jamesconwaydev",
@@ -2403,6 +2603,7 @@
     },
     {
       "repo": "junegunn/fzf",
+      "repo_id": 13807606,
       "category": "cli-terminal",
       "description": "Fuzzy search anything in your terminal, from files to history to git branches, as you type.",
       "submitted_by": "jamesconwaydev",
@@ -2415,6 +2616,7 @@
     },
     {
       "repo": "junit-team/junit-framework",
+      "repo_id": 29102367,
       "category": "testing",
       "description": "The standard testing framework for Java and the JVM, with a modern engine.",
       "submitted_by": "jamesconwaydev",
@@ -2427,6 +2629,7 @@
     },
     {
       "repo": "k3s-io/k3s",
+      "repo_id": 135516270,
       "category": "devops-infra",
       "description": "A small single binary Kubernetes that runs happily on a Raspberry Pi or a cheap VPS.",
       "submitted_by": "jamesconwaydev",
@@ -2439,6 +2642,7 @@
     },
     {
       "repo": "karakeep-app/karakeep",
+      "repo_id": 753589979,
       "category": "self-hosted",
       "description": "Save links, notes and images in one place and let AI tag them for you.",
       "submitted_by": "jamesconwaydev",
@@ -2451,6 +2655,7 @@
     },
     {
       "repo": "kdeldycke/awesome-falsehood",
+      "repo_id": 67687706,
       "category": "learning-resources",
       "description": "The wrong assumptions programmers make about names, time, addresses and more.",
       "submitted_by": "jamesconwaydev",
@@ -2463,6 +2668,7 @@
     },
     {
       "repo": "keras-team/keras",
+      "repo_id": 33015583,
       "category": "ai-ml",
       "description": "Deep learning with a gentle API, so building a neural network feels like stacking blocks.",
       "submitted_by": "jamesconwaydev",
@@ -2475,6 +2681,7 @@
     },
     {
       "repo": "kestra-io/kestra",
+      "repo_id": 204164353,
       "category": "devops-infra",
       "description": "A workflow orchestrator where you describe pipelines in YAML and watch them run in a web UI.",
       "submitted_by": "jamesconwaydev",
@@ -2487,6 +2694,7 @@
     },
     {
       "repo": "keycloak/keycloak",
+      "repo_id": 11125589,
       "category": "security",
       "description": "A single sign on server that handles logins, users and permissions so your apps do not have to.",
       "submitted_by": "jamesconwaydev",
@@ -2499,6 +2707,7 @@
     },
     {
       "repo": "koajs/koa",
+      "repo_id": 11551538,
       "category": "backend-apis",
       "description": "A tiny Node framework from the Express team that uses async functions to keep middleware clean.",
       "submitted_by": "jamesconwaydev",
@@ -2511,6 +2720,7 @@
     },
     {
       "repo": "koalaman/shellcheck",
+      "repo_id": 6731432,
       "category": "cli-terminal",
       "description": "Catches the quoting bugs and traps in your shell scripts before they bite in production.",
       "submitted_by": "jamesconwaydev",
@@ -2523,6 +2733,7 @@
     },
     {
       "repo": "Kong/insomnia",
+      "repo_id": 56899284,
       "category": "developer-tools",
       "description": "Design, debug and test REST, GraphQL and gRPC APIs from one tidy desktop app.",
       "submitted_by": "jamesconwaydev",
@@ -2535,6 +2746,7 @@
     },
     {
       "repo": "Kong/kong",
+      "repo_id": 26783295,
       "category": "backend-apis",
       "description": "An API gateway that handles auth, rate limits and routing before requests reach your services.",
       "submitted_by": "jamesconwaydev",
@@ -2547,6 +2759,7 @@
     },
     {
       "repo": "kovidgoyal/kitty",
+      "repo_id": 71056775,
       "category": "cli-terminal",
       "description": "A fast GPU terminal with images, ligatures and scripting for people who live in the shell.",
       "submitted_by": "jamesconwaydev",
@@ -2559,6 +2772,7 @@
     },
     {
       "repo": "ktorio/ktor",
+      "repo_id": 40136600,
       "category": "mobile",
       "description": "Build servers and clients in Kotlin with lightweight, async friendly code.",
       "submitted_by": "jamesconwaydev",
@@ -2571,6 +2785,7 @@
     },
     {
       "repo": "kubernetes/kubernetes",
+      "repo_id": 20580498,
       "category": "devops-infra",
       "description": "The Kubernetes source, home of kubeadm, the tool that bootstraps a real cluster on your own machines.",
       "submitted_by": "jamesconwaydev",
@@ -2583,6 +2798,7 @@
     },
     {
       "repo": "labstack/echo",
+      "repo_id": 31504491,
       "category": "backend-apis",
       "description": "A minimalist Go framework with clear routing and middleware for building REST APIs.",
       "submitted_by": "jamesconwaydev",
@@ -2595,6 +2811,7 @@
     },
     {
       "repo": "langchain-ai/langchain",
+      "repo_id": 552661142,
       "category": "ai-ml",
       "description": "Wire language models to your data and tools, then swap providers without rewriting the app.",
       "submitted_by": "jamesconwaydev",
@@ -2607,6 +2824,7 @@
     },
     {
       "repo": "langchain-ai/langgraph",
+      "repo_id": 676672661,
       "category": "ai-ml",
       "description": "Build agents as graphs you can pause, inspect and resume, so long tasks do not fall over.",
       "submitted_by": "jamesconwaydev",
@@ -2619,6 +2837,7 @@
     },
     {
       "repo": "langfuse/langfuse",
+      "repo_id": 642497346,
       "category": "ai-ml",
       "description": "Traces, costs and evals for your LLM app, so you can see what your prompts are really doing.",
       "submitted_by": "jamesconwaydev",
@@ -2631,6 +2850,7 @@
     },
     {
       "repo": "laravel/framework",
+      "repo_id": 7548986,
       "category": "backend-apis",
       "description": "The PHP framework with elegant syntax that makes routing, queues and auth feel almost easy.",
       "submitted_by": "jamesconwaydev",
@@ -2643,6 +2863,7 @@
     },
     {
       "repo": "linux-audit/audit-userspace",
+      "repo_id": 52464964,
       "category": "security",
       "description": "The Linux audit tools that record who touched what on a server, and when.",
       "submitted_by": "jamesconwaydev",
@@ -2655,6 +2876,7 @@
     },
     {
       "repo": "lldap/lldap",
+      "repo_id": 343753772,
       "category": "security",
       "description": "A light LDAP server for shared logins, without the weight of running a full directory service.",
       "submitted_by": "jamesconwaydev",
@@ -2667,6 +2889,7 @@
     },
     {
       "repo": "locustio/locust",
+      "repo_id": 1377867,
       "category": "testing",
       "description": "Write load tests in plain Python and see how many users your site really handles.",
       "submitted_by": "jamesconwaydev",
@@ -2679,6 +2902,7 @@
     },
     {
       "repo": "louislam/dockge",
+      "repo_id": 708775091,
       "category": "self-hosted",
       "description": "A tidy web page for managing Docker Compose stacks without memorising every command.",
       "submitted_by": "jamesconwaydev",
@@ -2691,6 +2915,7 @@
     },
     {
       "repo": "louislam/uptime-kuma",
+      "repo_id": 382496361,
       "category": "self-hosted",
       "description": "A good looking uptime monitor you host yourself, which pings your services and tells you when one drops.",
       "submitted_by": "jamesconwaydev",
@@ -2703,6 +2928,7 @@
     },
     {
       "repo": "lukasz-madon/awesome-remote-job",
+      "repo_id": 28699471,
       "category": "learning-resources",
       "description": "Job boards, tools and advice for finding and doing good remote work.",
       "submitted_by": "jamesconwaydev",
@@ -2715,6 +2941,7 @@
     },
     {
       "repo": "lysine-dev/okhttp",
+      "repo_id": 5152285,
       "category": "mobile",
       "description": "A dependable HTTP client for Android and Java that handles retries, caching and TLS for you.",
       "submitted_by": "jamesconwaydev",
@@ -2727,6 +2954,7 @@
     },
     {
       "repo": "lysine-dev/retrofit",
+      "repo_id": 892275,
       "category": "mobile",
       "description": "Turn a REST API into a Kotlin or Java interface and call it like a function.",
       "submitted_by": "jamesconwaydev",
@@ -2739,6 +2967,7 @@
     },
     {
       "repo": "mantinedev/mantine",
+      "repo_id": 327628682,
       "category": "design-ui",
       "description": "A full React toolkit of components and hooks that looks good with no extra work.",
       "submitted_by": "jamesconwaydev",
@@ -2751,6 +2980,7 @@
     },
     {
       "repo": "MariaDB/server",
+      "repo_id": 19816070,
       "category": "databases-data",
       "description": "The community fork of MySQL, a drop in relational database that stays open and keeps improving.",
       "submitted_by": "jamesconwaydev",
@@ -2763,6 +2993,7 @@
     },
     {
       "repo": "material-components/material-web",
+      "repo_id": 127049550,
       "category": "design-ui",
       "description": "Material Design as web components, usable in any framework or none.",
       "submitted_by": "jamesconwaydev",
@@ -2775,6 +3006,7 @@
     },
     {
       "repo": "matiassingers/awesome-readme",
+      "repo_id": 29456624,
       "category": "learning-resources",
       "description": "Great READMEs to borrow ideas from when you write your own.",
       "submitted_by": "jamesconwaydev",
@@ -2787,6 +3019,7 @@
     },
     {
       "repo": "matteocrippa/awesome-swift",
+      "repo_id": 21696302,
       "category": "learning-resources",
       "description": "Libraries and learning material for writing Swift, collected by the community.",
       "submitted_by": "jamesconwaydev",
@@ -2799,6 +3032,7 @@
     },
     {
       "repo": "meirwah/awesome-incident-response",
+      "repo_id": 45943554,
       "category": "learning-resources",
       "description": "Tools and playbooks for responding calmly and well when a security incident hits.",
       "submitted_by": "jamesconwaydev",
@@ -2811,6 +3045,7 @@
     },
     {
       "repo": "mem0ai/mem0",
+      "repo_id": 656099147,
       "category": "ai-ml",
       "description": "Gives your AI agent a memory, so it remembers what a user told it last week.",
       "submitted_by": "jamesconwaydev",
@@ -2823,6 +3058,7 @@
     },
     {
       "repo": "mermaid-js/mermaid",
+      "repo_id": 26066727,
       "category": "design-ui",
       "description": "Write a few lines of text and get a flowchart or sequence diagram in your docs.",
       "submitted_by": "jamesconwaydev",
@@ -2835,6 +3071,7 @@
     },
     {
       "repo": "meta/docusaurus",
+      "repo_id": 94911145,
       "category": "frontend-web",
       "description": "Spin up a good looking documentation site from Markdown files, with versions and search.",
       "submitted_by": "jamesconwaydev",
@@ -2847,6 +3084,7 @@
     },
     {
       "repo": "mfornos/awesome-microservices",
+      "repo_id": 34987697,
       "category": "learning-resources",
       "description": "Principles, tools and platforms for building systems out of small, independent services.",
       "submitted_by": "jamesconwaydev",
@@ -2859,6 +3097,7 @@
     },
     {
       "repo": "microsoft/markitdown",
+      "repo_id": 888092115,
       "category": "ai-ml",
       "description": "Turns Word, PowerPoint, PDF and Excel files into clean Markdown your language model can actually read.",
       "submitted_by": "jamesconwaydev",
@@ -2871,6 +3110,7 @@
     },
     {
       "repo": "microsoft/monaco-editor",
+      "repo_id": 60630844,
       "category": "developer-tools",
       "description": "The editor that powers VS Code, ready to embed in your own web page.",
       "submitted_by": "jamesconwaydev",
@@ -2883,6 +3123,7 @@
     },
     {
       "repo": "microsoft/playwright",
+      "repo_id": 221981891,
       "category": "testing",
       "description": "Test your web app across Chromium, Firefox and WebKit with reliable auto waiting.",
       "submitted_by": "jamesconwaydev",
@@ -2895,6 +3136,7 @@
     },
     {
       "repo": "microsoft/TypeScript",
+      "repo_id": 20929025,
       "category": "developer-tools",
       "description": "JavaScript with types that catch bugs before your users do.",
       "submitted_by": "jamesconwaydev",
@@ -2907,6 +3149,7 @@
     },
     {
       "repo": "microsoft/vscode",
+      "repo_id": 41881900,
       "category": "developer-tools",
       "description": "The code editor most developers have open right now, extendable to just about any language.",
       "submitted_by": "jamesconwaydev",
@@ -2919,6 +3162,7 @@
     },
     {
       "repo": "mikefarah/yq",
+      "repo_id": 43225113,
       "category": "cli-terminal",
       "description": "Read and edit YAML, JSON and TOML from the command line, the way jq does for JSON.",
       "submitted_by": "jamesconwaydev",
@@ -2931,6 +3175,7 @@
     },
     {
       "repo": "milvus-io/milvus",
+      "repo_id": 208728772,
       "category": "databases-data",
       "description": "A vector database built for similarity search across billions of embeddings.",
       "submitted_by": "jamesconwaydev",
@@ -2943,6 +3188,7 @@
     },
     {
       "repo": "mitmproxy/mitmproxy",
+      "repo_id": 519832,
       "category": "developer-tools",
       "description": "Intercept, inspect and rewrite HTTPS traffic to see exactly what your app is sending.",
       "submitted_by": "jamesconwaydev",
@@ -2955,6 +3201,7 @@
     },
     {
       "repo": "mjhea0/awesome-fastapi",
+      "repo_id": 260928305,
       "category": "learning-resources",
       "description": "Extensions, tutorials and projects for building fast Python APIs with FastAPI.",
       "submitted_by": "jamesconwaydev",
@@ -2967,6 +3214,7 @@
     },
     {
       "repo": "mmccaff/PlacesToPostYourStartup",
+      "repo_id": 16894772,
       "category": "learning-resources",
       "description": "Where to share your startup and find early users, gathered from a Hacker News thread.",
       "submitted_by": "jamesconwaydev",
@@ -2979,6 +3227,7 @@
     },
     {
       "repo": "mobxjs/mobx",
+      "repo_id": 32215970,
       "category": "frontend-web",
       "description": "Make state reactive and let the UI update itself when data changes.",
       "submitted_by": "jamesconwaydev",
@@ -2991,6 +3240,7 @@
     },
     {
       "repo": "moby/moby",
+      "repo_id": 7691631,
       "category": "devops-infra",
       "description": "The open source engine behind Docker, for building and running containers on your own machine.",
       "submitted_by": "jamesconwaydev",
@@ -3003,6 +3253,7 @@
     },
     {
       "repo": "mochajs/mocha",
+      "repo_id": 1451352,
       "category": "testing",
       "description": "A classic, flexible test framework for Node and the browser.",
       "submitted_by": "jamesconwaydev",
@@ -3015,6 +3266,7 @@
     },
     {
       "repo": "mockito/mockito",
+      "repo_id": 6207167,
       "category": "testing",
       "description": "Mock objects in Java tests with a readable API, the most used mocking library on the JVM.",
       "submitted_by": "jamesconwaydev",
@@ -3027,6 +3279,7 @@
     },
     {
       "repo": "mockk/mockk",
+      "repo_id": 107331132,
       "category": "testing",
       "description": "Mocking built for Kotlin, with a natural syntax for coroutines and extensions.",
       "submitted_by": "jamesconwaydev",
@@ -3039,6 +3292,7 @@
     },
     {
       "repo": "mockoon/mockoon",
+      "repo_id": 97478419,
       "category": "testing",
       "description": "Run a mock API on your laptop in a few clicks, with no code needed.",
       "submitted_by": "jamesconwaydev",
@@ -3051,6 +3305,7 @@
     },
     {
       "repo": "motiondivision/motion",
+      "repo_id": 157846876,
       "category": "design-ui",
       "description": "Animate React and JavaScript apps with a clean API, from hover effects to page transitions.",
       "submitted_by": "jamesconwaydev",
@@ -3063,6 +3318,7 @@
     },
     {
       "repo": "mrdoob/three.js",
+      "repo_id": 576201,
       "category": "frontend-web",
       "description": "Put 3D scenes in the browser with a friendly JavaScript library.",
       "submitted_by": "jamesconwaydev",
@@ -3075,6 +3331,7 @@
     },
     {
       "repo": "mswjs/msw",
+      "repo_id": 157397583,
       "category": "testing",
       "description": "Mock the network at the request level so your tests and dev server use the same fake API.",
       "submitted_by": "jamesconwaydev",
@@ -3087,6 +3344,7 @@
     },
     {
       "repo": "mui/material-ui",
+      "repo_id": 23083156,
       "category": "design-ui",
       "description": "React components that follow Material Design, with theming that bends to your brand.",
       "submitted_by": "jamesconwaydev",
@@ -3099,6 +3357,7 @@
     },
     {
       "repo": "MunGell/awesome-for-beginners",
+      "repo_id": 44882201,
       "category": "learning-resources",
       "description": "Beginner-friendly open source projects where your first contribution will be welcome.",
       "submitted_by": "jamesconwaydev",
@@ -3111,6 +3370,7 @@
     },
     {
       "repo": "mysql/mysql-server",
+      "repo_id": 24494032,
       "category": "databases-data",
       "description": "The relational database behind a huge share of the web, still a safe first choice for most apps.",
       "submitted_by": "jamesconwaydev",
@@ -3123,6 +3383,7 @@
     },
     {
       "repo": "NagiosEnterprises/nagioscore",
+      "repo_id": 16119670,
       "category": "devops-infra",
       "description": "The classic monitoring system that checks your servers and services and emails you when one falls over.",
       "submitted_by": "jamesconwaydev",
@@ -3135,6 +3396,7 @@
     },
     {
       "repo": "NativeScript/NativeScript",
+      "repo_id": 31492490,
       "category": "mobile",
       "description": "Write native mobile apps in TypeScript with direct access to platform APIs.",
       "submitted_by": "jamesconwaydev",
@@ -3147,6 +3409,7 @@
     },
     {
       "repo": "neo4j/neo4j",
+      "repo_id": 6650539,
       "category": "databases-data",
       "description": "Store and query connected data as a graph, ideal for networks and recommendations.",
       "submitted_by": "jamesconwaydev",
@@ -3159,6 +3422,7 @@
     },
     {
       "repo": "nestjs/nest",
+      "repo_id": 80945428,
       "category": "backend-apis",
       "description": "A structured Node framework with modules and decorators that keeps big TypeScript backends tidy.",
       "submitted_by": "jamesconwaydev",
@@ -3171,6 +3435,7 @@
     },
     {
       "repo": "netbirdio/netbird",
+      "repo_id": 357897199,
       "category": "devops-infra",
       "description": "A WireGuard based private network that links your devices and servers without opening ports.",
       "submitted_by": "jamesconwaydev",
@@ -3183,6 +3448,7 @@
     },
     {
       "repo": "netdata/netdata",
+      "repo_id": 10744183,
       "category": "devops-infra",
       "description": "Real time monitoring that shows every metric on a server, per second, with almost no setup.",
       "submitted_by": "jamesconwaydev",
@@ -3195,6 +3461,7 @@
     },
     {
       "repo": "nextcloud/server",
+      "repo_id": 60243197,
       "category": "self-hosted",
       "description": "Your own cloud for files, calendars and contacts that you control.",
       "submitted_by": "jamesconwaydev",
@@ -3207,6 +3474,7 @@
     },
     {
       "repo": "nginx/nginx",
+      "repo_id": 37912398,
       "category": "devops-infra",
       "description": "The web server and reverse proxy that sits in front of a large share of the internet.",
       "submitted_by": "jamesconwaydev",
@@ -3219,6 +3487,7 @@
     },
     {
       "repo": "NginxProxyManager/nginx-proxy-manager",
+      "repo_id": 114938943,
       "category": "self-hosted",
       "description": "Point domains at your services and get free HTTPS through a friendly web screen.",
       "submitted_by": "jamesconwaydev",
@@ -3231,6 +3500,7 @@
     },
     {
       "repo": "nock/nock",
+      "repo_id": 2436267,
       "category": "testing",
       "description": "Fake HTTP responses in Node tests so you never depend on a real server.",
       "submitted_by": "jamesconwaydev",
@@ -3243,6 +3513,7 @@
     },
     {
       "repo": "nodejs/node",
+      "repo_id": 27193779,
       "category": "developer-tools",
       "description": "The JavaScript runtime that lets you use the same language on the server as in the browser.",
       "submitted_by": "jamesconwaydev",
@@ -3255,6 +3526,7 @@
     },
     {
       "repo": "nrwl/nx",
+      "repo_id": 100061716,
       "category": "developer-tools",
       "description": "A monorepo build system that figures out what changed and only rebuilds that.",
       "submitted_by": "jamesconwaydev",
@@ -3267,6 +3539,7 @@
     },
     {
       "repo": "nushell/nushell",
+      "repo_id": 186024298,
       "category": "cli-terminal",
       "description": "A shell that treats command output as tables, so filtering and sorting data feels natural.",
       "submitted_by": "jamesconwaydev",
@@ -3279,6 +3552,7 @@
     },
     {
       "repo": "nuxt/nuxt",
+      "repo_id": 71995937,
       "category": "frontend-web",
       "description": "The Vue framework that brings server rendering and file based routing out of the box.",
       "submitted_by": "jamesconwaydev",
@@ -3291,6 +3565,7 @@
     },
     {
       "repo": "OAI/OpenAPI-Specification",
+      "repo_id": 17372733,
       "category": "backend-apis",
       "description": "The shared standard for describing REST APIs, so tools and humans read the same contract.",
       "submitted_by": "jamesconwaydev",
@@ -3303,6 +3578,7 @@
     },
     {
       "repo": "ohmyzsh/ohmyzsh",
+      "repo_id": 291137,
       "category": "cli-terminal",
       "description": "Makes your Zsh pretty and productive with themes, plugins and aliases that people actually use.",
       "submitted_by": "jamesconwaydev",
@@ -3315,6 +3591,7 @@
     },
     {
       "repo": "OISF/suricata",
+      "repo_id": 5410234,
       "category": "security",
       "description": "Watches network traffic for attacks and odd behaviour, and logs what it sees for your analysts.",
       "submitted_by": "jamesconwaydev",
@@ -3327,6 +3604,7 @@
     },
     {
       "repo": "ollama/ollama",
+      "repo_id": 658928958,
       "category": "ai-ml",
       "description": "Run large language models on your own computer with one command, no cloud account needed.",
       "submitted_by": "jamesconwaydev",
@@ -3339,6 +3617,7 @@
     },
     {
       "repo": "onevcat/Kingfisher",
+      "repo_id": 33486016,
       "category": "mobile",
       "description": "Download and cache images in Swift with a single line and smooth loading.",
       "submitted_by": "jamesconwaydev",
@@ -3351,6 +3630,7 @@
     },
     {
       "repo": "open-telemetry/opentelemetry-collector",
+      "repo_id": 185861173,
       "category": "devops-infra",
       "description": "Collects metrics, logs and traces from your hosts and forwards them wherever you want to look at them.",
       "submitted_by": "jamesconwaydev",
@@ -3363,6 +3643,7 @@
     },
     {
       "repo": "open-webui/open-webui",
+      "repo_id": 701547123,
       "category": "ai-ml",
       "description": "A friendly self-hosted chat interface for Ollama and other LLM backends, with the features you would expect.",
       "submitted_by": "jamesconwaydev",
@@ -3375,6 +3656,7 @@
     },
     {
       "repo": "openai/codex",
+      "repo_id": 965415649,
       "category": "ai-ml",
       "description": "A coding agent that lives in your terminal, reads your repo and makes the edits you ask for.",
       "submitted_by": "jamesconwaydev",
@@ -3387,6 +3669,7 @@
     },
     {
       "repo": "openai/openai-python",
+      "repo_id": 307213173,
       "category": "ai-ml",
       "description": "The official Python client for the OpenAI API, with typed responses and streaming built in.",
       "submitted_by": "jamesconwaydev",
@@ -3399,6 +3682,7 @@
     },
     {
       "repo": "openai/whisper",
+      "repo_id": 537603333,
       "category": "ai-ml",
       "description": "Point it at an audio file and get back a surprisingly accurate transcript in dozens of languages.",
       "submitted_by": "jamesconwaydev",
@@ -3411,6 +3695,7 @@
     },
     {
       "repo": "openbao/openbao",
+      "repo_id": 716719284,
       "category": "security",
       "description": "An open source fork of Vault for storing secrets and handing out short lived credentials.",
       "submitted_by": "jamesconwaydev",
@@ -3423,6 +3708,7 @@
     },
     {
       "repo": "opencv/opencv",
+      "repo_id": 5108051,
       "category": "ai-ml",
       "description": "The computer vision toolkit behind countless cameras, robots and apps, from face detection to image stitching.",
       "submitted_by": "jamesconwaydev",
@@ -3435,6 +3721,7 @@
     },
     {
       "repo": "OpenHands/OpenHands",
+      "repo_id": 771302083,
       "category": "ai-ml",
       "description": "An AI software engineer that writes code, runs commands and browses the web to finish a task for you.",
       "submitted_by": "jamesconwaydev",
@@ -3447,6 +3734,7 @@
     },
     {
       "repo": "OpenSCAP/openscap",
+      "repo_id": 19279199,
       "category": "security",
       "description": "Scans your hosts against benchmarks like CIS and the STIG, and tells you what falls short.",
       "submitted_by": "jamesconwaydev",
@@ -3459,6 +3747,7 @@
     },
     {
       "repo": "opensearch-project/OpenSearch",
+      "repo_id": 334274271,
       "category": "databases-data",
       "description": "A search and analytics engine for logs and documents, forked from Elasticsearch and run by the community.",
       "submitted_by": "jamesconwaydev",
@@ -3471,6 +3760,7 @@
     },
     {
       "repo": "openshift/microshift",
+      "repo_id": 361784175,
       "category": "devops-infra",
       "description": "A small edge sized cut of OpenShift that runs a whole Kubernetes cluster on one modest machine.",
       "submitted_by": "jamesconwaydev",
@@ -3483,6 +3773,7 @@
     },
     {
       "repo": "openssl/openssl",
+      "repo_id": 7634677,
       "category": "security",
       "description": "The library behind most of the internet's TLS, used to secure traffic and manage certificates.",
       "submitted_by": "jamesconwaydev",
@@ -3495,6 +3786,7 @@
     },
     {
       "repo": "OpenVoxProject/openvox",
+      "repo_id": 874477649,
       "category": "devops-infra",
       "description": "The community build of Puppet, for applying your manifests without chasing licence terms.",
       "submitted_by": "jamesconwaydev",
@@ -3507,6 +3799,7 @@
     },
     {
       "repo": "osquery/osquery",
+      "repo_id": 22394357,
       "category": "security",
       "description": "Lets you query a machine's processes, ports and users with SQL, as if the OS were a database.",
       "submitted_by": "jamesconwaydev",
@@ -3519,6 +3812,7 @@
     },
     {
       "repo": "owainlewis/awesome-artificial-intelligence",
+      "repo_id": 29906842,
       "category": "learning-resources",
       "description": "Courses, books, lectures and papers for learning artificial intelligence from the ground up.",
       "submitted_by": "jamesconwaydev",
@@ -3531,6 +3825,7 @@
     },
     {
       "repo": "pallets/flask",
+      "repo_id": 596892,
       "category": "backend-apis",
       "description": "A small Python web framework that starts as one file and grows with you.",
       "submitted_by": "jamesconwaydev",
@@ -3543,6 +3838,7 @@
     },
     {
       "repo": "pandas-dev/pandas",
+      "repo_id": 858127,
       "category": "databases-data",
       "description": "The Python tool for cleaning, slicing and summarizing tables of data.",
       "submitted_by": "jamesconwaydev",
@@ -3555,6 +3851,7 @@
     },
     {
       "repo": "paperless-ngx/paperless-ngx",
+      "repo_id": 458648791,
       "category": "self-hosted",
       "description": "Scan your paper mess, tag it automatically and search every document later.",
       "submitted_by": "jamesconwaydev",
@@ -3567,6 +3864,7 @@
     },
     {
       "repo": "parcel-bundler/parcel",
+      "repo_id": 99598595,
       "category": "frontend-web",
       "description": "Bundle a web app with zero config, because it figures out the setup for you.",
       "submitted_by": "jamesconwaydev",
@@ -3579,6 +3877,7 @@
     },
     {
       "repo": "passbolt/passbolt_api",
+      "repo_id": 52319036,
       "category": "security",
       "description": "A password manager built for teams, where secrets are encrypted in each person's browser.",
       "submitted_by": "jamesconwaydev",
@@ -3591,6 +3890,7 @@
     },
     {
       "repo": "PatrickJS/awesome-angular",
+      "repo_id": 41718185,
       "category": "learning-resources",
       "description": "Libraries, tools and tutorials from across the Angular community.",
       "submitted_by": "jamesconwaydev",
@@ -3603,6 +3903,7 @@
     },
     {
       "repo": "penpot/penpot",
+      "repo_id": 48769241,
       "category": "design-ui",
       "description": "An open source design tool where designers and developers share the same file.",
       "submitted_by": "jamesconwaydev",
@@ -3615,6 +3916,7 @@
     },
     {
       "repo": "Perl/perl5",
+      "repo_id": 8183570,
       "category": "developer-tools",
       "description": "The language that glued the early web together and still handles text like almost nothing else.",
       "submitted_by": "jamesconwaydev",
@@ -3627,6 +3929,7 @@
     },
     {
       "repo": "phoenixframework/phoenix",
+      "repo_id": 16072585,
       "category": "backend-apis",
       "description": "An Elixir web framework built for realtime features and apps that stay up under heavy traffic.",
       "submitted_by": "jamesconwaydev",
@@ -3639,6 +3942,7 @@
     },
     {
       "repo": "phosphor-icons/homepage",
+      "repo_id": 279699673,
       "category": "design-ui",
       "description": "A flexible icon family in six weights, so your icons match your design.",
       "submitted_by": "jamesconwaydev",
@@ -3651,6 +3955,7 @@
     },
     {
       "repo": "php/php-src",
+      "repo_id": 1903522,
       "category": "developer-tools",
       "description": "The language behind a big chunk of the web, and the source of the engine that runs it.",
       "submitted_by": "jamesconwaydev",
@@ -3663,6 +3968,7 @@
     },
     {
       "repo": "pingcap/tidb",
+      "repo_id": 41986369,
       "category": "databases-data",
       "description": "A distributed SQL database that speaks MySQL and scales out without manual sharding.",
       "submitted_by": "jamesconwaydev",
@@ -3675,6 +3981,7 @@
     },
     {
       "repo": "pixijs/pixijs",
+      "repo_id": 7741856,
       "category": "frontend-web",
       "description": "Fast 2D graphics in the browser for games and interactive pages.",
       "submitted_by": "jamesconwaydev",
@@ -3687,6 +3994,7 @@
     },
     {
       "repo": "plausible/analytics",
+      "repo_id": 160427405,
       "category": "self-hosted",
       "description": "Lightweight, cookie free web analytics that gives you the numbers on one simple page.",
       "submitted_by": "jamesconwaydev",
@@ -3699,6 +4007,7 @@
     },
     {
       "repo": "pmndrs/zustand",
+      "repo_id": 180328715,
       "category": "frontend-web",
       "description": "A tiny state manager for React with almost no boilerplate.",
       "submitted_by": "jamesconwaydev",
@@ -3711,6 +4020,7 @@
     },
     {
       "repo": "pnpm/pnpm",
+      "repo_id": 50565430,
       "category": "developer-tools",
       "description": "A package manager that shares dependencies across projects and saves disk space and install time.",
       "submitted_by": "jamesconwaydev",
@@ -3723,6 +4033,7 @@
     },
     {
       "repo": "podman-container-tools/podman",
+      "repo_id": 109145553,
       "category": "devops-infra",
       "description": "Run containers without a root daemon, using a command line that feels like Docker's.",
       "submitted_by": "jamesconwaydev",
@@ -3735,6 +4046,7 @@
     },
     {
       "repo": "pointfreeco/swift-composable-architecture",
+      "repo_id": 261039251,
       "category": "mobile",
       "description": "Structure a Swift app with state, actions and tests that stay predictable as it grows.",
       "submitted_by": "jamesconwaydev",
@@ -3747,6 +4059,7 @@
     },
     {
       "repo": "pola-rs/polars",
+      "repo_id": 263727855,
       "category": "databases-data",
       "description": "DataFrames that fly, written in Rust, for when pandas starts to feel slow.",
       "submitted_by": "jamesconwaydev",
@@ -3759,6 +4072,7 @@
     },
     {
       "repo": "portainer/portainer",
+      "repo_id": 59239347,
       "category": "devops-infra",
       "description": "A web interface for Docker and Kubernetes, for when you would rather click than type.",
       "submitted_by": "jamesconwaydev",
@@ -3771,6 +4085,7 @@
     },
     {
       "repo": "postgres/postgres",
+      "repo_id": 927442,
       "category": "databases-data",
       "description": "The relational database people trust with data they cannot afford to lose.",
       "submitted_by": "jamesconwaydev",
@@ -3783,6 +4098,7 @@
     },
     {
       "repo": "preactjs/preact",
+      "repo_id": 42283287,
       "category": "frontend-web",
       "description": "A 3kB alternative to React with the same API, perfect when bundle size matters.",
       "submitted_by": "jamesconwaydev",
@@ -3795,6 +4111,7 @@
     },
     {
       "repo": "PrefectHQ/prefect",
+      "repo_id": 139199684,
       "category": "databases-data",
       "description": "Turn Python scripts into scheduled, observable workflows with retries built in.",
       "submitted_by": "jamesconwaydev",
@@ -3807,6 +4124,7 @@
     },
     {
       "repo": "prestodb/presto",
+      "repo_id": 5349565,
       "category": "databases-data",
       "description": "Run one SQL query across many data sources and get answers from huge datasets.",
       "submitted_by": "jamesconwaydev",
@@ -3819,6 +4137,7 @@
     },
     {
       "repo": "prettier/prettier",
+      "repo_id": 75104123,
       "category": "developer-tools",
       "description": "Stop arguing about formatting, because it rewrites your code in one consistent style.",
       "submitted_by": "jamesconwaydev",
@@ -3831,6 +4150,7 @@
     },
     {
       "repo": "primer/octicons",
+      "repo_id": 20893207,
       "category": "design-ui",
       "description": "GitHub's own icon set as clean SVGs for your interface.",
       "submitted_by": "jamesconwaydev",
@@ -3843,6 +4163,7 @@
     },
     {
       "repo": "prisma/orm",
+      "repo_id": 192925833,
       "category": "backend-apis",
       "description": "Query your database from TypeScript with autocomplete and types that match your schema.",
       "submitted_by": "jamesconwaydev",
@@ -3855,6 +4176,7 @@
     },
     {
       "repo": "projectdiscovery/nuclei",
+      "repo_id": 252813491,
       "category": "security",
       "description": "Scan your apps and servers for known vulnerabilities with templates the community keeps fresh.",
       "submitted_by": "jamesconwaydev",
@@ -3867,6 +4189,7 @@
     },
     {
       "repo": "prometheus/node_exporter",
+      "repo_id": 9524057,
       "category": "devops-infra",
       "description": "Exposes a machine's CPU, memory, disk and network numbers so Prometheus can collect them.",
       "submitted_by": "jamesconwaydev",
@@ -3879,6 +4202,7 @@
     },
     {
       "repo": "prometheus/prometheus",
+      "repo_id": 6838921,
       "category": "devops-infra",
       "description": "The monitoring system that scrapes your metrics and alerts when numbers go somewhere they should not.",
       "submitted_by": "jamesconwaydev",
@@ -3891,6 +4215,7 @@
     },
     {
       "repo": "psf/requests",
+      "repo_id": 1362490,
       "category": "backend-apis",
       "description": "HTTP for Python that reads like English, the library everyone installs on day one.",
       "submitted_by": "jamesconwaydev",
@@ -3903,6 +4228,7 @@
     },
     {
       "repo": "puppeteer/puppeteer",
+      "repo_id": 90796663,
       "category": "testing",
       "description": "Drive Chrome from code to scrape pages, make PDFs and test your site.",
       "submitted_by": "jamesconwaydev",
@@ -3915,6 +4241,7 @@
     },
     {
       "repo": "pytest-dev/pytest",
+      "repo_id": 37489525,
       "category": "testing",
       "description": "Write small readable Python tests with fixtures and plain assert statements.",
       "submitted_by": "jamesconwaydev",
@@ -3927,6 +4254,7 @@
     },
     {
       "repo": "python-poetry/poetry",
+      "repo_id": 123303402,
       "category": "developer-tools",
       "description": "Manage Python dependencies and packaging in one file, with locked versions that reproduce.",
       "submitted_by": "jamesconwaydev",
@@ -3939,6 +4267,7 @@
     },
     {
       "repo": "python/cpython",
+      "repo_id": 81598961,
       "category": "developer-tools",
       "description": "The language you can read on the first day, and the source of its reference interpreter.",
       "submitted_by": "jamesconwaydev",
@@ -3951,6 +4280,7 @@
     },
     {
       "repo": "qazbnm456/awesome-web-security",
+      "repo_id": 80358070,
       "category": "learning-resources",
       "description": "Books, tools and write-ups for learning how web apps get attacked and defended.",
       "submitted_by": "jamesconwaydev",
@@ -3963,6 +4293,7 @@
     },
     {
       "repo": "qdrant/qdrant",
+      "repo_id": 268163609,
       "category": "ai-ml",
       "description": "A vector database that finds the most similar items fast, for search and retrieval in AI apps.",
       "submitted_by": "jamesconwaydev",
@@ -3975,6 +4306,7 @@
     },
     {
       "repo": "questdb/questdb",
+      "repo_id": 19257422,
       "category": "databases-data",
       "description": "A time series database that ingests millions of rows a second and answers in plain SQL.",
       "submitted_by": "jamesconwaydev",
@@ -3987,6 +4319,7 @@
     },
     {
       "repo": "radix-ui/primitives",
+      "repo_id": 273499522,
       "category": "design-ui",
       "description": "Unstyled, accessible building blocks for dialogs, menus and tabs that you can dress up yourself.",
       "submitted_by": "jamesconwaydev",
@@ -3999,6 +4332,7 @@
     },
     {
       "repo": "rails/rails",
+      "repo_id": 8514,
       "category": "backend-apis",
       "description": "Ruby on Rails lets one person ship a full web application, database and all, in an afternoon.",
       "submitted_by": "jamesconwaydev",
@@ -4011,6 +4345,7 @@
     },
     {
       "repo": "rancher/rancher",
+      "repo_id": 26337322,
       "category": "devops-infra",
       "description": "One dashboard to manage many Kubernetes clusters, wherever they happen to be running.",
       "submitted_by": "jamesconwaydev",
@@ -4023,6 +4358,7 @@
     },
     {
       "repo": "ranger/ranger",
+      "repo_id": 218157,
       "category": "cli-terminal",
       "description": "Browse your files with Vim keys in a three pane terminal view.",
       "submitted_by": "jamesconwaydev",
@@ -4035,6 +4371,7 @@
     },
     {
       "repo": "ray-project/ray",
+      "repo_id": 71932349,
       "category": "ai-ml",
       "description": "Take Python code from your laptop to a cluster and scale training or serving with little rewriting.",
       "submitted_by": "jamesconwaydev",
@@ -4047,6 +4384,7 @@
     },
     {
       "repo": "react-bootstrap/react-bootstrap",
+      "repo_id": 15480067,
       "category": "design-ui",
       "description": "Bootstrap rebuilt as real React components, with no jQuery in sight.",
       "submitted_by": "jamesconwaydev",
@@ -4059,6 +4397,7 @@
     },
     {
       "repo": "react-hook-form/react-hook-form",
+      "repo_id": 174038031,
       "category": "frontend-web",
       "description": "Build forms in React with validation and few re-renders, without the boilerplate.",
       "submitted_by": "jamesconwaydev",
@@ -4071,6 +4410,7 @@
     },
     {
       "repo": "react/react",
+      "repo_id": 10270250,
       "category": "frontend-web",
       "description": "The library for building user interfaces from small, reusable components.",
       "submitted_by": "jamesconwaydev",
@@ -4083,6 +4423,7 @@
     },
     {
       "repo": "react/react-native",
+      "repo_id": 29028775,
       "category": "mobile",
       "description": "Build real native iOS and Android apps with React and the skills you already have.",
       "submitted_by": "jamesconwaydev",
@@ -4095,6 +4436,7 @@
     },
     {
       "repo": "ReactiveX/RxAndroid",
+      "repo_id": 23095954,
       "category": "mobile",
       "description": "Bring reactive streams to Android with thread helpers that keep the UI smooth.",
       "submitted_by": "jamesconwaydev",
@@ -4107,6 +4449,7 @@
     },
     {
       "repo": "ReactiveX/RxSwift",
+      "repo_id": 33569135,
       "category": "mobile",
       "description": "Handle async events in Swift as streams you can combine and transform.",
       "submitted_by": "jamesconwaydev",
@@ -4119,6 +4462,7 @@
     },
     {
       "repo": "realm/realm-swift",
+      "repo_id": 4044891,
       "category": "mobile",
       "description": "A fast local database for iOS that stores objects directly, no SQL needed.",
       "submitted_by": "jamesconwaydev",
@@ -4131,6 +4475,7 @@
     },
     {
       "repo": "realm/SwiftLint",
+      "repo_id": 35732214,
       "category": "mobile",
       "description": "Keep your Swift code consistent with rules that flag style problems as you build.",
       "submitted_by": "jamesconwaydev",
@@ -4143,6 +4488,7 @@
     },
     {
       "repo": "recharts/recharts",
+      "repo_id": 40345658,
       "category": "design-ui",
       "description": "Composable React charts built on D3, so you describe a chart with components.",
       "submitted_by": "jamesconwaydev",
@@ -4155,6 +4501,7 @@
     },
     {
       "repo": "reduxjs/redux",
+      "repo_id": 36535156,
       "category": "frontend-web",
       "description": "Predictable state for JavaScript apps, with a log of every change.",
       "submitted_by": "jamesconwaydev",
@@ -4167,6 +4514,7 @@
     },
     {
       "repo": "remix-run/react-router",
+      "repo_id": 19872456,
       "category": "frontend-web",
       "description": "Routing for React apps, with nested layouts and data loading built in.",
       "submitted_by": "jamesconwaydev",
@@ -4179,6 +4527,7 @@
     },
     {
       "repo": "remix-run/remix",
+      "repo_id": 307489284,
       "category": "frontend-web",
       "description": "A full stack web framework built on web standards and nested routing.",
       "submitted_by": "jamesconwaydev",
@@ -4191,6 +4540,7 @@
     },
     {
       "repo": "renovatebot/renovate",
+      "repo_id": 76734068,
       "category": "devops-infra",
       "description": "Opens pull requests to update your dependencies, so version bumps stop piling up unnoticed.",
       "submitted_by": "jamesconwaydev",
@@ -4203,6 +4553,7 @@
     },
     {
       "repo": "restic/restic",
+      "repo_id": 19205896,
       "category": "devops-infra",
       "description": "Fast, encrypted backups to almost anywhere, with deduplication that keeps storage costs down.",
       "submitted_by": "jamesconwaydev",
@@ -4215,6 +4566,7 @@
     },
     {
       "repo": "robotframework/robotframework",
+      "repo_id": 21273155,
       "category": "testing",
       "description": "Write acceptance tests in readable keyword style that non developers can follow.",
       "submitted_by": "jamesconwaydev",
@@ -4227,6 +4579,7 @@
     },
     {
       "repo": "rockerBOO/awesome-neovim",
+      "repo_id": 296702877,
       "category": "learning-resources",
       "description": "Plugins that turn Neovim into the editor you wanted, sorted by what they do.",
       "submitted_by": "jamesconwaydev",
@@ -4239,6 +4592,7 @@
     },
     {
       "repo": "rossant/awesome-math",
+      "repo_id": 41793121,
       "category": "learning-resources",
       "description": "Books, courses and tools for learning and doing mathematics.",
       "submitted_by": "jamesconwaydev",
@@ -4251,6 +4605,7 @@
     },
     {
       "repo": "rqlite/rqlite",
+      "repo_id": 23247808,
       "category": "databases-data",
       "description": "A small distributed database built on SQLite, with clustering that is easy to run.",
       "submitted_by": "jamesconwaydev",
@@ -4263,6 +4618,7 @@
     },
     {
       "repo": "ruby/ruby",
+      "repo_id": 538746,
       "category": "developer-tools",
       "description": "The language that put programmer happiness first, and the interpreter that runs it.",
       "submitted_by": "jamesconwaydev",
@@ -4275,6 +4631,7 @@
     },
     {
       "repo": "run-llama/llama_index",
+      "repo_id": 560704231,
       "category": "ai-ml",
       "description": "Connect your documents and databases to a language model so it can answer questions about them.",
       "submitted_by": "jamesconwaydev",
@@ -4287,6 +4644,7 @@
     },
     {
       "repo": "rust-lang/rust",
+      "repo_id": 724712,
       "category": "developer-tools",
       "description": "A language that gives you speed and memory safety together, so the compiler catches bugs early.",
       "submitted_by": "jamesconwaydev",
@@ -4299,6 +4657,7 @@
     },
     {
       "repo": "rust-unofficial/awesome-rust",
+      "repo_id": 21938243,
       "category": "learning-resources",
       "description": "A hand-picked map of the Rust crates, tools and guides worth your time.",
       "submitted_by": "jamesconwaydev",
@@ -4311,6 +4670,7 @@
     },
     {
       "repo": "rustdesk/rustdesk",
+      "repo_id": 299354207,
       "category": "self-hosted",
       "description": "Control a remote computer with a self hosted alternative to TeamViewer.",
       "submitted_by": "jamesconwaydev",
@@ -4323,6 +4683,7 @@
     },
     {
       "repo": "saadeghi/daisyui",
+      "repo_id": 316836816,
       "category": "design-ui",
       "description": "Component class names for Tailwind, so a button is one word rather than ten utilities.",
       "submitted_by": "jamesconwaydev",
@@ -4335,6 +4696,7 @@
     },
     {
       "repo": "samba-team/samba",
+      "repo_id": 38905297,
       "category": "self-hosted",
       "description": "Shares files and printers with Windows, Mac and Linux machines on your network over SMB.",
       "submitted_by": "jamesconwaydev",
@@ -4347,6 +4709,7 @@
     },
     {
       "repo": "scikit-learn/scikit-learn",
+      "repo_id": 843222,
       "category": "ai-ml",
       "description": "Classic machine learning in Python with one consistent API, from regression to clustering.",
       "submitted_by": "jamesconwaydev",
@@ -4359,6 +4722,7 @@
     },
     {
       "repo": "searxng/searxng",
+      "repo_id": 357241735,
       "category": "self-hosted",
       "description": "A metasearch engine that pulls results from many sources without tracking you.",
       "submitted_by": "jamesconwaydev",
@@ -4371,6 +4735,7 @@
     },
     {
       "repo": "SeleniumHQ/selenium",
+      "repo_id": 7613257,
       "category": "testing",
       "description": "Drives a real browser from your code, so you can test the web the way a person uses it.",
       "submitted_by": "jamesconwaydev",
@@ -4383,6 +4748,7 @@
     },
     {
       "repo": "semantic-release/semantic-release",
+      "repo_id": 24063576,
       "category": "developer-tools",
       "description": "Cut releases and bump versions automatically from your commit messages.",
       "submitted_by": "jamesconwaydev",
@@ -4395,6 +4761,7 @@
     },
     {
       "repo": "semaphoreui/semaphore",
+      "repo_id": 23267883,
       "category": "devops-infra",
       "description": "A friendly web interface for running Ansible playbooks and Terraform, with a whole team around it.",
       "submitted_by": "jamesconwaydev",
@@ -4407,6 +4774,7 @@
     },
     {
       "repo": "semgrep/semgrep",
+      "repo_id": 227803815,
       "category": "security",
       "description": "Search your code for bugs and security holes using patterns that look like the code itself.",
       "submitted_by": "jamesconwaydev",
@@ -4419,6 +4787,7 @@
     },
     {
       "repo": "sequelize/sequelize",
+      "repo_id": 790359,
       "category": "backend-apis",
       "description": "A long running Node ORM that talks to Postgres, MySQL and more using plain JavaScript models.",
       "submitted_by": "jamesconwaydev",
@@ -4431,6 +4800,7 @@
     },
     {
       "repo": "serhii-londar/open-source-mac-os-apps",
+      "repo_id": 109343098,
       "category": "learning-resources",
       "description": "Open source Mac apps you can read, trust and use every day.",
       "submitted_by": "jamesconwaydev",
@@ -4443,6 +4813,7 @@
     },
     {
       "repo": "shadcn-ui/ui",
+      "repo_id": 585146387,
       "category": "design-ui",
       "description": "Copy accessible, nicely designed components into your project and own the code.",
       "submitted_by": "jamesconwaydev",
@@ -4455,6 +4826,7 @@
     },
     {
       "repo": "sharkdp/bat",
+      "repo_id": 130464961,
       "category": "cli-terminal",
       "description": "Like cat, but with syntax colors, line numbers and git markers in the margin.",
       "submitted_by": "jamesconwaydev",
@@ -4467,6 +4839,7 @@
     },
     {
       "repo": "sharkdp/fd",
+      "repo_id": 90793418,
       "category": "cli-terminal",
       "description": "A friendlier find that is fast, ignores junk and has sensible defaults.",
       "submitted_by": "jamesconwaydev",
@@ -4479,6 +4852,7 @@
     },
     {
       "repo": "sharkdp/hyperfine",
+      "repo_id": 117356231,
       "category": "cli-terminal",
       "description": "Benchmark any command and get clear timings and statistics instead of guesswork.",
       "submitted_by": "jamesconwaydev",
@@ -4491,6 +4865,7 @@
     },
     {
       "repo": "sigstore/cosign",
+      "repo_id": 335952417,
       "category": "security",
       "description": "Signs your container images and checks those signatures, so you know what you are about to run.",
       "submitted_by": "jamesconwaydev",
@@ -4503,6 +4878,7 @@
     },
     {
       "repo": "sindresorhus/awesome-nodejs",
+      "repo_id": 21737266,
       "category": "learning-resources",
       "description": "Packages and resources for Node.js, picked with care instead of by volume.",
       "submitted_by": "jamesconwaydev",
@@ -4515,6 +4891,7 @@
     },
     {
       "repo": "siyuan-note/siyuan",
+      "repo_id": 291438522,
       "category": "self-hosted",
       "description": "A privacy first knowledge workspace for linked notes, running on your own hardware.",
       "submitted_by": "jamesconwaydev",
@@ -4527,6 +4904,7 @@
     },
     {
       "repo": "software-mansion/react-native-reanimated",
+      "repo_id": 130961487,
       "category": "mobile",
       "description": "Buttery smooth animations in React Native that run on the UI thread.",
       "submitted_by": "jamesconwaydev",
@@ -4539,6 +4917,7 @@
     },
     {
       "repo": "solidjs/solid",
+      "repo_id": 130884470,
       "category": "frontend-web",
       "description": "Reactive UI with fine grained updates and no virtual DOM, for very quick interfaces.",
       "submitted_by": "jamesconwaydev",
@@ -4551,6 +4930,7 @@
     },
     {
       "repo": "Solido/awesome-flutter",
+      "repo_id": 90528830,
       "category": "learning-resources",
       "description": "Libraries, tools and tutorials for building apps with Flutter.",
       "submitted_by": "jamesconwaydev",
@@ -4563,6 +4943,7 @@
     },
     {
       "repo": "sorrycc/awesome-javascript",
+      "repo_id": 21393871,
       "category": "learning-resources",
       "description": "Browser-side JavaScript libraries and resources, sorted by what you need them for.",
       "submitted_by": "jamesconwaydev",
@@ -4575,6 +4956,7 @@
     },
     {
       "repo": "spring-projects/spring-boot",
+      "repo_id": 6296790,
       "category": "backend-apis",
       "description": "Start a production grade Java service with sensible defaults and almost no configuration.",
       "submitted_by": "jamesconwaydev",
@@ -4587,6 +4969,7 @@
     },
     {
       "repo": "sqlc-dev/sqlc",
+      "repo_id": 193160679,
       "category": "databases-data",
       "description": "Write plain SQL and get type safe Go code generated for you.",
       "submitted_by": "jamesconwaydev",
@@ -4599,6 +4982,7 @@
     },
     {
       "repo": "square/leakcanary",
+      "repo_id": 34824499,
       "category": "mobile",
       "description": "Finds the memory leaks in your Android app and tells you exactly which object is to blame.",
       "submitted_by": "jamesconwaydev",
@@ -4611,6 +4995,7 @@
     },
     {
       "repo": "square/moshi",
+      "repo_id": 22789601,
       "category": "mobile",
       "description": "Parse JSON in Kotlin and Java into real objects with minimal fuss.",
       "submitted_by": "jamesconwaydev",
@@ -4623,6 +5008,7 @@
     },
     {
       "repo": "starship/starship",
+      "repo_id": 178991158,
       "category": "cli-terminal",
       "description": "A fast prompt for any shell that shows git status, language versions and more at a glance.",
       "submitted_by": "jamesconwaydev",
@@ -4635,6 +5021,7 @@
     },
     {
       "repo": "steven2358/awesome-generative-ai",
+      "repo_id": 554771302,
       "category": "learning-resources",
       "description": "Generative AI projects and services you can try, sorted by what they make.",
       "submitted_by": "jamesconwaydev",
@@ -4647,6 +5034,7 @@
     },
     {
       "repo": "storybookjs/storybook",
+      "repo_id": 54173593,
       "category": "design-ui",
       "description": "Build and test UI components in isolation, then share them as a living catalog.",
       "submitted_by": "jamesconwaydev",
@@ -4659,6 +5047,7 @@
     },
     {
       "repo": "stretchr/testify",
+      "repo_id": 6247705,
       "category": "testing",
       "description": "Assertions and mocks for Go tests that make failures easier to read.",
       "submitted_by": "jamesconwaydev",
@@ -4671,6 +5060,7 @@
     },
     {
       "repo": "supabase/supabase",
+      "repo_id": 214587193,
       "category": "backend-apis",
       "description": "Postgres, auth, storage and realtime in one place, so you can skip weeks of backend plumbing.",
       "submitted_by": "jamesconwaydev",
@@ -4683,6 +5073,7 @@
     },
     {
       "repo": "sveltejs/svelte",
+      "repo_id": 74293321,
       "category": "frontend-web",
       "description": "Write less code and ship less JavaScript, because the compiler does the heavy lifting.",
       "submitted_by": "jamesconwaydev",
@@ -4695,6 +5086,7 @@
     },
     {
       "repo": "swagger-api/swagger-ui",
+      "repo_id": 2055965,
       "category": "backend-apis",
       "description": "Turns an OpenAPI file into a page where you can read and try out every endpoint.",
       "submitted_by": "jamesconwaydev",
@@ -4707,6 +5099,7 @@
     },
     {
       "repo": "swiftlang/swift",
+      "repo_id": 44838949,
       "category": "mobile",
       "description": "The language behind modern Apple apps, fast and safe with a friendly syntax.",
       "submitted_by": "jamesconwaydev",
@@ -4719,6 +5112,7 @@
     },
     {
       "repo": "sxyazi/yazi",
+      "repo_id": 663900193,
       "category": "cli-terminal",
       "description": "A speedy terminal file manager with image previews and async everything.",
       "submitted_by": "jamesconwaydev",
@@ -4731,6 +5125,7 @@
     },
     {
       "repo": "symfony/symfony",
+      "repo_id": 458058,
       "category": "backend-apis",
       "description": "Reusable PHP components and a full framework that power a huge share of the PHP world.",
       "submitted_by": "jamesconwaydev",
@@ -4743,6 +5138,7 @@
     },
     {
       "repo": "syncthing/syncthing",
+      "repo_id": 14712850,
       "category": "self-hosted",
       "description": "Keep folders in sync across your devices directly, with no cloud in the middle.",
       "submitted_by": "jamesconwaydev",
@@ -4755,6 +5151,7 @@
     },
     {
       "repo": "tabler/tabler-icons",
+      "repo_id": 243546335,
       "category": "design-ui",
       "description": "Thousands of crisp, consistent free SVG icons you can tweak in size and stroke.",
       "submitted_by": "jamesconwaydev",
@@ -4767,6 +5164,7 @@
     },
     {
       "repo": "tailscale/tailscale",
+      "repo_id": 237523442,
       "category": "devops-infra",
       "description": "A private network for your devices that just works, built on WireGuard with no port forwarding.",
       "submitted_by": "jamesconwaydev",
@@ -4779,6 +5177,7 @@
     },
     {
       "repo": "tailwindlabs/tailwindcss",
+      "repo_id": 106017343,
       "category": "design-ui",
       "description": "Style your pages with small utility classes right in the markup, and skip the stylesheet sprawl.",
       "submitted_by": "jamesconwaydev",
@@ -4791,6 +5190,7 @@
     },
     {
       "repo": "TanStack/query",
+      "repo_id": 207645083,
       "category": "frontend-web",
       "description": "Fetch, cache and update server data in your app without writing the loading logic yourself.",
       "submitted_by": "jamesconwaydev",
@@ -4803,6 +5203,7 @@
     },
     {
       "repo": "TanStack/table",
+      "repo_id": 71487058,
       "category": "frontend-web",
       "description": "Headless table logic for sorting, filtering and pagination, and you bring the markup.",
       "submitted_by": "jamesconwaydev",
@@ -4815,6 +5216,7 @@
     },
     {
       "repo": "tauri-apps/tauri",
+      "repo_id": 196701619,
       "category": "mobile",
       "description": "Ship small, fast desktop and mobile apps with a web frontend and a Rust core.",
       "submitted_by": "jamesconwaydev",
@@ -4827,6 +5229,7 @@
     },
     {
       "repo": "temporalio/temporal",
+      "repo_id": 215654064,
       "category": "backend-apis",
       "description": "Write long running workflows as ordinary code and let it survive crashes and restarts.",
       "submitted_by": "jamesconwaydev",
@@ -4839,6 +5242,7 @@
     },
     {
       "repo": "tensorflow/tensorflow",
+      "repo_id": 45717250,
       "category": "ai-ml",
       "description": "Train and ship machine learning models from a laptop experiment to a production server farm.",
       "submitted_by": "jamesconwaydev",
@@ -4851,6 +5255,7 @@
     },
     {
       "repo": "testcontainers/testcontainers-java",
+      "repo_id": 33816473,
       "category": "testing",
       "description": "Spin up real databases and services in Docker for your Java integration tests.",
       "submitted_by": "jamesconwaydev",
@@ -4863,6 +5268,7 @@
     },
     {
       "repo": "testing-library/react-testing-library",
+      "repo_id": 125863507,
       "category": "testing",
       "description": "Test React components the way users use them, not how they are built.",
       "submitted_by": "jamesconwaydev",
@@ -4875,6 +5281,7 @@
     },
     {
       "repo": "Textualize/textual",
+      "repo_id": 355959597,
       "category": "cli-terminal",
       "description": "Build rich, mouse friendly terminal apps in Python that look like they belong on the web.",
       "submitted_by": "jamesconwaydev",
@@ -4887,6 +5294,7 @@
     },
     {
       "repo": "tmux/tmux",
+      "repo_id": 36836475,
       "category": "cli-terminal",
       "description": "Keep terminal sessions alive, split your screen and pick up where you left off after a dropped connection.",
       "submitted_by": "jamesconwaydev",
@@ -4899,6 +5307,7 @@
     },
     {
       "repo": "tokio-rs/axum",
+      "repo_id": 372172254,
       "category": "backend-apis",
       "description": "A Rust web framework that stays ergonomic and plays nicely with the rest of the Tokio stack.",
       "submitted_by": "jamesconwaydev",
@@ -4911,6 +5320,7 @@
     },
     {
       "repo": "traefik/traefik",
+      "repo_id": 42408804,
       "category": "devops-infra",
       "description": "A reverse proxy that finds your containers by itself and routes traffic to them with TLS built in.",
       "submitted_by": "jamesconwaydev",
@@ -4923,6 +5333,7 @@
     },
     {
       "repo": "trpc/trpc",
+      "repo_id": 280557054,
       "category": "backend-apis",
       "description": "Call your backend functions from the frontend with full TypeScript types and no schema files.",
       "submitted_by": "jamesconwaydev",
@@ -4935,6 +5346,7 @@
     },
     {
       "repo": "trufflesecurity/trufflehog",
+      "repo_id": 77726177,
       "category": "security",
       "description": "Hunts through your repos for leaked passwords and API keys, and checks whether they still work.",
       "submitted_by": "jamesconwaydev",
@@ -4947,6 +5359,7 @@
     },
     {
       "repo": "TryGhost/Ghost",
+      "repo_id": 9852918,
       "category": "self-hosted",
       "description": "Publish a blog or newsletter and run paid memberships on a platform you control.",
       "submitted_by": "jamesconwaydev",
@@ -4959,6 +5372,7 @@
     },
     {
       "repo": "tsenart/vegeta",
+      "repo_id": 12080551,
       "category": "testing",
       "description": "Hammer an HTTP service at a fixed rate and get latency numbers back.",
       "submitted_by": "jamesconwaydev",
@@ -4971,6 +5385,7 @@
     },
     {
       "repo": "tursodatabase/libsql",
+      "repo_id": 543276238,
       "category": "databases-data",
       "description": "An open contribution fork of SQLite with the extras you wish the original had.",
       "submitted_by": "jamesconwaydev",
@@ -4983,6 +5398,7 @@
     },
     {
       "repo": "twbs/bootstrap",
+      "repo_id": 2126244,
       "category": "design-ui",
       "description": "The CSS framework that made responsive layouts easy and still gets a site looking decent in minutes.",
       "submitted_by": "jamesconwaydev",
@@ -4995,6 +5411,7 @@
     },
     {
       "repo": "typeorm/typeorm",
+      "repo_id": 52773157,
       "category": "backend-apis",
       "description": "Map TypeScript classes to database tables and let the ORM handle the SQL.",
       "submitted_by": "jamesconwaydev",
@@ -5007,6 +5424,7 @@
     },
     {
       "repo": "typesense/typesense",
+      "repo_id": 79317191,
       "category": "databases-data",
       "description": "Typo tolerant search that is quick to set up and pleasant to run.",
       "submitted_by": "jamesconwaydev",
@@ -5019,6 +5437,7 @@
     },
     {
       "repo": "ueberdosis/tiptap",
+      "repo_id": 145464445,
       "category": "frontend-web",
       "description": "Build a rich text editor your way, with a headless toolkit that does not force a look.",
       "submitted_by": "jamesconwaydev",
@@ -5031,6 +5450,7 @@
     },
     {
       "repo": "ultralytics/ultralytics",
+      "repo_id": 535360445,
       "category": "ai-ml",
       "description": "Detect, segment and track objects in images and video with a few lines of YOLO code.",
       "submitted_by": "jamesconwaydev",
@@ -5043,6 +5463,7 @@
     },
     {
       "repo": "umami-software/umami",
+      "repo_id": 280363952,
       "category": "self-hosted",
       "description": "Simple, privacy friendly web analytics that does not need cookies or a data deal.",
       "submitted_by": "jamesconwaydev",
@@ -5055,6 +5476,7 @@
     },
     {
       "repo": "unicodeveloper/awesome-nextjs",
+      "repo_id": 75291705,
       "category": "learning-resources",
       "description": "Books, videos and examples for learning and building with Next.js.",
       "submitted_by": "jamesconwaydev",
@@ -5067,6 +5489,7 @@
     },
     {
       "repo": "unixorn/awesome-zsh-plugins",
+      "repo_id": 24878875,
       "category": "learning-resources",
       "description": "Plugins, themes and frameworks for a ZSH shell that works the way you think.",
       "submitted_by": "jamesconwaydev",
@@ -5079,6 +5502,7 @@
     },
     {
       "repo": "unslothai/unsloth",
+      "repo_id": 725205304,
       "category": "ai-ml",
       "description": "Fine-tune and run open models locally in a friendly interface, with less memory than you would expect.",
       "submitted_by": "jamesconwaydev",
@@ -5091,6 +5515,7 @@
     },
     {
       "repo": "usebruno/bruno",
+      "repo_id": 542284380,
       "category": "developer-tools",
       "description": "An API client that keeps your requests as plain files in your repo, ready for git.",
       "submitted_by": "jamesconwaydev",
@@ -5103,6 +5528,7 @@
     },
     {
       "repo": "usememos/memos",
+      "repo_id": 436297812,
       "category": "self-hosted",
       "description": "A quick place to jot down notes and thoughts, hosted on your own machine.",
       "submitted_by": "jamesconwaydev",
@@ -5115,6 +5541,7 @@
     },
     {
       "repo": "valkey-io/valkey",
+      "repo_id": 775743011,
       "category": "databases-data",
       "description": "The open source, community run descendant of Redis, for caching and fast key value storage.",
       "submitted_by": "jamesconwaydev",
@@ -5127,6 +5554,7 @@
     },
     {
       "repo": "vapor/vapor",
+      "repo_id": 49910095,
       "category": "backend-apis",
       "description": "Build web servers and APIs in Swift, sharing models with your iOS app.",
       "submitted_by": "jamesconwaydev",
@@ -5139,6 +5567,7 @@
     },
     {
       "repo": "veggiemonk/awesome-docker",
+      "repo_id": 24297122,
       "category": "learning-resources",
       "description": "Docker tools, tutorials and projects for building, shipping and running containers.",
       "submitted_by": "jamesconwaydev",
@@ -5151,6 +5580,7 @@
     },
     {
       "repo": "Velocidex/velociraptor",
+      "repo_id": 126576769,
       "category": "security",
       "description": "Collects evidence and hunts for threats across your endpoints when you are working an incident.",
       "submitted_by": "jamesconwaydev",
@@ -5163,6 +5593,7 @@
     },
     {
       "repo": "vercel/next.js",
+      "repo_id": 70107786,
       "category": "frontend-web",
       "description": "A React framework that handles routing, rendering and deployment so you can focus on the product.",
       "submitted_by": "jamesconwaydev",
@@ -5175,6 +5606,7 @@
     },
     {
       "repo": "vercel/swr",
+      "repo_id": 218115303,
       "category": "frontend-web",
       "description": "React hooks for fetching data that show cached results first and refresh them quietly.",
       "submitted_by": "jamesconwaydev",
@@ -5187,6 +5619,7 @@
     },
     {
       "repo": "vercel/turborepo",
+      "repo_id": 413918947,
       "category": "developer-tools",
       "description": "Speeds up monorepo builds by caching work and running tasks in parallel.",
       "submitted_by": "jamesconwaydev",
@@ -5199,6 +5632,7 @@
     },
     {
       "repo": "vitejs/vite",
+      "repo_id": 257485422,
       "category": "frontend-web",
       "description": "A dev server that starts instantly and builds your frontend for production.",
       "submitted_by": "jamesconwaydev",
@@ -5211,6 +5645,7 @@
     },
     {
       "repo": "vitessio/vitess",
+      "repo_id": 11008207,
       "category": "databases-data",
       "description": "Scale MySQL horizontally without rewriting your application, the system behind huge sites.",
       "submitted_by": "jamesconwaydev",
@@ -5223,6 +5658,7 @@
     },
     {
       "repo": "vitest-dev/vitest",
+      "repo_id": 434708679,
       "category": "testing",
       "description": "A Vite powered test runner with a Jest compatible API and instant feedback.",
       "submitted_by": "jamesconwaydev",
@@ -5235,6 +5671,7 @@
     },
     {
       "repo": "vllm-project/vllm",
+      "repo_id": 599547518,
       "category": "ai-ml",
       "description": "Serves language models fast and cheap, squeezing far more requests out of each GPU.",
       "submitted_by": "jamesconwaydev",
@@ -5247,6 +5684,7 @@
     },
     {
       "repo": "vsouza/awesome-ios",
+      "repo_id": 21700699,
       "category": "learning-resources",
       "description": "Libraries, tools and learning material for iOS developers using Swift or Objective-C.",
       "submitted_by": "jamesconwaydev",
@@ -5259,6 +5697,7 @@
     },
     {
       "repo": "vuejs/awesome-vue",
+      "repo_id": 44571718,
       "category": "learning-resources",
       "description": "Libraries, tools and learning material from across the Vue.js world.",
       "submitted_by": "jamesconwaydev",
@@ -5271,6 +5710,7 @@
     },
     {
       "repo": "vuejs/core",
+      "repo_id": 137078487,
       "category": "frontend-web",
       "description": "Vue's approachable framework for building interfaces, easy to start and ready to scale.",
       "submitted_by": "jamesconwaydev",
@@ -5283,6 +5723,7 @@
     },
     {
       "repo": "vueuse/vueuse",
+      "repo_id": 227978903,
       "category": "frontend-web",
       "description": "A big shelf of ready made Vue composables for things like storage, mouse and network.",
       "submitted_by": "jamesconwaydev",
@@ -5295,6 +5736,7 @@
     },
     {
       "repo": "wazuh/wazuh",
+      "repo_id": 40556106,
       "category": "security",
       "description": "An open source security platform that watches hosts for intrusions, vulnerabilities and compliance gaps.",
       "submitted_by": "jamesconwaydev",
@@ -5307,6 +5749,7 @@
     },
     {
       "repo": "webdriverio/webdriverio",
+      "repo_id": 2296970,
       "category": "testing",
       "description": "Browser and mobile automation for Node with a friendly API and strong tooling.",
       "submitted_by": "jamesconwaydev",
@@ -5319,6 +5762,7 @@
     },
     {
       "repo": "webpack/webpack",
+      "repo_id": 3678731,
       "category": "developer-tools",
       "description": "The bundler that packs your modules and assets into files browsers can load.",
       "submitted_by": "jamesconwaydev",
@@ -5331,6 +5775,7 @@
     },
     {
       "repo": "webpro/awesome-dotfiles",
+      "repo_id": 21900980,
       "category": "learning-resources",
       "description": "Dotfile repos and tools to help you set up a new machine in minutes.",
       "submitted_by": "jamesconwaydev",
@@ -5343,6 +5788,7 @@
     },
     {
       "repo": "wiremock/wiremock",
+      "repo_id": 2544305,
       "category": "testing",
       "description": "Stub and verify HTTP services so your tests do not depend on live systems.",
       "submitted_by": "jamesconwaydev",
@@ -5355,6 +5801,7 @@
     },
     {
       "repo": "wix/Detox",
+      "repo_id": 61204547,
       "category": "testing",
       "description": "Gray box end to end tests for React Native apps that stay stable and quick.",
       "submitted_by": "jamesconwaydev",
@@ -5367,6 +5814,7 @@
     },
     {
       "repo": "wix/react-native-navigation",
+      "repo_id": 53662249,
       "category": "mobile",
       "description": "Fully native navigation for React Native, with screens that feel right.",
       "submitted_by": "jamesconwaydev",
@@ -5379,6 +5827,7 @@
     },
     {
       "repo": "xtekky/gpt4free",
+      "repo_id": 620936652,
       "category": "ai-ml",
       "description": "Collects free access to many language models behind one interface so you can experiment without paying.",
       "submitted_by": "jamesconwaydev",
@@ -5391,6 +5840,7 @@
     },
     {
       "repo": "zabbix/zabbix",
+      "repo_id": 17253775,
       "category": "devops-infra",
       "description": "Monitoring for servers, networks and apps, with graphs and alerts you can set up yourself.",
       "submitted_by": "jamesconwaydev",
@@ -5403,6 +5853,7 @@
     },
     {
       "repo": "zaproxy/zaproxy",
+      "repo_id": 36817565,
       "category": "testing",
       "description": "A web app security scanner that finds holes in your site while you test it, free to use.",
       "submitted_by": "jamesconwaydev",
@@ -5415,6 +5866,7 @@
     },
     {
       "repo": "zellij-org/zellij",
+      "repo_id": 292014229,
       "category": "cli-terminal",
       "description": "A terminal workspace with panes, tabs and layouts that is easy to pick up.",
       "submitted_by": "jamesconwaydev",
@@ -5427,6 +5879,7 @@
     },
     {
       "repo": "zitadel/zitadel",
+      "repo_id": 247714750,
       "category": "security",
       "description": "Add login, SSO and multi tenant identity to your product without building it yourself.",
       "submitted_by": "jamesconwaydev",
@@ -5439,6 +5892,7 @@
     },
     {
       "repo": "zsh-users/zsh-syntax-highlighting",
+      "repo_id": 1197428,
       "category": "cli-terminal",
       "description": "Colors your Zsh commands as you type, so typos and bad paths show up before you hit enter.",
       "submitted_by": "jamesconwaydev",

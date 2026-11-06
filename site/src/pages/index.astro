@@ -3,13 +3,13 @@ import Base from "../layouts/Base.astro";
 import Leaderboard from "../components/Leaderboard.astro";
 import Explain from "../components/Explain.astro";
 import { loadAll, liveList, trending } from "../lib/data.ts";
-import { icon, num } from "../lib/format.ts";
+import { centralStamp, icon, num } from "../lib/format.ts";
 
 const { entries, categories } = loadAll();
 const live = liveList(entries);
 const climber = trending(entries)[0];
 const built = new Date();
-const stamp = built.toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
+const stamp = centralStamp(built);
 ---
 
 <Base
@@ -20,7 +20,7 @@ const stamp = built.toLocaleString("en-GB", { day: "numeric", month: "short", ho
     <div class="wrap hero-grid">
       <div>
         <p class="live">
-          <span class="pulse" aria-hidden="true"></span><strong>Updated live</strong> Last count <time datetime={built.toISOString()}>{stamp} UTC</time>
+          <span class="pulse" aria-hidden="true"></span><strong>Updated live</strong> Last count <time datetime={built.toISOString()}>{stamp}</time>
         </p>
         <h1>Top GitHub Repos, ranked by developers</h1>
         <p>Stars pile up for years. A Like here is one developer saying they'd use it today, so the order moves every hour.</p>

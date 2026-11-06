@@ -48,6 +48,8 @@ class DescriptionTest(unittest.TestCase):
             "y" * 139, "z" * 140, "w" * 139 + ".", "v" * 141, "short", "abcdefghi!", "abcdefghij!",
             "Mixed ending?.!", "Tabs\tand\nnewlines in it", "Dots... in the middle... end...",
             "Questions? Yes, answered here?", "Ending with spaces and bang !  ",
+            # Found by the fuzzer: a dot and a space inside the trailing run, and a joiner after a lone selector.
+            "f\u2764...\u2764e-Z!gg!bdgf::fb.a:.?", "Xc ebb!-. .?!", "eedf\ufe0f\u200d\u2764? g;\U0001f468",
             # The added period turns a trailing "www" into "www.", which must not read as a link.
             "A short history of the www", "Mirror of the WWW!",
         ]

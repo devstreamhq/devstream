@@ -230,6 +230,48 @@ class SubmitTest(unittest.TestCase):
         self.assertEqual(len(run(gh(readme="This project is no longer maintained. " + README)).failures), 1)
         self.assertEqual(run(gh(readme=README + " " * 600 + "deprecated")).failures, [])
 
+    def test_readme_deprecated_only_for_project_level_statements(self):
+        spark = (
+            "# Apache Spark\n\nSpark is a unified analytics engine for large-scale data processing. It provides\n"
+            "high-level APIs in Scala, Java, Python, and R (Deprecated), and an optimized engine that\n"
+        )
+        pad = "\n\n" + README
+        self.assertEqual(run(gh(readme=spark + pad)).failures, [])
+        self.assertEqual(run(gh(readme=spark + pad), "rot").rot, "ok")
+        for head in (
+            "> **Deprecated:** use foo instead",
+            "This project is no longer maintained.",
+            "# DEPRECATED",
+            "DEPRECATED: moved",
+            "> [!WARNING] This project is no longer maintained",
+            "Hello. This library has been archived by its owner.",
+        ):
+            with self.subTest(head):
+                self.assertEqual(len(run(gh(readme=head + pad)).failures), 1)
+                self.assertEqual(run(gh(readme=head + pad), "rot").rot, "warn")
+
+    def test_readme_deprecated_variants_are_rejected(self):
+        pad = "\n\n" + README
+        for head in (
+            "\u26a0 DEPRECATED", "\U0001f6a8 Deprecated: use foo", "# \u26a0\ufe0f Deprecated",
+            "[DEPRECATED] use X", "__DEPRECATED__", "_Deprecated_", "<h1>DEPRECATED</h1>",
+            "<p align=center>Deprecated</p>", "Status: Deprecated", "foo - DEPRECATED",
+            "# foo (deprecated)", "This project is officially deprecated", "This project was deprecated",
+            "This library is no longer actively maintained", "The project is deprecated", "This is deprecated",
+        ):
+            with self.subTest(head):
+                self.assertEqual(len(run(gh(readme=head + pad)).failures), 1)
+
+    def test_readme_deprecated_word_before_hyphen_is_not_a_marker(self):
+        self.assertEqual(run(gh(readme="The library is deprecated-aware and fast. " + README)).failures, [])
+
+    def test_readme_deprecated_regex_is_fast_on_hostile_input(self):
+        for unit in ("<", "<a ", "_", "# ", "this ", "\n>", "[!x", "- (", "the project is now "):
+            g = gh(readme=(unit * 500)[:500] + README)
+            t = time.monotonic()
+            run(g)
+            self.assertLess(time.monotonic() - t, 2, unit)
+
     def test_collects_all_failures(self):
         r = run(gh({"archived": True, "license": None, "description": ""}, readme=None))
         self.assertGreaterEqual(len(r.failures), 4)

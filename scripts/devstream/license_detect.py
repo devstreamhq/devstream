@@ -9,7 +9,18 @@ from pathlib import Path
 from scripts.devstream.gh import GitHubError
 
 OSI = frozenset(json.loads((Path(__file__).parents[2] / "data" / "osi-licenses.json").read_text()))
-FILE_RE = re.compile(r"^(licen[cs]e|copying|unlicense)([-._][\w.-]+)?(\.(md|txt|rst))?$", re.I)
+LICENSE_RE = re.compile(r"^(licen[cs]e|copying|unlicense)([-._][\w.-]+)?(\.(md|txt|rst))?$", re.I)
+# Narrower than LICENSE_RE: these stems also name source files (copyright.py, gpl.js).
+OTHER_RE = re.compile(r"^(copyright|artistic|bsdl|gpl)(\.(md|txt|rst)|-[\w-]+|-([\w-]*-)?\d+(\.\d+)*(\.(md|txt|rst))?)?$", re.I)
+
+
+class _FileRe:
+    @staticmethod
+    def match(name):
+        return LICENSE_RE.match(name) or OTHER_RE.match(name)
+
+
+FILE_RE = _FileRe()
 MAX_FILES = 5
 MAX_BYTES = 100_000
 
@@ -34,6 +45,8 @@ NON_OSI = [
 PHRASES = [
     ("curl", ["copyright and permission notice", "permission to use, copy, modify, and distribute this software for any purpose with or without fee", "the name of a copyright holder shall not be used in advertising"], []),
     ("PostgreSQL", ["permission to use, copy, modify, and distribute this software and its documentation for any purpose, without fee, and without a written agreement", "has no obligations to provide maintenance, support, updates, enhancements, or modifications"], []),
+    ("Artistic-2.0", ["this license establishes the terms under which a given free software package may be copied, modified, distributed, and/or redistributed", "copyright holder means the individual(s) or organization(s) named in the copyright notice for the entire package"], []),
+    ("Artistic-1.0", ["the intent of this document is to state the conditions under which a package may be copied", "reasonable copying fee"], []),
     ("BSL-1.0", ["boost software license", "accompanying documentation covered by this license"], []),
     ("MIT", ["permission is hereby granted, free of charge", "the above copyright notice and this permission notice shall be included"], ["good, not evil"]),
     ("Apache-2.0", ["apache license", "version 2.0", "terms and conditions for use, reproduction, and distribution"], []),
@@ -80,7 +93,7 @@ class Undecided(GitHubError):
 
 
 def _norm(text: str) -> str:
-    return re.sub(r"\s+", " ", text).lower()
+    return re.sub(r"\s+", " ", re.sub("[\"\u201c\u201d]", "", text)).lower()
 
 
 def _non_osi(text: str, markers=NON_OSI) -> str | None:
@@ -249,8 +262,10 @@ def find_license(gh, r, readme_text: str | None) -> tuple[str | None, str | None
     if not isinstance(listing, list):
         listing = []
     entries = sorted(
-        (e["name"], e.get("type")) for e in listing
-        if e.get("type") in ("file", "symlink") and FILE_RE.match(e.get("name") or "")
+        ((e["name"], e.get("type")) for e in listing
+         if e.get("type") in ("file", "symlink") and FILE_RE.match(e.get("name") or "")),
+        # license-like names first so the real license is inside the cap
+        key=lambda e: (not LICENSE_RE.match(e[0]), e[0].lower(), e[0]),
     )[:MAX_FILES]
     if not entries:
         return _readme_license(readme_text or "")

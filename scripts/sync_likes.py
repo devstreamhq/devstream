@@ -279,17 +279,20 @@ def run(gh, entries, now: datetime, excluded: set[str]) -> None:
 
     prev_meta = read_json(gh, "meta.json")[0]
     # A repo GitHub hides from us this hour keeps its last card rather than losing stars and avatar.
-    listed = set(keys)
-    fetched = fetch_meta(gh, keys)
+    # Every entry gets one, so the Archive page shows stars for archived and superseded entries too.
+    carded = {}
+    for e in entries:
+        carded.setdefault(normalize_repo(e["repo"]), e)
+    fetched = fetch_meta(gh, sorted(carded))
     replaced = set()
     for k, m in list(fetched.items()):
-        got, want = m.pop("repo_id"), ranked[k].get("repo_id")
+        got, want = m.pop("repo_id"), carded[k].get("repo_id")
         if want is not None and got != want:
             # Someone else's repo at the listed name: its stars and avatar never reach the card or Trending.
-            logging.warning("%s now names repo %s, not the listed %s; keeping its last card", ranked[k]["repo"], got, want)
+            logging.warning("%s now names repo %s, not the listed %s; keeping its last card", carded[k]["repo"], got, want)
             del fetched[k]
             replaced.add(k)
-    meta = {k: v for k, v in (prev_meta or {}).items() if k in listed} | fetched
+    meta = {k: v for k, v in (prev_meta or {}).items() if k in carded} | fetched
     reactors = fetch_reactors(gh, sorted({mapping[k] for k in keys if k in mapping}))
     prev_flags = read_json(gh, "flags.json")[0]
     flags = copy.deepcopy(prev_flags or {})

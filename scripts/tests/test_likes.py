@@ -888,6 +888,17 @@ class Writes(unittest.TestCase):
             self.assertTrue(likes["o/sq"]["flagged"], status)
             self.assertFalse(likes["o/a"]["flagged"])
 
+    def test_archived_and_superseded_entries_keep_a_card(self):
+        # The Archive page shows their stars; only an entry gone from entries.json loses its card.
+        old = {"stars": 9, "language": "Go", "language_color": "#00ADD8",
+               "pushed_at": "2026-10-01T00:00:00Z", "avatar_url": "https://a/old.png"}
+        w = World([entry("o/a"), entry("o/arch", "archived"), entry("o/sup", "superseded")], {"o/a": [node("x")]},
+                  stars={"o/a": 3, "o/arch": 7, "o/sup": 4}, stats={"meta.json": {"o/removed": old}})
+        w.run()
+        meta = w.written("meta.json")
+        self.assertEqual({k: v["stars"] for k, v in meta.items()}, {"o/a": 3, "o/arch": 7, "o/sup": 4})
+        self.assertEqual(set(w.written("likes.json")), {"o/a"})
+
     def test_meta_batched_per_50(self):
         repos = {f"o/r{i:03}": [] for i in range(51)}
         w = World([entry(r) for r in repos], repos)

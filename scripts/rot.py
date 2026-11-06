@@ -346,24 +346,23 @@ def finish(gh, plan: dict, now: datetime | None = None) -> None:
 
     numbers = dict(read_json(gh, "discussions.json")[0] or {})  # before the move, so dropped entries find their thread
     failed = 0
-    moved = True
     for path, mutate, message in (
         ("rot.json", lambda _: plan["rot_state"], "chore(stats): record failing repos"),
+        # Before the key move: if that write fails, on_merge finishes it from this record.
+        ("renames.json", record, "chore(stats): record renamed repos"),
         ("discussions.json", rekey, "chore(stats): follow renamed repos"),
         ("flags.json", rekey, "chore(stats): follow renamed repos"),
         # The site build reads these two by key, so they move now rather than at the next hourly sync.
         ("likes.json", rekey, "chore(stats): follow renamed repos"),
         ("meta.json", rekey, "chore(stats): follow renamed repos"),
-        ("renames.json", record, "chore(stats): record renamed repos"),
     ):
         try:
             update_json(gh, path, mutate, message)
         except Exception:
             logging.exception("could not write %s", path)
             failed += 1
-            moved = moved and path != "discussions.json"
-    # A retitle without its key move would leave the thread named for a key it isn't stored under.
-    posted, notified = _post(gh, actions, numbers, retitle=moved)
+    # Retitled even if the key move failed: on_merge moves the key from renames.json, and adopts by title.
+    posted, notified = _post(gh, actions, numbers)
     failed += posted + _mark_notified(gh, notified, plan["rot_state"])
     if failed:
         raise SystemExit(f"{failed} Discussion or stats update(s) failed")
@@ -392,7 +391,7 @@ def _mark_notified(gh, keys: set[str], planned: dict) -> int:
     return 0
 
 
-def _post(gh, actions, numbers: dict, retitle: bool = True) -> tuple[int, set[str]]:
+def _post(gh, actions, numbers: dict) -> tuple[int, set[str]]:
     """Comment on, or retitle, each action's Discussion.
 
     numbers maps stats key to Discussion number. Returns (failures, rot keys whose notice is done).
@@ -408,7 +407,7 @@ def _post(gh, actions, numbers: dict, retitle: bool = True) -> tuple[int, set[st
             if d is not None:
                 if a.kind != "rename":
                     gh.graphql(_COMMENT, {"discussionId": d["id"], "body": a.message})
-                if a.kind in ("rename", "drop") and retitle:
+                if a.kind in ("rename", "drop"):
                     # "Removed: " can never normalise to a listed repo, so on_merge won't adopt the thread.
                     title = a.repo if a.kind == "rename" else f"{REMOVED_PREFIX}{a.repo}"
                     gh.graphql(_RETITLE, {"discussionId": d["id"], "title": title})

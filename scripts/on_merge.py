@@ -12,6 +12,18 @@ CAP = 40
 VISIBLE = {"live", "warned", "flagged"}
 
 
+def _follow(mapping: dict, renames: dict, listed: set[str]) -> dict:
+    """Finish a rename whose key move failed in rot's finish, so the entry keeps its thread and its Likes.
+
+    Overrides a stored new key: that is the dropped entry's thread after a rename collision.
+    An old name listed again is someone else's entry and keeps its own key.
+    """
+    for old, r in sorted(((k, r) for k, r in renames.items() if isinstance(r, dict)), key=lambda kv: kv[1]["at"]):
+        if old in mapping and old not in listed:
+            mapping[normalize_repo(r["to"])] = mapping.pop(old)
+    return mapping
+
+
 def run(gh, entries, sleep=time.sleep):
     ensure_branch(gh)
     cur = read_json(gh, "discussions.json")[0]
@@ -22,6 +34,10 @@ def run(gh, entries, sleep=time.sleep):
     # setdefault: a stored mapping always wins, so a thread retitled onto a listed name can't take it over.
     for k, v in list_discussions(gh, category_id).items():
         mapping.setdefault(k, v)
+    # After adopting, so a thread still titled with the old name can't put the old key back.
+    renames = read_json(gh, "renames.json")[0] or {}
+    listed = {normalize_repo(e["repo"]) for e in entries}
+    _follow(mapping, renames, listed)
     todo = {}
     for e in entries:
         if e["status"] in VISIBLE and normalize_repo(e["repo"]) not in mapping:
@@ -40,8 +56,8 @@ def run(gh, entries, sleep=time.sleep):
         added = {k: v for k, v in mapping.items() if before.get(k) != v}
 
         def merge(stored):
-            # Re-applied onto a fresh read after a 409; a stored mapping still wins.
-            return {**added, **{normalize_repo(k): v for k, v in stored.items()}}
+            # Re-applied onto a fresh read after a 409; a stored mapping still wins, once renames are followed.
+            return {**added, **_follow({normalize_repo(k): v for k, v in stored.items()}, renames, listed)}
         if mapping != before:
             try:
                 update_json(gh, "discussions.json", merge, "chore(stats): map entry discussions")

@@ -212,7 +212,7 @@ def _merge_flags(flags: dict, before: dict):
 
 
 def _rename_in_flight(gh, now, entries, keys, mapping, prev_likes) -> bool:
-    """True while a rename has merged but rot's finish hasn't moved discussions.json yet.
+    """True while a rename has merged but discussions.json hasn't moved yet (rot's finish, or on_merge within the hour).
 
     The tell: a listed key has no thread, and a key that was ranked last time has a thread but is no
     longer listed. An entry removed for good drops out of likes.json, so it can't hold the board.

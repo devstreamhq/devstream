@@ -284,7 +284,7 @@ class PrepareTest(unittest.TestCase):
     def test_rate_limited_aborts_with_no_actions(self):
         before = Path(self.path).read_text()
 
-        def check(full, gh, now, mode):
+        def check(full, gh, now, mode, **kw):
             if full == "bob/other":
                 raise RateLimited(0)
             return warn(full)
@@ -296,7 +296,7 @@ class PrepareTest(unittest.TestCase):
         self.assertEqual(writes(g), [])
 
     def test_undecided_repo_is_skipped_not_failed(self):
-        def check(full, gh, now, mode):
+        def check(full, gh, now, mode, **kw):
             if full == "alice/tool":
                 raise Undecided(0, "no pushed_at")
             return warn(full)
@@ -308,20 +308,20 @@ class PrepareTest(unittest.TestCase):
     def test_skips_hidden_and_superseded(self):
         save([entry(status="hidden"), entry("bob/other", status="superseded", issue=2)], self.path)
         seen = []
-        self.run_prepare(FakeGitHub(routes()), lambda full, *a: seen.append(full) or ok(full))
+        self.run_prepare(FakeGitHub(routes()), lambda full, *a, **kw: seen.append(full) or ok(full))
         self.assertEqual(seen, [])
 
     def test_unchanged_entries_no_pr(self):
         before = Path(self.path).read_text()
         g = FakeGitHub(routes())
-        plan = self.run_prepare(g, lambda full, *a: ok(full))
+        plan = self.run_prepare(g, lambda full, *a, **kw: ok(full))
         self.assertFalse(plan["changed"])
         self.assertEqual(Path(self.path).read_text(), before)
         self.assertEqual(writes(g), [])
 
         # A first sighting changes only rot.json, which is written straight away.
         g = FakeGitHub(routes())
-        plan = self.run_prepare(g, lambda full, *a: gone(full) if full == "alice/tool" else ok(full))
+        plan = self.run_prepare(g, lambda full, *a, **kw: gone(full) if full == "alice/tool" else ok(full))
         self.assertFalse(plan["changed"])
         self.assertEqual(Path(self.path).read_text(), before)
         self.assertEqual(list(written(g, "rot.json")[0]), ["alice/tool"])
@@ -334,7 +334,7 @@ class PrepareTest(unittest.TestCase):
         }
         r, state = store({"discussions.json": {"alice/tool": 5}}, extra)
         g = FakeGitHub(r)
-        self.run_prepare(g, lambda full, *a: gone(full) if full == "alice/tool" else ok(full))
+        self.run_prepare(g, lambda full, *a, **kw: gone(full) if full == "alice/tool" else ok(full))
         self.assertTrue(state["rot.json"]["alice/tool"]["notified"])
         self.assertEqual([c[:2] for c in writes(g)],
                          [("PUT", f"{API}/contents/rot.json"), ("GRAPHQL", "CommentOnEntry"),
@@ -346,7 +346,7 @@ class PrepareTest(unittest.TestCase):
 
         g = FakeGitHub(routes(discussions={"alice/tool": 5}, extra={**extra, f"PUT {API}/contents/rot.json": refuse}))
         with self.assertRaises(GitHubError):
-            self.run_prepare(g, lambda full, *a: gone(full) if full == "alice/tool" else ok(full))
+            self.run_prepare(g, lambda full, *a, **kw: gone(full) if full == "alice/tool" else ok(full))
         self.assertEqual([c for c in writes(g) if c[0] == "GRAPHQL"], [])
 
     def test_notice_that_fails_to_post_stays_unnotified(self):
@@ -356,19 +356,19 @@ class PrepareTest(unittest.TestCase):
         r, state = store({"discussions.json": {"alice/tool": 5}},
                          {**threads({}), "GRAPHQL CommentOnEntry": boom})
         with self.assertRaises(SystemExit):
-            self.run_prepare(FakeGitHub(r), lambda full, *a: gone(full) if full == "alice/tool" else ok(full))
+            self.run_prepare(FakeGitHub(r), lambda full, *a, **kw: gone(full) if full == "alice/tool" else ok(full))
         self.assertNotIn("notified", state["rot.json"]["alice/tool"])
 
     def test_notice_without_a_thread_counts_as_notified(self):
         # Otherwise an entry still waiting for its Discussion could never be removed.
         r, state = store({"discussions.json": {}}, threads({}))
-        self.run_prepare(FakeGitHub(r), lambda full, *a: gone(full) if full == "alice/tool" else ok(full))
+        self.run_prepare(FakeGitHub(r), lambda full, *a, **kw: gone(full) if full == "alice/tool" else ok(full))
         self.assertTrue(state["rot.json"]["alice/tool"]["notified"])
 
     def test_github_error_aborts_with_no_writes(self):
         before = Path(self.path).read_text()
 
-        def check(full, gh, now, mode):
+        def check(full, gh, now, mode, **kw):
             if full == "bob/other":
                 raise GitHubError(502, "bad gateway")
             return gone(full)
@@ -381,7 +381,7 @@ class PrepareTest(unittest.TestCase):
 
     def test_changed_entries_defer_every_write(self):
         g = FakeGitHub(routes())
-        plan = self.run_prepare(g, lambda full, *a: gone(full) if full == "alice/tool" else warn(full))
+        plan = self.run_prepare(g, lambda full, *a, **kw: gone(full) if full == "alice/tool" else warn(full))
         self.assertTrue(plan["changed"])
         self.assertEqual(writes(g), [])
         self.assertEqual(list(plan["rot_state"]), ["alice/tool"])
@@ -390,7 +390,7 @@ class PrepareTest(unittest.TestCase):
         g = FakeGitHub(routes())
         before = Path(self.path).read_text()
         with self.assertRaises(SystemExit):
-            self.run_prepare(g, lambda full, *a: ok("not a valid/name!" if full == "alice/tool" else full))
+            self.run_prepare(g, lambda full, *a, **kw: ok("not a valid/name!" if full == "alice/tool" else full))
         self.assertEqual(Path(self.path).read_text(), before)
 
     def test_redirect_is_a_rename_not_a_404(self):
@@ -407,6 +407,23 @@ class PrepareTest(unittest.TestCase):
         self.assertEqual(plan["rot_state"], {})
         self.assertEqual(load(self.path)[0]["repo"], "alice/tool-ng")
 
+    def test_cc_licence_kept_only_in_learning_resources(self):
+        readme = base64.b64encode(("A shelf of guides and handbooks for people. " * 10).encode()).decode()
+
+        def g():
+            return FakeGitHub(routes(extra={
+                "GET /repos/alice/tool": {"full_name": "alice/tool", "pushed_at": iso(NOW - timedelta(days=3)),
+                                          "license": {"spdx_id": "CC0-1.0"}, "archived": False, "description": "x"},
+                "GET /repos/alice/tool/readme": {"content": readme, "encoding": "base64"},
+            }))
+
+        save([{**entry(), "category": "learning-resources"}], self.path)
+        plan = self.run_prepare(g(), check_repo)
+        self.assertEqual((plan["actions"], plan["rot_state"]), ([], {}))
+        save([entry()], self.path)
+        plan = self.run_prepare(g(), check_repo)
+        self.assertEqual(kinds([Action(**a) for a in plan["actions"]]), [("notice", "alice/tool")])
+
     def test_single_repo_dispatch_validates_input(self):
         entries = [entry(), entry("bob/other", issue=2)]
         self.assertEqual(select(entries, None), entries)
@@ -417,7 +434,7 @@ class PrepareTest(unittest.TestCase):
                 select(entries, bad)
 
         seen = []
-        self.run_prepare(FakeGitHub(routes()), lambda full, *a: seen.append(full) or ok(full), repo="bob/other")
+        self.run_prepare(FakeGitHub(routes()), lambda full, *a, **kw: seen.append(full) or ok(full), repo="bob/other")
         self.assertEqual(seen, ["bob/other"])
 
 

@@ -9,6 +9,8 @@ from pathlib import Path
 from scripts.devstream.gh import GitHubError
 
 OSI = frozenset(json.loads((Path(__file__).parents[2] / "data" / "osi-licenses.json").read_text()))
+# Content licenses, for categories whose entries are text rather than code.
+CONTENT_LICENSES = frozenset({"CC0-1.0", "CC-BY-4.0", "CC-BY-SA-4.0"})
 LICENSE_RE = re.compile(r"^(licen[cs]e|copying|unlicense)([-._][\w.-]+)?(\.(md|txt|rst))?$", re.I)
 # Narrower than LICENSE_RE: these stems also name source files (copyright.py, gpl.js).
 OTHER_RE = re.compile(r"^(copyright|artistic|bsdl|gpl)(\.(md|txt|rst)|-[\w-]+|-([\w-]*-)?\d+(\.\d+)*(\.(md|txt|rst))?)?$", re.I)
@@ -62,6 +64,10 @@ PHRASES = [
     ("Unlicense", ["this is free and unencumbered software released into the public domain", "unlicense.org"], []),
     ("Zlib", ["this software is provided 'as-is'", "altered source versions must be plainly marked", "this notice may not be removed or altered from any source distribution"], []),
     ("EPL-2.0", ["eclipse public license", "2.0", "accompanying program is provided under the terms of this eclipse public license"], []),
+    # Only counted when allowed. NC and ND texts carry neither opening, so they never match.
+    ("CC0-1.0", ["cc0 1.0 universal", "statement of purpose"], []),
+    ("CC-BY-SA-4.0", ["attribution-sharealike 4.0 international", "sharealike"], []),
+    ("CC-BY-4.0", ["attribution 4.0 international", "creative commons corporation"], []),
 ]
 
 # README license names, lowercase.
@@ -75,6 +81,8 @@ NAMES = {
     "lgpl-3.0": "LGPL-3.0", "lgpl-2.1": "LGPL-2.1", "agpl-3.0": "AGPL-3.0",
     "mpl 2.0": "MPL-2.0", "mpl-2.0": "MPL-2.0", "isc": "ISC",
     "unlicense": "Unlicense", "the unlicense": "Unlicense",
+    "cc0": "CC0-1.0", "cc0-1.0": "CC0-1.0", "cc by 4.0": "CC-BY-4.0", "cc-by-4.0": "CC-BY-4.0",
+    "creative commons attribution 4.0": "CC-BY-4.0", "cc by-sa 4.0": "CC-BY-SA-4.0",
 }
 NAME_RE = re.compile(
     r"(?<![\w-])(" + "|".join(re.escape(n) for n in sorted(NAMES, key=len, reverse=True)) + r")(?![\w-])"
@@ -86,6 +94,10 @@ SPDX_MAX_CHARS = 500
 SPDX_MAX_DEPTH = 50
 ID_NAME_RE = re.compile(r"^[A-Za-z0-9.+-]{1,64}$")
 GENERIC = "a non-open-source license"
+
+
+def extra_licenses_for(category: str) -> frozenset:
+    return CONTENT_LICENSES if category == "learning-resources" else frozenset()
 
 
 class Undecided(GitHubError):
@@ -101,15 +113,15 @@ def _non_osi(text: str, markers=NON_OSI) -> str | None:
     return next((name for marker, name in markers if marker.lower() in t), None)
 
 
-def _id_ok(i: str) -> bool:
-    return i in OSI or (i.endswith("+") and i[:-1] in OSI)
+def _id_ok(i: str, allowed: frozenset = frozenset()) -> bool:
+    return i in OSI or i in allowed or (i.endswith("+") and i[:-1] in OSI)
 
 
 class _Bad(Exception):
     pass
 
 
-def _spdx_eval(expr: str) -> tuple[bool, str | None]:
+def _spdx_eval(expr: str, allowed: frozenset = frozenset()) -> tuple[bool, str | None]:
     """(is OSI, first non-OSI ID). Raises _Bad on anything unparseable."""
     toks = expr.replace("(", " ( ").replace(")", " ) ").split()
     pos = 0
@@ -146,7 +158,7 @@ def _spdx_eval(expr: str) -> tuple[bool, str | None]:
             if peek() in (None, "AND", "OR", "WITH", "(", ")"):
                 raise _Bad
             take()
-        ok = _id_ok(t)
+        ok = _id_ok(t, allowed)
         if not ok and bad is None:
             bad = t
         return ok
@@ -171,7 +183,7 @@ def _spdx_eval(expr: str) -> tuple[bool, str | None]:
     return result, bad
 
 
-def _spdx_scan(text: str) -> tuple[str | None, str | None]:
+def _spdx_scan(text: str, allowed: frozenset = frozenset()) -> tuple[str | None, str | None]:
     """(osi expression, non-OSI name) from SPDX-License-Identifier lines."""
     found = bad = None
     seen = 0
@@ -186,7 +198,7 @@ def _spdx_scan(text: str) -> tuple[str | None, str | None]:
         try:
             if len(expr) > SPDX_MAX_CHARS:
                 raise _Bad
-            ok, name = _spdx_eval(expr)
+            ok, name = _spdx_eval(expr, allowed)
         except (_Bad, RecursionError):
             bad = bad or GENERIC
             continue
@@ -197,12 +209,12 @@ def _spdx_scan(text: str) -> tuple[str | None, str | None]:
     return found, bad
 
 
-def _detect_text(text: str) -> tuple[str | None, str | None]:
+def _detect_text(text: str, allowed: frozenset = frozenset()) -> tuple[str | None, str | None]:
     """(osi_id, non_osi_name) for one license file."""
     bad = _non_osi(text)
     if bad:
         return None, bad
-    found, bad = _spdx_scan(text)
+    found, bad = _spdx_scan(text, allowed)
     if bad:
         return None, bad
     if found:
@@ -211,12 +223,12 @@ def _detect_text(text: str) -> tuple[str | None, str | None]:
     if t in ("mit", "mit license"):
         return "MIT", None
     for spdx, need, forbid in PHRASES:
-        if all(p in t for p in need) and not any(p in t for p in forbid):
+        if (spdx in OSI or spdx in allowed) and all(p in t for p in need) and not any(p in t for p in forbid):
             return spdx, None
     return None, None
 
 
-def _readme_license(readme: str) -> tuple[str | None, str | None]:
+def _readme_license(readme: str, allowed: frozenset = frozenset()) -> tuple[str | None, str | None]:
     """(osi_id, non_osi_name) from the README's License section."""
     lines = readme.splitlines()
     for n, line in enumerate(lines):
@@ -238,7 +250,7 @@ def _readme_license(readme: str) -> tuple[str | None, str | None]:
         for ln in first:
             low = _norm(ln)
             m = NAME_RE.search(low)
-            if m and not NEGATION_RE.search(low):
+            if m and not NEGATION_RE.search(low) and _id_ok(NAMES[m.group(1)], allowed):
                 return NAMES[m.group(1)], None
     return None, None
 
@@ -256,8 +268,11 @@ def _read_file(gh, r, path) -> str:
     return raw[:MAX_BYTES].decode("utf-8", errors="replace")
 
 
-def find_license(gh, r, readme_text: str | None) -> tuple[str | None, str | None]:
-    """(osi_id, non_osi_name); (None, None) when nothing was found. API errors raise."""
+def find_license(gh, r, readme_text: str | None, allowed: frozenset = frozenset()) -> tuple[str | None, str | None, bool]:
+    """(osi_id, non_osi_name, cc_only); (None, None, False) when nothing was found. API errors raise.
+
+    cc_only: nothing acceptable here, but a content license is present that another category accepts.
+    """
     listing = gh.get(f"/repos/{r}/contents/")
     if not isinstance(listing, list):
         listing = []
@@ -267,14 +282,20 @@ def find_license(gh, r, readme_text: str | None) -> tuple[str | None, str | None
         # license-like names first so the real license is inside the cap
         key=lambda e: (not LICENSE_RE.match(e[0]), e[0].lower(), e[0]),
     )[:MAX_FILES]
-    if not entries:
-        return _readme_license(readme_text or "")
-    found = None
-    for name, kind in entries:
-        if kind != "file":
-            continue  # a symlink counts as a license file but isn't followed
-        osi, bad = _detect_text(_read_file(gh, r, name))
-        if bad:
-            return None, bad
-        found = found or osi
-    return found, None
+    # Read once; the CC hint below re-detects over the same texts.
+    texts = [_read_file(gh, r, name) for name, kind in entries if kind == "file"]
+
+    def detect(ok: frozenset):
+        if not entries:
+            return _readme_license(readme_text or "", ok)
+        found = None
+        for text in texts:
+            osi, bad = _detect_text(text, ok)
+            if bad:
+                return None, bad
+            found = found or osi
+        return found, None
+
+    found, bad = detect(allowed)
+    cc_only = not (found or bad or allowed) and bool(detect(CONTENT_LICENSES)[0])
+    return found, bad, cc_only

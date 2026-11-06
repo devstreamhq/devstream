@@ -19,6 +19,7 @@ from scripts.devstream.description import clean_description
 from scripts.devstream.entries import CATEGORIES, DEFAULT_PATH, Entry, find, load, normalize_repo, save
 from scripts.devstream.gh import GitHub, GitHubError, RateLimited
 from scripts.devstream.issue_form import FormError, parse_submission
+from scripts.devstream.license_detect import extra_licenses_for
 from scripts.devstream.quality import check_repo
 from scripts.devstream.trust import check_user, ensure_block_access
 from scripts.validate_data import validate
@@ -76,21 +77,21 @@ def decide(issue: dict, gh, now: datetime, entries: list[Entry], excluded: set[s
     if _recent_submissions(login, gh, now) > WEEKLY_LIMIT:
         reasons.append(RATE_LIMIT)
 
-    more, canonical, description = _check(form["repository"], form["description"], gh, now, entries)
+    more, canonical, description = _check(form["repository"], form["description"], gh, now, entries, form["category"])
     reasons += more
     if reasons:
         return Decision(False, reasons)
     return Decision(True, [], _entry(canonical, form["category"], description, login, now, issue["number"]))
 
 
-def _check(link: str, text: str, gh, now: datetime, entries: list[Entry]) -> tuple[list[str], str, str | None]:
+def _check(link: str, text: str, gh, now: datetime, entries: list[Entry], category: str) -> tuple[list[str], str, str | None]:
     """The repo and description checks: (reasons, canonical repo, cleaned description)."""
     dup = find(entries, link)
     if dup:
         return [_dup_reason(dup)], link, None
 
     reasons = []
-    result = check_repo(link, gh, now, "submit")
+    result = check_repo(link, gh, now, "submit", allowed_extra=extra_licenses_for(category))
     if not result.exists:
         reasons.append(NOT_FOUND)
     else:
@@ -216,7 +217,7 @@ def _seed_row(row: dict, gh, now: datetime, entries: list[Entry], seen: set[str]
         out["reasons"] = [f"unknown category {row['category']!r}"]
         return out
     try:
-        reasons, canonical, description = _check(row["repo"], row["description"], gh, now, entries)
+        reasons, canonical, description = _check(row["repo"], row["description"], gh, now, entries, row["category"])
     except (GitHubError, RateLimited, OSError) as e:
         # Undecided is a GitHubError; none of these say anything about the repo.
         return out | {"status": "undecided", "reasons": [str(e)]}

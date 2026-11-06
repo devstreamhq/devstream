@@ -17,6 +17,7 @@ from datetime import datetime, timedelta, timezone
 from scripts.devstream.discussions import REMOVED_PREFIX
 from scripts.devstream.entries import DEFAULT_PATH, find, load, normalize_repo, save, sort_key
 from scripts.devstream.gh import GitHub
+from scripts.devstream.license_detect import extra_licenses_for
 from scripts.devstream.quality import (
     MSG_GONE,
     MSG_LICENSE,
@@ -200,7 +201,7 @@ def prepare(gh, now, path=DEFAULT_PATH, repo=None, check=check_repo) -> dict:
     results = {}
     for e in targets:
         try:
-            results[e["repo"]] = check(e["repo"], gh, now, "rot")
+            results[e["repo"]] = check(e["repo"], gh, now, "rot", allowed_extra=extra_licenses_for(e["category"]))
         except Undecided as exc:
             logging.warning("skipping %s: %s", e["repo"], exc)
     new, actions, rot = plan_rot(entries, results, now, rot_state)

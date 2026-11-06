@@ -1,5 +1,6 @@
 import unittest
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 from scripts.devstream.gh import GitHubError
 from scripts.sweep import sweep
@@ -408,3 +409,17 @@ class HourlyWatchdogTest(unittest.TestCase):
         g = gh([issue(9)], routes={MERGE_RUNS: runs(timedelta(hours=3))})
         sweep(g, NOW)
         self.assertEqual((dispatched(g), hourly_dispatched(g)), (["9"], []))
+
+
+class WorkflowTest(unittest.TestCase):
+    def test_sweep_runs_when_a_submission_or_report_finishes(self):
+        wf = Path(__file__).resolve().parents[2] / ".github" / "workflows"
+        text = (wf / "sweep.yml").read_text()
+        on = text[text.index("workflow_run:"):text.index("types: [completed]")]
+        for name, file in (("Submit", "submit.yml"), ("Reports", "reports.yml")):
+            self.assertIn(name, on)
+            self.assertTrue((wf / file).read_text().startswith(f"name: {name}\n"), file)
+        # Never the triggering run's code, and never a loop on a failing run.
+        self.assertIn("github.event.workflow_run.conclusion == 'success'", text)
+        self.assertNotIn("workflow_run.head_sha", text)
+        self.assertIn("ref: main", text)

@@ -60,6 +60,51 @@ class LicenseSearchTest(unittest.TestCase):
         g = lic_gh({"LICENSE": "SPDX-License-Identifier: MIT AND Proprietary"})
         self.assertIn("isn't an open-source license", run(g).failures[0])
 
+    def test_added_restriction_after_a_license_text_fails(self):
+        msg = MSG_NON_OSI.format("MIT with an added restriction")
+        canonical = (FIXTURES / "MIT.txt").read_text()
+        for extra in ("You may not use this commercially.", "This software may not be sold.",
+                      "Commercial use is prohibited.", "For personal use only.",
+                      "Commercial use requires a paid license from the author.",
+                      "You can\u2019t sell this software.", "It can only be used for non-commercial projects."):
+            with self.subTest(extra):
+                self.assertEqual(run(lic_gh({"LICENSE": canonical + "\n\n" + extra})).failures, [msg])
+        g = lic_gh({"LICENSE": "SPDX-License-Identifier: MIT\nNo commercial use."})
+        self.assertEqual(run(g).failures, [msg])
+        g = lic_gh({}, readme=README + "\n## License\n\nMIT\n\nFor personal use only.\n")
+        self.assertEqual(run(g).failures, [msg])
+
+    def test_readme_prose_that_lifts_a_limit_is_not_a_restriction(self):
+        for prose in ("There are no commercial use restrictions.", "No commercial use limits apply.",
+                      "Without commercial use fees of any kind.",
+                      "Commercial use requires nothing more than the notice.",
+                      "Commercial use requires attribution, like any other use.",
+                      "Commercial use requires no fee or other limitation."):
+            with self.subTest(prose):
+                g = lic_gh({}, readme=README + f"\n## License\n\nMIT\n\n{prose}\n")
+                self.assertEqual(run(g).failures, [])
+        for prose in ("No commercial use.", "Commercial use requires a paid license."):
+            with self.subTest(prose):
+                g = lic_gh({}, readme=README + f"\n## License\n\nMIT\n\n{prose}\n")
+                self.assertEqual(run(g).failures, [MSG_NON_OSI.format("MIT with an added restriction")])
+
+    def test_trademark_notice_is_not_a_restriction(self):
+        # From the MIT Kerberos notice bundled in mysql/mysql-server's LICENSE.
+        notice = ("Project Athena, Athena, Athena MUSE, Discuss, Hesiod, Kerberos, Moira, and Zephyr are "
+                  "trademarks of the Massachusetts Institute of Technology (MIT). No commercial use of these "
+                  "trademarks may be made without prior written permission of MIT.")
+        canonical = (FIXTURES / "MIT.txt").read_text()
+        self.passes(lic_gh({"LICENSE": canonical + "\n\n" + notice}))
+        g = lic_gh({"LICENSE": canonical + "\n\n" + notice + " No commercial use."})
+        self.assertEqual(run(g).failures, [MSG_NON_OSI.format("MIT with an added restriction")])
+
+    def test_canonical_texts_carry_no_restriction(self):
+        from scripts.devstream.license_detect import _restricted
+        for f in sorted(FIXTURES.glob("*.txt")):
+            with self.subTest(f.name):
+                # CC BY-NC is the one text that really does restrict commercial use.
+                self.assertEqual(_restricted(f.read_text()), f.name == "CC-BY-NC-4.0.txt")
+
     def test_sspl_rejected_by_name(self):
         r = run(lic_gh({"LICENSE": SSPL + MIT}))
         self.assertEqual(

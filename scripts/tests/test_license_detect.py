@@ -60,6 +60,27 @@ class LicenseSearchTest(unittest.TestCase):
         g = lic_gh({"LICENSE": "SPDX-License-Identifier: MIT AND Proprietary"})
         self.assertIn("isn't an open-source license", run(g).failures[0])
 
+    def test_added_restriction_after_a_license_text_fails(self):
+        msg = MSG_NON_OSI.format("MIT with an added restriction")
+        canonical = (FIXTURES / "MIT.txt").read_text()
+        for extra in ("You may not use this commercially.", "This software may not be sold.",
+                      "Commercial use is prohibited.", "For personal use only.",
+                      "Commercial use requires a paid license from the author.",
+                      "You can\u2019t sell this software.", "It can only be used for non-commercial projects."):
+            with self.subTest(extra):
+                self.assertEqual(run(lic_gh({"LICENSE": canonical + "\n\n" + extra})).failures, [msg])
+        g = lic_gh({"LICENSE": "SPDX-License-Identifier: MIT\nNo commercial use."})
+        self.assertEqual(run(g).failures, [msg])
+        g = lic_gh({}, readme=README + "\n## License\n\nMIT\n\nFor personal use only.\n")
+        self.assertEqual(run(g).failures, [msg])
+
+    def test_canonical_texts_carry_no_restriction(self):
+        from scripts.devstream.license_detect import _restricted
+        for f in sorted(FIXTURES.glob("*.txt")):
+            with self.subTest(f.name):
+                # CC BY-NC is the one text that really does restrict commercial use.
+                self.assertEqual(_restricted(f.read_text()), f.name == "CC-BY-NC-4.0.txt")
+
     def test_sspl_rejected_by_name(self):
         r = run(lic_gh({"LICENSE": SSPL + MIT}))
         self.assertEqual(

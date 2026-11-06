@@ -42,6 +42,21 @@ NON_OSI = [
     ("good, not evil", "JSON License"),
 ]
 
+# Restrictions people tack onto a standard license text ("MIT, but you may not use this commercially").
+# Kept to wording that restricts; plenty of OSI texts talk about commercial use without limiting it.
+_MAY_NOT = r"\b(?:(?:may|must|shall|can|will)(?: not|not| never)|can't|cannot|won't|mustn't|shan't)"
+_USE = r"(?:use|used|usage|purposes?|projects?|products?)"
+RESTRICTION_RE = re.compile("|".join([
+    rf"{_MAY_NOT} (?:be )?(?:used?|sold|sell|resold|resell|redistributed?|distributed?)\b[^.;]{{0,40}}\bcommercial",
+    rf"{_MAY_NOT} (?:be )?(?:sold|sell|resold|resell)\b",
+    r"\bcommercial (?:use|usage|purposes?|distribution|exploitation)\b[^.;]{0,40}\b(?:is|are) "
+    r"(?:not (?:permitted|allowed)|prohibited|forbidden)",
+    r"\b(?:no|without) commercial (?:use|usage|purposes?)\b",
+    rf"\b(?:personal|private|non-?commercial|educational|academic) {_USE} only\b",
+    rf"\bonly (?:for|be used for|be used in) (?:personal|private|non-?commercial|educational|academic) {_USE}",
+    r"\bcommercial (?:use|usage|purposes?)\b[^.;]{0,40}\brequires?\b",
+]))
+
 # (SPDX ID, phrases that must all appear, phrases that must not). The first phrase is the
 # license's opening, the rest are standard text from deeper in the same license, so a
 # look-alike that borrows only the opening doesn't match. First match wins, so more
@@ -217,8 +232,20 @@ def _spdx_scan(text: str, allowed: frozenset = frozenset()) -> tuple[str | None,
     return found, bad
 
 
+def _restricted(text: str) -> bool:
+    return bool(RESTRICTION_RE.search(_norm(text).replace("\u2019", "'")))
+
+
 def _detect_text(text: str, allowed: frozenset = frozenset()) -> tuple[str | None, str | None]:
     """(osi_id, non_osi_name) for one license file."""
+    found, bad = _detect_known(text, allowed)
+    if found and _restricted(text):
+        # A fixed name, never the file's own words: this reason is posted publicly.
+        return None, f"{found} with an added restriction"
+    return found, bad
+
+
+def _detect_known(text: str, allowed: frozenset = frozenset()) -> tuple[str | None, str | None]:
     bad = _non_osi(text)
     if bad:
         return None, bad
@@ -260,6 +287,8 @@ def _readme_license(readme: str, allowed: frozenset = frozenset()) -> tuple[str 
             m = NAME_RE.search(low)
             if m and not NEGATION_RE.search(low) and not NC_ND.intersection(re.findall(r"[a-z0-9]+", low)) \
                     and _id_ok(NAMES[m.group(1)], allowed):
+                if _restricted(section):
+                    return None, f"{NAMES[m.group(1)]} with an added restriction"
                 return NAMES[m.group(1)], None
     return None, None
 

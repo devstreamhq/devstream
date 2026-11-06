@@ -12,6 +12,7 @@ import json
 import os
 import re
 import sys
+import urllib.parse
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 
@@ -30,6 +31,11 @@ HIDE_AT = 3
 ESTABLISHED_AGE = timedelta(days=365)
 ESTABLISHED_REPOS = 3
 ESTABLISHED_CONTRIBUTIONS = 50
+# rot.yml names a one-repo run "Health check: owner/name".
+ONE_REPO = "Health check: "
+RECHECK_AFTER = timedelta(hours=24)
+# One-repo checks an hour, across all reporters, before new dead reports wait for a maintainer.
+CHECKS_PER_HOUR = 5
 
 NOT_LISTED = "That repo isn't on the list, so there's nothing here for us to act on."
 UNTRUSTED = (
@@ -84,6 +90,20 @@ def _other_recent_reports(login: str, number: int, gh, now: datetime) -> int:
     q = f"repo:{REPO}+label:report+author:{login}+created:>={since}"
     # shortcut: one page of 100 is plenty to see 5.
     return sum(1 for i in gh.get(f"/search/issues?q={q}&per_page=100")["items"] if i["number"] != number)
+
+
+def _recent_checks(gh, now: datetime) -> list[tuple[datetime, str]]:
+    """(created, normalised repo) for one-repo health checks from the last 24 hours, any status.
+
+    Every queued or running check is in there too: a run can't wait in the queue longer than that.
+    """
+    since = (now - RECHECK_AFTER).strftime("%Y-%m-%dT%H:%M:%SZ")
+    query = urllib.parse.urlencode({"created": f">={since}", "per_page": 100})
+    # shortcut: newest 100 runs only. The cap allows 120 a day, so a repo checked about 21 hours ago
+    # can be missed and checked again early; paginate if that starts to matter.
+    page = gh.get(f"{API}/actions/workflows/rot.yml/runs?{query}") or {}
+    return [(datetime.fromisoformat(r["created_at"].replace("Z", "+00:00")), normalize_repo(r["display_title"][len(ONE_REPO):]))
+            for r in page.get("workflow_runs", []) if (r.get("display_title") or "").startswith(ONE_REPO)]
 
 
 def _unedited(gh, numbers: list[int]) -> set[int]:
@@ -149,6 +169,13 @@ def handle_report(issue: dict, gh, entries: list, open_reports: list[dict],
     hidden = f"Thanks for the heads-up. `{repo}` is hidden from the list while a maintainer reviews it."
 
     if reason == "dead":
+        recent = _recent_checks(gh, now)
+        if normalize_repo(repo) in {r for _, r in recent}:
+            return _reply(f"Thanks. `{repo}` had a health check in the last day, "
+                          "so a maintainer will take it from here.", "needs-review")
+        if sum(now - at <= timedelta(hours=1) for at, _ in recent) >= CHECKS_PER_HOUR:
+            return _reply(f"Thanks for reporting `{repo}`. A lot of health checks are queued right now, "
+                          "so a maintainer will take a look instead.", "needs-review")
         return [Action("dispatch_rot", repo)] + _reply(
             f"A health check on `{repo}` has been queued.",
             "needs-review")

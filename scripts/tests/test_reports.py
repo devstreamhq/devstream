@@ -55,6 +55,15 @@ USERS = {
 }
 
 
+ROT_RUNS = f"GET {API}/actions/workflows/rot.yml/runs"
+
+
+def rot_runs(*runs_):
+    """runs_ is (age, title) pairs."""
+    return {ROT_RUNS: {"total_count": len(runs_), "workflow_runs": [
+        {"created_at": iso(NOW - a), "display_title": t, "status": "completed"} for a, t in runs_]}}
+
+
 def search_key(login):
     return (f"GET /search/issues?q=repo:devstreamhq/devstream+label:report+author:{login}"
             "+created:>=2026-11-04T12:00:00Z&per_page=100")
@@ -79,6 +88,7 @@ def gh(counts=None, extra=None, edited=(), current=7):
         return {"repository": {f"i{k}": {"lastEditedAt": iso(NOW) if n in edited else None}
                                for k, n in ((k, v[f"n{k}"]) for k in range(len(v)))}}
 
+    routes[ROT_RUNS] = {"total_count": 0, "workflow_runs": []}
     routes["GRAPHQL UserActivity"] = activity
     routes["GRAPHQL ReportEdits"] = edits
     routes.update(extra or {})
@@ -279,6 +289,32 @@ class ReasonTest(unittest.TestCase):
         self.assertEqual(labels(actions), {"needs-review"})
         self.assertNotIn("close", kinds(actions))
         self.assertEqual(comments(actions)[0], "A health check on `alice/tool` has been queued.")
+
+    def test_second_dead_report_within_a_day_does_not_dispatch(self):
+        dead = report(entry="https://github.com/Alice/Tool", reason="Dead or abandoned")
+        for title in ("Health check: alice/tool", "Health check: Alice/Tool"):
+            g = gh(extra=rot_runs((timedelta(hours=23), title)))
+            actions = run(dead, g)
+            self.assertNotIn("dispatch_rot", kinds(actions), title)
+            self.assertEqual(labels(actions), {"needs-review"})
+            self.assertIn("in the last day", comments(actions)[0])
+        # Checks of other repos, and full runs, don't count.
+        g = gh(extra=rot_runs((timedelta(hours=2), "Health check: alice/tool-ng"), (timedelta(hours=1), "Health check")))
+        self.assertIn("dispatch_rot", kinds(run(dead, g)))
+        call = next(c for c in g.calls if c[1].startswith(f"{API}/actions/workflows/rot.yml/runs"))
+        self.assertIn("created=%3E%3D2026-11-04T12%3A00%3A00Z", call[1])
+
+    def test_sixth_dead_report_within_an_hour_is_parked(self):
+        dead = report(reason="Dead or abandoned")
+        five = [(timedelta(minutes=10 * k + 5), f"Health check: x/r{k}") for k in range(5)]
+        g = gh(extra=rot_runs(*five))
+        actions = run(dead, g)
+        self.assertNotIn("dispatch_rot", kinds(actions))
+        self.assertEqual(labels(actions), {"needs-review"})
+        self.assertIn("a maintainer", comments(actions)[0])
+        # Four in the hour (the fifth is older) still dispatches.
+        g = gh(extra=rot_runs(*five[:4], (timedelta(minutes=61), "Health check: x/r4")))
+        self.assertIn("dispatch_rot", kinds(run(dead, g)))
 
     def test_superseded_labels_and_validates(self):
         actions = run(report(reason="Replaced by something better", superseded_by="https://github.com/Bob/New"))

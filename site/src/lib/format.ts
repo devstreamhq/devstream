@@ -12,6 +12,19 @@ export const compact = (n: number) =>
       ? `${+(n / 1000).toFixed(n < 1e4 ? 1 : 0)}k`
       : `${+(n / 1e6).toFixed(1)}m`;
 
+// Display-only: data and scripts stay UTC. Short zone name gives CST or CDT.
+export const centralStamp = (d: Date) =>
+  new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Chicago",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  })
+    .format(d)
+    .replace(" at ", ", ");
+
 const UNITS: [number, string][] = [
   [365 * 86400, "year"],
   [30 * 86400, "month"],

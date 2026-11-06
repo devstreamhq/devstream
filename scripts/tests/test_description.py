@@ -48,6 +48,8 @@ class DescriptionTest(unittest.TestCase):
             "y" * 139, "z" * 140, "w" * 139 + ".", "v" * 141, "short", "abcdefghi!", "abcdefghij!",
             "Mixed ending?.!", "Tabs\tand\nnewlines in it", "Dots... in the middle... end...",
             "Questions? Yes, answered here?", "Ending with spaces and bang !  ",
+            # The added period turns a trailing "www" into "www.", which must not read as a link.
+            "A short history of the www", "Mirror of the WWW!",
         ]
         self.assertGreaterEqual(len(inputs), 30)
         for x in inputs:
@@ -165,9 +167,23 @@ class DescriptionTest(unittest.TestCase):
         for ch in ("\u00ad", "\u2062", "\u034f", "\u180e", "\ufe0f"):
             bad(f"Free po{ch}rn tool for the web")
 
+    def test_default_ignorables_and_hangul_fillers_stripped(self):
+        # Not all of these are Cf, and NFKC turns U+3164 and U+FFA0 into U+1160.
+        for ch in ("\U000e0100", "\u180b", "\u3164", "\u115f", "\u1160", "\uffa0", "\u061c",
+                   "\u17b4", "\U0001bca0", "\U0001d173", "\ufff0", "\U000e0001"):
+            with self.subTest(ch=hex(ord(ch))):
+                bad(f"Free po{ch}rn tool for the web")
+
+    def test_bare_www_is_a_word_not_a_link(self):
+        self.assertEqual(ok("A short history of the www"), "A short history of the www.")
+        self.assertEqual(ok("Mirror of the WWW!"), "Mirror of the WWW.")
+        bad("Docs live at www.example for now")
+
     def test_emoji_run_with_variation_selector(self):
         bad("Stars \u2728\ufe0f\u2728\ufe0f\u2728\ufe0f everywhere here")
         ok("Stars \u2728\ufe0f\u2728\ufe0f everywhere here")
+        # Any selector, not only U+FE0F: they are all dropped before storing.
+        bad("Stars \u2728\u2728\ufe08\u2728\u2728 everywhere here")
 
     def test_removed_terms_allowed(self):
         ok("Work from home setup scripts for devs")

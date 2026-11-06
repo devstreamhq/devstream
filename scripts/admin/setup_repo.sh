@@ -32,6 +32,7 @@ gh label create needs-review -R "$REPO" --color fbca04 --description "Needs a ma
 gh label create report -R "$REPO" --color d93f0b --description "Entry reported" --force >/dev/null
 gh label create superseded -R "$REPO" --color c5def5 --description "Reported as replaced by another repo" --force >/dev/null
 
+# The analyze (...) contexts are CodeQL's matrix jobs. Scorecard isn't listed: it never runs on PRs.
 RULESET=$(cat <<'J'
 {
   "name": "main-protection",
@@ -60,7 +61,18 @@ RULESET=$(cat <<'J'
         "required_status_checks": [
           { "context": "validate", "integration_id": 15368 },
           { "context": "test", "integration_id": 15368 },
-          { "context": "lint", "integration_id": 15368 }
+          { "context": "lint", "integration_id": 15368 },
+          { "context": "analyze (python)", "integration_id": 15368 },
+          { "context": "analyze (javascript-typescript)", "integration_id": 15368 },
+          { "context": "analyze (actions)", "integration_id": 15368 }
+        ]
+      }
+    },
+    {
+      "type": "code_scanning",
+      "parameters": {
+        "code_scanning_tools": [
+          { "tool": "CodeQL", "alerts_threshold": "errors", "security_alerts_threshold": "high_or_higher" }
         ]
       }
     },
@@ -72,12 +84,36 @@ RULESET=$(cat <<'J'
 J
 )
 
-ID=$(gh api "repos/$REPO/rulesets" --jq '.[] | select(.name=="main-protection") | .id')
-if [ -n "$ID" ]; then
-  echo "$RULESET" | gh api -X PUT "repos/$REPO/rulesets/$ID" --input - >/dev/null
-else
-  echo "$RULESET" | gh api -X POST "repos/$REPO/rulesets" --input - >/dev/null
-fi
+# A v* tag triggers release.yml, so only admins may create, move or delete one.
+TAG_RULESET=$(cat <<'J'
+{
+  "name": "release-tags",
+  "target": "tag",
+  "enforcement": "active",
+  "conditions": { "ref_name": { "include": ["refs/tags/v*"], "exclude": [] } },
+  "bypass_actors": [
+    { "actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always" }
+  ],
+  "rules": [
+    { "type": "creation" },
+    { "type": "update" },
+    { "type": "deletion" }
+  ]
+}
+J
+)
+
+upsert_ruleset() {
+  local id
+  id=$(gh api "repos/$REPO/rulesets" --jq ".[] | select(.name==\"$1\") | .id")
+  if [ -n "$id" ]; then
+    echo "$2" | gh api -X PUT "repos/$REPO/rulesets/$id" --input - >/dev/null
+  else
+    echo "$2" | gh api -X POST "repos/$REPO/rulesets" --input - >/dev/null
+  fi
+}
+upsert_ruleset main-protection "$RULESET"
+upsert_ruleset release-tags "$TAG_RULESET"
 # Last: fails while the org forbids Actions approving PRs (org setting).
 gh api -X PUT "repos/$REPO/actions/permissions/workflow" \
   -f default_workflow_permissions=read \

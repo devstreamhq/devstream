@@ -31,7 +31,7 @@ _LIST = """query LikesDiscussions($cursor: String, $cat: ID!) {
 
 def list_discussions(gh, category_id: str) -> dict[str, int]:
     """Every thread already in the category, keyed by normalised repo."""
-    out, cursor = {}, None
+    out, cursor, seen = {}, None, set()
     while True:
         page = gh.graphql(_LIST, {"cursor": cursor, "cat": category_id})["repository"]["discussions"]
         for n in page["nodes"]:
@@ -45,6 +45,10 @@ def list_discussions(gh, category_id: str) -> dict[str, int]:
         if not page["pageInfo"]["hasNextPage"]:
             return out
         cursor = page["pageInfo"]["endCursor"]
+        # A cursor seen before would loop until the job times out.
+        if not cursor or cursor in seen:
+            raise GitHubError(200, "discussions cursor repeated")
+        seen.add(cursor)
 
 
 def likes_category(gh) -> tuple[str, str]:

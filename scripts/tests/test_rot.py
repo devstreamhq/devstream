@@ -674,51 +674,102 @@ class FinishTest(unittest.TestCase):
         new, actions, _ = plan_rot([entry()], {"alice/tool": gone()}, NOW + timedelta(days=1), state["rot.json"])
         self.assertEqual((new, kinds(actions)), ([entry()], [("notice", "alice/tool")]))
 
-    def test_no_retitle_when_the_key_move_fails(self):
-        titles = {5: "alice/tool", 6: "bob/kept"}
-        r, state = store({"discussions.json": {"alice/tool": 5, "bob/kept": 6}}, threads(titles),
-                         conflicts={"discussions.json": 3})
-        g = FakeGitHub(r)
-        with self.assertRaises(SystemExit):
-            finish(g, self.plan([Action("rename", "alice/tool-ng", "", "alice/tool"),
-                                 Action("drop", "bob/kept", "Merged", "bob/kept"),
-                                 Action("warn", "alice/tool-ng", "Heads up", "alice/tool")]))
-        self.assertEqual(self.gql(g, "UpdateEntryDiscussion"), [])
-        self.assertEqual(titles, {5: "alice/tool", 6: "bob/kept"})
-        self.assertEqual(sorted(c["body"] for c in self.gql(g, "CommentOnEntry")), ["Heads up", "Merged"])
-
-    def test_collision_keeps_the_older_entrys_thread_through_on_merge(self):
-        from scripts.devstream.entries import normalize_repo
-        from scripts.on_merge import run as on_merge
-        from scripts.validate_data import REPO_RE
-
-        older = entry("alice/tool", submitted_at="2026-01-01T00:00:00Z", issue=1)
-        newer = entry("bob/kept", submitted_at="2026-03-01T00:00:00Z", issue=2)
-        new, actions, rot = plan_rot([older, newer], {"alice/tool": ok("bob/kept")}, NOW, {})
-        titles = {5: "alice/tool", 6: "bob/kept"}
-        listing = {"repository": {"discussions": {"nodes": [], "pageInfo": {"hasNextPage": False, "endCursor": None}}}}
-
+    def on_merge_routes(self, titles):
         def list_threads(_):
             nodes = [{"number": n, "title": t, "author": {"login": "devstreamhq-bot[bot]"}}
                      for n, t in sorted(titles.items())]
-            return {"repository": {"discussions": {**listing["repository"]["discussions"], "nodes": nodes}}}
-
-        r, state = store({"discussions.json": {"alice/tool": 5, "bob/kept": 6}}, {
+            return {"repository": {"discussions": {
+                "nodes": nodes, "pageInfo": {"hasNextPage": False, "endCursor": None}}}}
+        return {
             **threads(titles),
             "GRAPHQL LikesCategory": {"repository": {"id": "R", "discussionCategories": {
                 "nodes": [{"id": "C", "slug": "likes"}]}}},
             "GRAPHQL LikesDiscussions": list_threads,
-        })
-        g = FakeGitHub(r)
-        finish(g, {"changed": True, "actions": [a.__dict__ for a in actions], "rot_state": rot})
-        self.assertEqual(titles, {5: "bob/kept", 6: "Removed: bob/kept"})
-        self.assertEqual(state["discussions.json"], {"bob/kept": 5})
-        dropped = normalize_repo(titles[6])
-        self.assertNotIn(dropped, {normalize_repo(e["repo"]) for e in new + [older, newer]})
-        self.assertIsNone(REPO_RE.fullmatch(dropped))
+            "GRAPHQL CreateEntryDiscussion": {"createDiscussion": {"discussion": {"number": 99}}},
+        }
 
-        on_merge(g, new, sleep=lambda s: None)
+    def test_failed_key_move_is_finished_by_the_next_on_merge(self):
+        from scripts.on_merge import run as on_merge
+
+        titles = {5: "alice/tool", 6: "bob/other"}
+        r, state = store({"discussions.json": {"alice/tool": 5, "bob/other": 6}}, self.on_merge_routes(titles),
+                         conflicts={"discussions.json": 3})
+        g = FakeGitHub(r)
+        with self.assertRaises(SystemExit):
+            finish(g, self.plan([Action("rename", "alice/tool-ng", "", "alice/tool"),
+                                 Action("warn", "alice/tool-ng", "Heads up", "alice/tool")]), now=NOW)
+        self.assertIn("alice/tool", state["discussions.json"])
+        self.assertEqual(state["renames.json"],
+                         {"alice/tool": {"to": "alice/tool-ng", "at": iso(NOW), "pending": True}})
+        self.assertEqual(titles[5], "alice/tool-ng")
+        self.assertEqual([c["body"] for c in self.gql(g, "CommentOnEntry")], ["Heads up"])
+
+        listed = [entry("alice/tool-ng"), entry("bob/other", issue=2)]
+        on_merge(g, listed, sleep=lambda s: None)
+        self.assertEqual(state["discussions.json"], {"alice/tool-ng": 5, "bob/other": 6, "other/writer": 1})
+        self.assertEqual(state["renames.json"], {"alice/tool": {"to": "alice/tool-ng", "at": iso(NOW)}})
+        self.assertEqual(self.gql(g, "CreateEntryDiscussion"), [])
+        g.calls.clear()
+        on_merge(g, listed, sleep=lambda s: None)
+        self.assertEqual([c for c in g.calls if c[0] == "PUT"], [])
+
+    def test_completed_move_is_never_replayed_after_a_relist_and_unlist(self):
+        from scripts.on_merge import run as on_merge
+
+        titles = {5: "alice/tool"}
+        r, state = store({"discussions.json": {"alice/tool": 5}}, self.on_merge_routes(titles),
+                         conflicts={"discussions.json": 3})
+        g = FakeGitHub(r)
+        with self.assertRaises(SystemExit):
+            finish(g, self.plan([Action("rename", "alice/tool-ng", "", "alice/tool")]), now=NOW)
+        on_merge(g, [entry("alice/tool-ng")], sleep=lambda s: None)
+        # Someone lists a new repo under the old name; it gets its own thread.
+        on_merge(g, [entry("alice/tool-ng"), entry("alice/tool", issue=2)], sleep=lambda s: None)
+        self.assertEqual(state["discussions.json"]["alice/tool"], 99)
+        # It comes off the list again while the rename record is still fresh.
+        on_merge(g, [entry("alice/tool-ng")], sleep=lambda s: None)
+        self.assertEqual(state["discussions.json"]["alice/tool-ng"], 5)
+
+    def test_completed_rename_record_is_not_replayed(self):
+        from scripts.on_merge import _follow
+        self.assertEqual(_follow({"b/x": 5, "a/y": 9}, {}, {"b/x"}), {"b/x": 5, "a/y": 9})
+
+    def test_no_retitle_when_both_rename_writes_fail(self):
+        titles = {5: "alice/tool"}
+        r, state = store({"discussions.json": {"alice/tool": 5}}, threads(titles),
+                         conflicts={"discussions.json": 3, "renames.json": 3})
+        g = FakeGitHub(r)
+        with self.assertRaises(SystemExit):
+            finish(g, self.plan([Action("rename", "alice/tool-ng", "", "alice/tool"),
+                                 Action("warn", "alice/tool-ng", "Heads up", "alice/tool")]), now=NOW)
+        self.assertEqual(titles, {5: "alice/tool"})
+        self.assertEqual([c["body"] for c in self.gql(g, "CommentOnEntry")], ["Heads up"])
+
+    def test_drop_retitled_only_after_its_key_is_gone(self):
+        titles = {6: "bob/kept"}
+        r, state = store({"discussions.json": {"bob/kept": 6}}, threads(titles), conflicts={"discussions.json": 3})
+        g = FakeGitHub(r)
+        with self.assertRaises(SystemExit):
+            finish(g, self.plan([Action("drop", "bob/kept", "Merged", "bob/kept")]), now=NOW)
+        self.assertEqual(titles, {6: "bob/kept"})
+        self.assertEqual([c["body"] for c in self.gql(g, "CommentOnEntry")], ["Merged"])
+
+    def test_failed_collision_move_is_finished_by_the_next_on_merge(self):
+        from scripts.on_merge import run as on_merge
+
+        titles = {5: "alice/tool", 6: "bob/kept"}
+        r, state = store({"discussions.json": {"alice/tool": 5, "bob/kept": 6}}, self.on_merge_routes(titles),
+                         conflicts={"discussions.json": 3})
+        g = FakeGitHub(r)
+        with self.assertRaises(SystemExit):
+            finish(g, self.plan([Action("rename", "bob/kept", "", "alice/tool"),
+                                 Action("drop", "bob/kept", "Merged", "bob/kept")]), now=NOW)
+        # The drop's key wasn't removed, so its thread keeps its title until a maintainer looks.
+        self.assertEqual(titles, {5: "bob/kept", 6: "bob/kept"})
+        # The stored bob/kept is the dropped entry's thread; the kept entry's Likes are on 5.
+        on_merge(g, [entry("bob/kept")], sleep=lambda s: None)
         self.assertEqual(state["discussions.json"]["bob/kept"], 5)
+        self.assertNotIn("alice/tool", state["discussions.json"])
         self.assertEqual(self.gql(g, "CreateEntryDiscussion"), [])
 
 

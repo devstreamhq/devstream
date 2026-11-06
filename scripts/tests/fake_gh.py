@@ -1,7 +1,7 @@
 import re
 import urllib.parse
 
-from scripts.devstream.gh import GitHubError, _allowed
+from scripts.devstream.gh import MAX_HOPS, GitHubError, _allowed
 
 
 class Redirect:
@@ -50,7 +50,8 @@ class FakeGitHub:
     Only .get returns None on a missing route; post, patch, put and delete raise
     GitHubError(404). A route whose value is None answers a write like a
     204. paginate yields nothing for a missing route (the real client does
-    the same for a 404 on the first page, unless must_exist; the fake has a single page).
+    the same for a 404 on the first page, unless must_exist; the fake has a single page),
+    and raises for a routed page that isn't a list.
 
     .last_redirect is reset at the start of every call.
 
@@ -62,7 +63,7 @@ class FakeGitHub:
         self.calls: list[tuple[str, str, object]] = []
         self.last_redirect: str | None = None
 
-    def _find(self, method, path, params, body, write=False):
+    def _find(self, method, path, params, body, write=False, hops=0):
         full = path
         if params:
             full += ("&" if "?" in path else "?") + urllib.parse.urlencode(params)
@@ -72,8 +73,11 @@ class FakeGitHub:
             if key in self.routes:
                 v = self.routes[key]
                 if isinstance(v, Redirect):
+                    # Same limit as the real client, so a cycle fails instead of recursing forever.
+                    if hops >= MAX_HOPS:
+                        raise GitHubError(301, "too many redirects")
                     self.last_redirect = v.path
-                    return self._find(method, v.path, None, body, write)
+                    return self._find(method, v.path, None, body, write, hops + 1)
                 return v(body) if callable(v) else v
         if write:
             raise GitHubError(404, f"no route: {method} {path}")
@@ -101,13 +105,20 @@ class FakeGitHub:
     def paginate(self, path, params=None, must_exist=False):
         self.last_redirect = None
         page = self._find("GET", path, params, None)
+        # A route answering None is an empty body, which the real client refuses; no route is a 404.
+        full = path + (("&" if "?" in path else "?") + urllib.parse.urlencode(params) if params else "")
+        routed = page is not None or any(f"GET {p}" in self.routes for p in (full, path.split("?")[0]))
         if isinstance(page, Status) and self._ok(page):
-            page = None
-        if page is None and must_exist:
-            raise GitHubError(404, f"page not found: {path}")
+            page, routed = None, False
+        if page is None and not routed:
+            if must_exist:
+                raise GitHubError(404, f"page not found: {path}")
+            return
         if isinstance(page, dict) and "items" in page:
             page = page["items"]
-        yield from page or []
+        if not isinstance(page, list):
+            raise GitHubError(200, f"not a list page: {path}")
+        yield from page
 
     def _write(self, method, path, body):
         self.last_redirect = None

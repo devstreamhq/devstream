@@ -1,3 +1,4 @@
+import http.client
 import json
 import random
 import re
@@ -6,6 +7,8 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from datetime import timezone
+from email.utils import parsedate_to_datetime
 from typing import Iterator
 
 MAX_SLEEP = 600
@@ -13,7 +16,8 @@ MAX_HOPS = 5
 TIMEOUT = 30
 ATTEMPTS = 3
 TRANSIENT = (502, 503, 504)
-NETWORK = (urllib.error.URLError, TimeoutError, ConnectionError)
+# OSError covers URLError, timeouts, resets and ssl; http.client raises its own on a cut-off response.
+NETWORK = (OSError, http.client.HTTPException)
 # Only a document that opens as a query is a read; anything else (a fragment first, say) may be a mutation.
 LEADING_COMMENTS = re.compile(r"(\s*#[^\n]*(\n|$))*")
 READ_QUERY = re.compile(r"\s*(query\b|\{)")
@@ -40,6 +44,8 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
 
 def _allowed(e: dict, not_found: bool, forbidden: bool) -> bool:
     # A FORBIDDEN with no path is the whole query refused, never one hidden repo.
+    if not isinstance(e, dict):
+        return False
     return (not_found and e.get("type") == "NOT_FOUND") or (forbidden and e.get("type") == "FORBIDDEN" and bool(e.get("path")))
 
 
@@ -79,7 +85,14 @@ class GitHub:
         if headers.get("x-ratelimit-remaining") != "0" and retry is None:
             return None
         if retry is not None:
-            return int(time.time()) + int(retry)
+            if retry.strip().isdigit():
+                return int(time.time()) + int(retry)
+            # Retry-After may also be an HTTP date; anything unreadable waits a minute.
+            try:
+                at = parsedate_to_datetime(retry)
+            except (TypeError, ValueError):
+                return int(time.time()) + 60
+            return int((at if at.tzinfo else at.replace(tzinfo=timezone.utc)).timestamp())
         return int(headers.get("x-ratelimit-reset") or time.time() + 60)
 
     @staticmethod
@@ -109,7 +122,8 @@ class GitHub:
             except NETWORK as e:
                 fails += 1
                 if fails >= ATTEMPTS or not self._retryable(method, read, exc=e):
-                    raise
+                    # As a GitHubError, the callers' per-item error handling applies to it too.
+                    raise GitHubError(0, f"network error: {e}") from e
                 self._backoff(fails)
                 continue
             if self._retryable(method, read, status) and fails + 1 < ATTEMPTS:
@@ -128,7 +142,9 @@ class GitHub:
                 hops += 1
                 if hops > MAX_HOPS:
                     raise GitHubError(status, "too many redirects")
-                loc = urllib.parse.urlsplit(headers["Location"])
+                if not headers.get("Location"):
+                    raise GitHubError(status, "redirect without a Location")
+                loc = urllib.parse.urlsplit(urllib.parse.urljoin(self.base + path, headers["Location"]))
                 path = loc.path + (f"?{loc.query}" if loc.query else "")
                 self.last_redirect = path
                 continue
@@ -164,7 +180,11 @@ class GitHub:
                 raise GitHubError(404, f"page not found: {path}")
             first = False
             headers, page = r
-            yield from page["items"] if isinstance(page, dict) and "items" in page else page
+            items = page["items"] if isinstance(page, dict) and "items" in page else page
+            if not isinstance(items, list):
+                # A dict here would yield its keys as if they were items.
+                raise GitHubError(200, f"not a list page: {path}")
+            yield from items
             m = re.search(r'<([^>]+)>\s*;\s*rel="next"', headers.get("Link") or "")
             # Rebuilt against base so the token never leaves the API host.
             nxt = urllib.parse.urlsplit(m.group(1)) if m else None
@@ -201,7 +221,7 @@ class GitHub:
             raise GitHubError(404, "graphql endpoint not found")
         out = r[1] or {}
         errors = out.get("errors")
-        if any(e.get("type") == "RATE_LIMITED" for e in errors or []):
+        if any(isinstance(e, dict) and e.get("type") == "RATE_LIMITED" for e in errors or []):
             raise RateLimited(int(r[0].get("x-ratelimit-reset") or time.time() + 60))
         if errors and not all(_allowed(e, allow_not_found, allow_forbidden) for e in errors):
             raise GitHubError(200, json.dumps(out["errors"])[:500])

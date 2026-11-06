@@ -58,6 +58,7 @@ class World:
             "GRAPHQL DiscussionReactors": self._reactors,
             "GRAPHQL RepoMeta": self._meta,
             f"POST {API}/issues": self._open_issue,
+            f"GET {API}/issues": self._list_issues,
         }
         for login, created in users.items():
             routes[f"GET /users/{login}"] = {
@@ -115,9 +116,14 @@ class World:
     def _open_issue(self, body):
         n = self.next_issue
         self.next_issue += 1
-        self.routes[f"GET {API}/issues/{n}"] = {"number": n, "state": "open", "title": body["title"]}
+        self.routes[f"GET {API}/issues/{n}"] = {"number": n, "state": "open", "title": body["title"],
+                                                "user": {"login": "devstreamhq-bot[bot]"}}
         self.routes[f"PATCH {API}/issues/{n}"] = {}
         return {"number": n}
+
+    def _list_issues(self, _):
+        return [{"user": {"login": "mallory"}, **v} for k, v in self.routes.items()
+                if k.startswith(f"GET {API}/issues/") and isinstance(v, dict) and v.get("state") == "open"]
 
     def close(self, n):
         self.routes[f"GET {API}/issues/{n}"]["state"] = "closed"
@@ -494,6 +500,112 @@ class Burst(unittest.TestCase):
         w.routes[f"PUT {API}/contents/likes.json"] = {}
         w.run(now=NOW + timedelta(minutes=5))
         self.assertEqual(w.issues_opened(), [])
+        self.assertTrue(w.written("likes.json")["o/a"]["flagged"])
+
+    def test_failed_flags_write_after_issues_opens_no_duplicates(self):
+        repos = {f"o/r{j}": burst_nodes(10, 10) for j in range(6)}
+        w = World([entry(r) for r in repos], repos)
+
+        def boom(_):
+            raise GitHubError(502, "bad gateway")
+        w.routes[f"PUT {API}/contents/flags.json"] = boom
+        with self.assertRaises(GitHubError):
+            w.run()
+        self.assertEqual(len(w.issues_opened()), 6)
+        w.persist()
+        w.routes.pop(f"GET {API}/contents/flags.json")  # that PUT never landed
+        w.routes[f"PUT {API}/contents/flags.json"] = {}
+        w.run(now=NOW + timedelta(minutes=5))
+        # The lost records are rebuilt from the bot's open issues, not opened again.
+        self.assertEqual(w.issues_opened(), [])
+        flags = w.written("flags.json")
+        self.assertEqual(sorted(r["burst"]["issue"] for r in flags.values()), [100, 101, 102, 103, 104, 105])
+
+    def test_aggregate_patch_failure_keeps_the_run(self):
+        first = {f"o/r{j}": burst_nodes(10, 10) for j in range(6)}
+        later = {f"o/s{j}": [] for j in range(6)}
+        w = World([entry(r) for r in {**first, **later}], {**first, **later})
+        w.run()
+        agg = w.next_issue - 1
+        w.persist()
+
+        def boom(_):
+            raise GitHubError(502, "bad gateway")
+        w.routes[f"PATCH {API}/issues/{agg}"] = boom
+        for r in later:
+            w.set_nodes(r, burst_nodes(10, 10, reacted=iso(NOW + timedelta(minutes=30))))
+        with self.assertLogs(level="WARNING"):
+            w.run(now=NOW + timedelta(hours=1))
+        self.assertEqual(w.written("flags.json")["o/s5"]["burst"]["issue"], agg)
+        self.assertIn("o/s5", w.written("likes.json"))
+
+    def test_aggregate_closed_mid_edit_gets_a_new_issue(self):
+        first = {f"o/r{j}": burst_nodes(10, 10) for j in range(6)}
+        later = {f"o/s{j}": [] for j in range(6)}
+        for gone in ({"state": "closed"}, None):
+            w = World([entry(r) for r in {**first, **later}], {**first, **later})
+            w.run()
+            agg = w.next_issue - 1
+            w.persist()
+            if gone is None:
+                del w.routes[f"PATCH {API}/issues/{agg}"]  # deleted: the fake answers 404
+            else:
+                w.routes[f"PATCH {API}/issues/{agg}"] = gone
+            for r in later:
+                w.set_nodes(r, burst_nodes(10, 10, reacted=iso(NOW + timedelta(minutes=30))))
+            w.run(now=NOW + timedelta(hours=1))
+            self.assertEqual(titles(w)[-1], "Like burst: 1 entry")
+            self.assertEqual(w.written("flags.json")["o/s5"]["burst"]["issue"], w.next_issue - 1)
+            self.assertNotEqual(w.next_issue - 1, agg)
+
+    def test_review_lookup_404_counts_as_reviewed(self):
+        w = World([entry("o/a")], {"o/a": [node("x")]}, stats=self.flags())
+
+        def gone(_):
+            raise GitHubError(404, "Not Found")
+        w.routes[f"GET {API}/issues/7"] = gone
+        w.run()
+        self.assertEqual(w.written("flags.json")["o/a"]["burst"]["reviewed_at"], iso(NOW))
+
+    def test_adopted_aggregate_keeps_the_entries_it_listed(self):
+        first = {f"o/r{j}": burst_nodes(10, 10) for j in range(6)}
+        later = {f"o/s{j}": [] for j in range(6)}
+        w = World([entry(r) for r in {**first, **later}], {**first, **later})
+
+        def boom(_):
+            raise GitHubError(502, "bad gateway")
+        w.routes[f"PUT {API}/contents/flags.json"] = boom
+        with self.assertRaises(GitHubError):
+            w.run()
+        agg = w.next_issue - 1
+        w.routes[f"GET {API}/issues/{agg}"]["body"] = w.issues_opened()[-1]["body"]
+        w.persist()
+        w.routes.pop(f"GET {API}/contents/flags.json")  # that PUT never landed
+        w.routes[f"PUT {API}/contents/flags.json"] = {}
+        w.set_nodes("o/r5", [])
+        for r in later:
+            w.set_nodes(r, burst_nodes(10, 10, reacted=iso(NOW + timedelta(minutes=30))))
+        w.run(now=NOW + timedelta(hours=1))
+        [(_, path, body)] = w.patches()
+        self.assertEqual(path, f"{API}/issues/{agg}")
+        self.assertEqual(body["title"], "Like burst: 7 entries")
+        self.assertIn("- o/r5", body["body"])
+        self.assertIn("- o/s5", body["body"])
+
+    def test_one_failed_review_lookup_skips_only_that_issue(self):
+        stats = {"flags.json": {r: {"burst": {"kind": "burst", "issue": n, "opened_at": iso(NOW),
+                                              "reviewed_at": None}} for r, n in (("o/a", 7), ("o/b", 8))}}
+        w = World([entry("o/a"), entry("o/b")], {"o/a": [], "o/b": []}, stats=stats,
+                  issues=[{"number": 8, "state": "closed"}])
+
+        def boom(_):
+            raise GitHubError(502, "bad gateway")
+        w.routes[f"GET {API}/issues/7"] = boom
+        with self.assertLogs(level="WARNING"):
+            w.run()
+        flags = w.written("flags.json")
+        self.assertIsNone(flags["o/a"]["burst"]["reviewed_at"])
+        self.assertEqual(flags["o/b"]["burst"]["reviewed_at"], iso(NOW))
         self.assertTrue(w.written("likes.json")["o/a"]["flagged"])
 
     def test_failed_issue_post_keeps_flags_for_opened_ones(self):

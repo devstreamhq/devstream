@@ -70,6 +70,10 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    # The Cloudflare secrets live only here, and the environment only deploys from main.
+    environment:
+      name: production
+      url: https://devstream.jamesconway.dev
     timeout-minutes: 10
     permissions:
       contents: read

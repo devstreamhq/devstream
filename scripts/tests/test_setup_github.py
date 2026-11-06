@@ -73,5 +73,30 @@ class SummaryTest(unittest.TestCase):
         self.assertIn("org ruleset: HTTP 403", out.getvalue())
 
 
+class OptionalTest(unittest.TestCase):
+    def setUp(self):
+        for x in (sg.skipped, sg.notes):
+            x.clear()
+            self.addCleanup(x.clear)
+
+    def run_failing(self, message):
+        def fail():
+            raise sg.GhError(message)
+        with contextlib.redirect_stdout(io.StringIO()):
+            sg.optional("org ruleset", fail)
+
+    def test_a_plan_gate_is_a_note_not_a_skip(self):
+        self.run_failing("gh: Upgrade to GitHub Team to enable this feature. (HTTP 403)")
+        self.assertEqual(sg.skipped, [])
+        self.assertEqual(len(sg.notes), 1)
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(sg.summary(), 0)
+
+    def test_any_other_403_is_still_a_skip(self):
+        self.run_failing("gh: Resource not accessible by integration (HTTP 403)")
+        self.assertEqual(len(sg.skipped), 1)
+        self.assertEqual(sg.notes, [])
+
+
 if __name__ == "__main__":
     unittest.main()

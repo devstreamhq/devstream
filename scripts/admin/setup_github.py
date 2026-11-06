@@ -22,6 +22,9 @@ PROJECT_TITLE = "DevStream Roadmap"
 
 changes: list[str] = []
 skipped: list[str] = []
+notes: list[str] = []
+# A feature our plan doesn't include isn't a failure; the step starts working if the org upgrades.
+PLAN_GATE = "Upgrade to GitHub Team"
 
 
 class GhError(Exception):
@@ -64,6 +67,10 @@ def optional(name, fn):
     try:
         fn()
     except GhError as e:
+        if PLAN_GATE in str(e):
+            notes.append(f"{name}: not on this plan ({e})")
+            print(f"  not on this plan: {name}")
+            return
         skipped.append(f"{name}: {e}")
         print(f"  skipped {name}: {e}")
 
@@ -715,13 +722,15 @@ def main():
     org()
     optional("security defaults for new repos", security_defaults)
     optional("org ruleset", org_ruleset)
-    print("note: verified domain has no API; start it in org settings")
+    notes.append("verified domain: no API; start it in org settings")
     return summary()
 
 
 def summary() -> int:
     """Print the run's outcome; 2 if any optional step was skipped, so a partial run can't pass for a clean one."""
     print(f"\n{len(changes)} change(s)")
+    for n in notes:
+        print(f"note: {n}")
     if not skipped:
         return 0
     print(f"\n!!! NOT DONE: {len(skipped)} step(s) skipped !!!")

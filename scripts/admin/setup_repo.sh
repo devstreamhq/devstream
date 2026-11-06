@@ -106,7 +106,11 @@ J
 upsert_ruleset() {
   local ids
   # This repo's own rulesets only: an org ruleset with the same name can't be updated from here.
-  mapfile -t ids < <(gh api --paginate "repos/$REPO/rulesets?includes_parents=false" \
+  # A read loop, not mapfile: macOS still ships bash 3.2.
+  ids=()
+  while IFS= read -r id; do
+    [ -n "$id" ] && ids+=("$id")
+  done < <(gh api --paginate "repos/$REPO/rulesets?includes_parents=false" \
     --jq ".[] | select(.name==\"$1\") | .id" | sort -n)
   if [ "${#ids[@]}" -gt 1 ]; then
     # Deleting a ruleset is a call to make by hand, so update the oldest and say which others exist.

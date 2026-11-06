@@ -38,6 +38,15 @@ STALE = timedelta(days=14)
 RENAME_KEEP = timedelta(days=8)
 REMOVAL_REASONS = (MSG_GONE, MSG_LICENSE, MSG_NO_README, MSG_SHORT_README)
 REPO_INPUT = re.compile(r"[A-Za-z0-9-]{1,39}/[A-Za-z0-9._-]{1,100}")
+API = "/repos/devstreamhq/devstream"
+BOT = "devstreamhq-bot[bot]"
+# Full runs in a row that couldn't decide on an entry before a maintainer is asked to look.
+UNDECIDED_WEEKS = 3
+REVIEW_TITLE = "Health check can't decide on {repo}"
+REVIEW_BODY = (
+    "The weekly health check couldn't decide on `{repo}` for {weeks} weeks running, "
+    "so it isn't being warned or removed. Could someone take a look?\n\nLast error: `{error}`\n"
+)
 
 WARN = (
     "Heads up: `{repo}` moves to the archive on {date} unless something changes. "
@@ -200,11 +209,19 @@ def prepare(gh, now, path=DEFAULT_PATH, repo=None, check=check_repo) -> dict:
     rot_state = read_json(gh, "rot.json")[0]
     rot_state = rot_state or {}
     results = {}
+    undecided = {}
     for e in targets:
         try:
             results[e["repo"]] = check(e["repo"], gh, now, "rot", allowed_extra=extra_licenses_for(e["category"]))
         except Undecided as exc:
             logging.warning("skipping %s: %s", e["repo"], exc)
+            undecided[normalize_repo(e["repo"])] = str(exc)
+    if repo is None:
+        try:
+            _track_undecided(gh, now, {normalize_repo(e["repo"]) for e in targets}, undecided)
+        except Exception:
+            # The weeks are only a review prompt; failing to record them mustn't stop the check.
+            logging.exception("could not record undecided repos")
     new, actions, rot = plan_rot(entries, results, now, rot_state)
     changed = new != sorted(entries, key=sort_key)
     if changed:
@@ -222,6 +239,33 @@ def prepare(gh, now, path=DEFAULT_PATH, repo=None, check=check_repo) -> dict:
         if failed:
             raise SystemExit(f"{failed} Discussion or stats update(s) failed")
     return {"changed": changed, "actions": [asdict(a) for a in actions], "rot_state": rot}
+
+
+def _track_undecided(gh, now, checked: set[str], undecided: dict[str, str]) -> None:
+    """Count full runs in a row that skipped each entry; past UNDECIDED_WEEKS, open one review issue."""
+    def mutate(data):
+        data = {k: v for k, v in data.items() if k in checked and k in undecided}
+        for k in undecided:
+            rec = data.get(k)
+            # A retried run in the same week isn't another week.
+            if rec is None or now - _parse(rec["at"]) >= CONFIRM:
+                data[k] = {"weeks": (rec or {}).get("weeks", 0) + 1, "at": _iso(now)}
+        return data
+
+    update_json(gh, "undecided.json", mutate, "chore(stats): record undecided repos")
+    data = read_json(gh, "undecided.json")[0] or {}
+    due = {k: v["weeks"] for k, v in data.items() if v["weeks"] >= UNDECIDED_WEEKS}
+    if not due:
+        return
+    open_titles = {i["title"] for i in gh.paginate(f"{API}/issues?state=open&labels=needs-review&per_page=100")
+                   if (i.get("user") or {}).get("login") == BOT}
+    for k, weeks in sorted(due.items()):
+        title = REVIEW_TITLE.format(repo=k)
+        if title in open_titles:
+            continue
+        error = " ".join(undecided[k].replace("`", "'").split())[:300]
+        gh.post(f"{API}/issues", {"title": title, "body": REVIEW_BODY.format(repo=k, weeks=weeks, error=error),
+                                  "labels": ["needs-review"]})
 
 
 def pr_body(actions) -> str:

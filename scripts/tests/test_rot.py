@@ -210,6 +210,7 @@ def routes(rot=None, discussions=None, flags=None, extra=None):
         f"PUT {API}/contents/discussions.json": None,
         f"PUT {API}/contents/flags.json": None,
         f"PUT {API}/contents/renames.json": None,
+        f"PUT {API}/contents/undecided.json": None,
         f"GET {API}/git/ref/heads/stats": {"ref": "refs/heads/stats"},
     }
     r.update(extra or {})
@@ -242,7 +243,7 @@ def store(files=None, extra=None, conflicts=()):
         return answer
 
     r = {f"GET {API}/git/ref/heads/stats": {"ref": "refs/heads/stats"}}
-    for path in ("rot.json", "discussions.json", "flags.json", "likes.json", "meta.json", "renames.json"):
+    for path in ("rot.json", "discussions.json", "flags.json", "likes.json", "meta.json", "renames.json", "undecided.json"):
         r[f"GET {API}/contents/{path}"] = get(path)
         r[f"PUT {API}/contents/{path}"] = put(path)
     r.update(extra or {})
@@ -305,6 +306,40 @@ class PrepareTest(unittest.TestCase):
         plan = self.run_prepare(FakeGitHub(routes()), check)
         self.assertEqual(kinds([Action(**a) for a in plan["actions"]]), [("warn", "bob/other")])
         self.assertEqual({e["repo"]: e["status"] for e in load(self.path)}, {"alice/tool": "live", "bob/other": "warned"})
+
+    def test_undecided_three_weeks_running_opens_one_review_issue(self):
+        def check(full, gh, now, mode, **kw):
+            if full == "alice/tool":
+                raise Undecided(0, "README of alice/tool could not be decoded")
+            return ok(full)
+
+        issues = []
+
+        def open_issue(b):
+            issues.append({"number": 50 + len(issues), "title": b["title"], "user": {"login": "devstreamhq-bot[bot]"}})
+            return issues[-1]
+
+        # A look-alike title from someone else doesn't stand in for the bot's issue.
+        fake = {"number": 9, "title": "Health check can't decide on alice/tool", "user": {"login": "mallory"}}
+        r, state = store(extra={f"GET {API}/issues": lambda _: [fake, *issues], f"POST {API}/issues": open_issue})
+        g = FakeGitHub(r)
+        for week in range(5):
+            prepare(g, NOW + timedelta(days=7 * week), self.path, None, check=check)
+            self.assertEqual(state["undecided.json"]["alice/tool"]["weeks"], week + 1)
+            self.assertEqual(len(issues), 0 if week < 2 else 1, week)
+        posts = [b for m, p, b in g.calls if m == "POST" and p == f"{API}/issues"]
+        self.assertEqual(posts[0]["labels"], ["needs-review"])
+        self.assertIn("`alice/tool`", posts[0]["body"])
+        self.assertNotIn("bob/other", state["undecided.json"])
+
+        # A one-repo run or a second run the same week isn't another week.
+        prepare(g, NOW + timedelta(days=29), self.path, None, check=check)
+        prepare(g, NOW + timedelta(days=30), self.path, "alice/tool", check=check)
+        self.assertEqual(state["undecided.json"]["alice/tool"]["weeks"], 5)
+
+        # Decided again: the count starts over.
+        prepare(g, NOW + timedelta(days=35), self.path, None, check=lambda full, *a, **kw: ok(full))
+        self.assertEqual(state["undecided.json"], {})
 
     def test_skips_hidden_and_superseded(self):
         save([entry(status="hidden"), entry("bob/other", status="superseded", issue=2)], self.path)

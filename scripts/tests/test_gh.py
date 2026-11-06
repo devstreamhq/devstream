@@ -4,6 +4,7 @@ import threading
 import urllib.error
 import time
 import unittest
+from email.utils import formatdate
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from scripts.devstream.gh import GitHub, GitHubError, RateLimited
@@ -360,7 +361,7 @@ class Retries(unittest.TestCase):
     def test_graphql_mutation_502_not_retried(self):
         for err in (502, TimeoutError()):
             gh, sent, _ = self.gh(err, 200)
-            with self.assertRaises((GitHubError, TimeoutError)):
+            with self.assertRaises(GitHubError):
                 gh.graphql("mutation M { x }", {})
             self.assertEqual(len(sent), 1)
 
@@ -395,7 +396,7 @@ class Retries(unittest.TestCase):
 
     def test_three_network_errors_raise(self):
         gh, sent, _ = self.gh(TimeoutError(), TimeoutError(), TimeoutError(), 200)
-        with self.assertRaises(TimeoutError):
+        with self.assertRaises(GitHubError):
             gh.get("/a")
         self.assertEqual(len(sent), 3)
 
@@ -408,7 +409,7 @@ class Retries(unittest.TestCase):
             self.assertEqual(len(sent), 2)
         for err in (TimeoutError(), ConnectionResetError(), urllib.error.URLError("reset")):
             gh, sent, _ = self.gh(err, 200)
-            with self.assertRaises(OSError):
+            with self.assertRaises(GitHubError):
                 gh.patch("/a", {})
             self.assertEqual(len(sent), 1)
 
@@ -421,7 +422,70 @@ class Retries(unittest.TestCase):
         self.assertEqual(len(sent), 1)
 
 
+class OddAnswers(unittest.TestCase):
+    """_send is scripted with (status, headers, body) answers."""
+
+    def gh(self, *script):
+        slept = []
+        gh = GitHub("tok", "http://x", sleep=slept.append)
+        sent = []
+
+        def send(method, url, body):
+            sent.append(url)
+            return script[len(sent) - 1]
+        gh._send = send
+        return gh, sent, slept
+
+    def test_redirect_without_location_raises(self):
+        gh, sent, _ = self.gh((301, {}, b""))
+        with self.assertRaises(GitHubError) as c:
+            gh.get("/repos/a/b")
+        self.assertEqual(c.exception.status, 301)
+
+    def test_relative_redirect_followed(self):
+        for loc, want in (("/repositories/9", "/repositories/9"), ("9", "/repositories/9")):
+            gh, sent, _ = self.gh((301, {"Location": loc}, b""), (200, {}, b'{"ok": 1}'))
+            self.assertEqual(gh.get("/repositories/old"), {"ok": 1})
+            self.assertEqual((sent[1], gh.last_redirect), ("http://x" + want, want))
+
+    def test_retry_after_http_date(self):
+        gh, sent, slept = self.gh((429, {"retry-after": formatdate(time.time() + 30, usegmt=True)}, b"{}"),
+                                  (200, {}, b'{"ok": 1}'))
+        self.assertEqual(gh.get("/a"), {"ok": 1})
+        self.assertAlmostEqual(slept[0], 30, delta=3)
+        gh, _, _ = self.gh((429, {"retry-after": formatdate(LONG, usegmt=True)}, b"{}"))
+        with self.assertRaises(RateLimited) as c:
+            gh.get("/a")
+        self.assertEqual(c.exception.reset_at, LONG)
+
+    def test_retry_after_garbage_waits_a_minute(self):
+        gh, _, slept = self.gh((429, {"retry-after": "soon"}, b"{}"), (200, {}, b'{"ok": 1}'))
+        self.assertEqual(gh.get("/a"), {"ok": 1})
+        self.assertAlmostEqual(slept[0], 60, delta=3)
+
+    def test_graphql_error_that_is_not_a_dict(self):
+        for errors in (["boom"], [None], [{"type": "NOT_FOUND", "path": ["r0"]}, "boom"]):
+            gh, _, _ = self.gh((200, {}, json.dumps({"data": {"r0": None}, "errors": errors}).encode()))
+            with self.assertRaises(GitHubError):
+                gh.graphql("query Q { x }", {}, allow_not_found=True)
+
+    def test_network_error_after_retries_is_a_github_error(self):
+        gh = GitHub("tok", "http://x", sleep=lambda s: None)
+
+        def send(*a):
+            raise urllib.error.URLError("down")
+        gh._send = send
+        with self.assertRaises(GitHubError) as c:
+            gh.get("/a")
+        self.assertIsInstance(c.exception.__cause__, urllib.error.URLError)
+
+
 class FakeTest(unittest.TestCase):
+    def test_redirect_cycle_raises(self):
+        f = FakeGitHub({"GET /a": Redirect("/b"), "GET /b": Redirect("/a")})
+        with self.assertRaises(GitHubError):
+            f.get("/a")
+
     def test_same_public_methods(self):
         pub = lambda c: {n for n in dir(c) if not n.startswith("_") and callable(getattr(c, n))}
         self.assertEqual(pub(GitHub), pub(FakeGitHub))

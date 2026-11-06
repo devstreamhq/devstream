@@ -1,7 +1,7 @@
 import re
 import urllib.parse
 
-from scripts.devstream.gh import GitHubError, _allowed
+from scripts.devstream.gh import MAX_HOPS, GitHubError, _allowed
 
 
 class Redirect:
@@ -62,7 +62,7 @@ class FakeGitHub:
         self.calls: list[tuple[str, str, object]] = []
         self.last_redirect: str | None = None
 
-    def _find(self, method, path, params, body, write=False):
+    def _find(self, method, path, params, body, write=False, hops=0):
         full = path
         if params:
             full += ("&" if "?" in path else "?") + urllib.parse.urlencode(params)
@@ -72,8 +72,11 @@ class FakeGitHub:
             if key in self.routes:
                 v = self.routes[key]
                 if isinstance(v, Redirect):
+                    # Same limit as the real client, so a cycle fails instead of recursing forever.
+                    if hops >= MAX_HOPS:
+                        raise GitHubError(301, "too many redirects")
                     self.last_redirect = v.path
-                    return self._find(method, v.path, None, body, write)
+                    return self._find(method, v.path, None, body, write, hops + 1)
                 return v(body) if callable(v) else v
         if write:
             raise GitHubError(404, f"no route: {method} {path}")

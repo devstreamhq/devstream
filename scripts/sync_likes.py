@@ -113,10 +113,10 @@ def _aggregate(listed: list[tuple[str, str]]) -> dict:
 
 
 def _baseline(gh, now: datetime) -> dict | None:
-    """The snapshot from 7 days ago, else the oldest one at least a day old, else None."""
+    """The snapshot from 7 days ago, else the oldest one between 1 and 7 days old, else None."""
     dates = sorted(m.group(1) for n in list_dir(gh, "snapshots") if (m := re.fullmatch(r"(\d{4}-\d\d-\d\d)\.json", n)))
     week = f"{now - WEEK:%Y-%m-%d}"
-    old = [d for d in dates if d <= f"{now - DAY:%Y-%m-%d}"]
+    old = [d for d in dates if f"{now - WEEK:%Y-%m-%d}" < d <= f"{now - DAY:%Y-%m-%d}"]
     pick = week if week in dates else (old[0] if old else None)
     return (read_json(gh, f"snapshots/{pick}.json")[0] or {}) if pick else None
 

@@ -590,6 +590,11 @@ class Snapshots(unittest.TestCase):
         a = self.likes_for(stats)["o/a"]
         self.assertEqual((a["delta_7d"], a["rank_delta_7d"]), (1, 1))
 
+    def test_baseline_never_older_than_7_days(self):
+        stats = {**self.snap(10, {"o/a": {"likes": 0, "rank": 1}}), **self.snap(4, {"o/a": {"likes": 2, "rank": 3}})}
+        a = self.likes_for(stats)["o/a"]
+        self.assertEqual((a["delta_7d"], a["rank_delta_7d"]), (1, 2))
+
     def test_only_today_snapshot_gives_zero(self):
         got = self.likes_for(self.snap(0, {"o/a": {"likes": 0, "rank": 1}}))
         self.assertEqual((got["o/a"]["delta_7d"], got["o/a"]["rank_delta_7d"]), (0, 0))

@@ -30,7 +30,7 @@ def iso(d):
 
 def entry(repo="alice/tool", status="live", warned_at=None, submitted_at="2026-01-01T00:00:00Z", issue=1):
     return {
-        "repo": repo, "repo_id": 1, "category": "developer-tools", "description": "An older tool that still works.",
+        "repo": repo, "repo_id": issue, "category": "developer-tools", "description": "An older tool that still works.",
         "submitted_by": "dave", "submitted_at": submitted_at, "issue": issue,
         "status": status, "warned_at": warned_at, "superseded_by": None, "added_by_seed": False,
     }
@@ -477,7 +477,7 @@ class PrepareTest(unittest.TestCase):
         # A squatter's repo at the listed name: different ID, and it would pass every check.
         def check(full, gh, now, mode, **kw):
             r = ok("Alice/Tool" if full == "alice/tool" else full)
-            r.repo_id = 999 if full == "alice/tool" else 1
+            r.repo_id = 999 if full == "alice/tool" else 2
             return r
 
         g = FakeGitHub(routes())
@@ -499,10 +499,25 @@ class PrepareTest(unittest.TestCase):
         self.assertIn("`alice/tool`", issues[0]["body"])
         self.assertIn("999", issues[0]["body"])
 
+    def test_missing_repo_id_warns_and_carries_on(self):
+        e = entry()
+        del e["repo_id"]
+        save([e], self.path)
+
+        def check(full, gh, now, mode, **kw):
+            r = ok(full)
+            r.repo_id = 1
+            return r
+
+        with self.assertLogs(level="WARNING") as logs:
+            plan = self.run_prepare(FakeGitHub(routes()), check)
+        self.assertTrue(any("alice/tool" in m and "repo_id" in m for m in logs.output))
+        self.assertEqual(plan["review"], [])
+
     def test_matching_repo_id_follows_a_rename(self):
         def check(full, gh, now, mode, **kw):
             r = ok("alice/tool-ng" if full == "alice/tool" else full)
-            r.repo_id = 1
+            r.repo_id = 1 if full == "alice/tool" else 2
             return r
 
         plan = self.run_prepare(FakeGitHub(routes()), check)

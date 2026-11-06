@@ -4,7 +4,6 @@ import re
 import tempfile
 from datetime import datetime, timedelta
 
-from scripts.devstream.gh import GitHubError
 
 ORG = "devstreamhq"
 LOGIN_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$")
@@ -131,7 +130,5 @@ class TrustCache:
 
 def blocked_logins(gh) -> set[str]:
     """The org's blocked logins, lowercased: one listing per run instead of one lookup per account."""
-    # paginate reads a 404 as an empty list, which would read as "nobody blocked".
-    if gh.get(f"/orgs/{ORG}/blocks?per_page=1") is None:
-        raise GitHubError(404, "token can't read org blocks")
-    return {u["login"].lower() for u in gh.paginate(f"/orgs/{ORG}/blocks?per_page=100")}
+    # A token that can't read blocks gets 404, which must never read as "nobody blocked".
+    return {u["login"].lower() for u in gh.paginate(f"/orgs/{ORG}/blocks?per_page=100", must_exist=True)}

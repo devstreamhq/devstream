@@ -54,8 +54,9 @@ REPLACED_TITLE = "A different repo now answers to {repo}"
 REPLACED_BODY = (
     "`{repo}` was listed as GitHub repo {want}, but that name now belongs to repo {got}. "
     "Usually that means the owner renamed or deleted their account and someone else took the name.\n\n"
-    "The entry has a removal notice and won't pick up anything from the new repo. "
-    "Could someone check which repo is the real one before the notice runs out?\n"
+    "The entry has a removal notice, and the hourly Likes sync keeps its old card and holds it out of Trending. "
+    "It still links to that name until it comes off the list, "
+    "so could someone check which repo is the real one before then?\n"
 )
 
 WARN = (
@@ -224,7 +225,9 @@ def prepare(gh, now, path=DEFAULT_PATH, repo=None, check=check_repo) -> dict:
     for e in targets:
         try:
             r = check(e["repo"], gh, now, "rot", allowed_extra=extra_licenses_for(e["category"]))
-            if r.exists and r.repo_id is not None and e.get("repo_id") not in (None, r.repo_id):
+            if e.get("repo_id") is None:
+                logging.warning("%s has no repo_id, so a replaced repo can't be caught", e["repo"])
+            elif r.exists and r.repo_id is not None and r.repo_id != e["repo_id"]:
                 # Someone else's repo at the listed name inherits nothing: it reads as gone, and a person decides.
                 replaced.append({"repo": e["repo"], "kind": "replaced", "want": e["repo_id"], "got": r.repo_id})
                 r = RepoResult(False, e["repo"], [MSG_REPLACED], "remove")

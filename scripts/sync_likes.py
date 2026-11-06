@@ -230,7 +230,16 @@ def run(gh, entries, now: datetime, excluded: set[str]) -> None:
     prev_meta = read_json(gh, "meta.json")[0]
     # A repo GitHub hides from us this hour keeps its last card rather than losing stars and avatar.
     listed = set(keys)
-    meta = {k: v for k, v in (prev_meta or {}).items() if k in listed} | fetch_meta(gh, keys)
+    fetched = fetch_meta(gh, keys)
+    replaced = set()
+    for k, m in list(fetched.items()):
+        got, want = m.pop("repo_id"), ranked[k].get("repo_id")
+        if want is not None and got != want:
+            # Someone else's repo at the listed name: its stars and avatar never reach the card or Trending.
+            logging.warning("%s now names repo %s, not the listed %s; keeping its last card", ranked[k]["repo"], got, want)
+            del fetched[k]
+            replaced.add(k)
+    meta = {k: v for k, v in (prev_meta or {}).items() if k in listed} | fetched
     reactors = fetch_reactors(gh, sorted({mapping[k] for k in keys if k in mapping}))
     prev_flags = read_json(gh, "flags.json")[0]
     flags = copy.deepcopy(prev_flags or {})
@@ -283,7 +292,7 @@ def run(gh, entries, now: datetime, excluded: set[str]) -> None:
             "delta_7d": likes[k] - base,
             "rank": ranks[k],
             "rank_delta_7d": o["rank"] - ranks[k] if o else 0,
-            "flagged": ranked[k]["status"] == "flagged" or k in bursts or _under_review(flags, k),
+            "flagged": ranked[k]["status"] == "flagged" or k in bursts or k in replaced or _under_review(flags, k),
         }
 
     snap_path = f"snapshots/{now:%Y-%m-%d}.json"

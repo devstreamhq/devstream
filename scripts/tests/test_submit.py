@@ -6,6 +6,7 @@ import sys
 import tempfile
 import time
 import unittest
+import zlib
 from unittest import mock
 from datetime import datetime, timedelta, timezone
 
@@ -58,7 +59,7 @@ def gh(count=1, repo_kw=None, extra=None):
 
 def entry(repo_="alice/tool", status="live"):
     return {
-        "repo": repo_, "repo_id": 1, "category": "developer-tools", "description": "An older tool that still works.",
+        "repo": repo_, "repo_id": zlib.crc32(repo_.encode()), "category": "developer-tools", "description": "An older tool that still works.",
         "submitted_by": "dave", "submitted_at": "2026-01-01T00:00:00Z", "issue": 1,
         "status": status, "warned_at": None, "superseded_by": None, "added_by_seed": False,
     }

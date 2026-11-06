@@ -29,15 +29,17 @@ def node(login, created=OLD, reacted=LONG_AGO):
     return {"createdAt": reacted, "user": None if login is None else {"login": login, "createdAt": created}}
 
 
-def entry(repo, status="live"):
-    return {"repo": repo, "status": status, "description": "d"}
+def entry(repo, status="live", repo_id=None):
+    e = {"repo": repo, "status": status, "description": "d"}
+    return e if repo_id is None else {**e, "repo_id": repo_id}
 
 
 class World:
     """A FakeGitHub with discussions, users, repo meta and stats files wired up."""
 
-    def __init__(self, entries, discussions, users=None, stats=None, stars=None, issues=(), page=100):
+    def __init__(self, entries, discussions, users=None, stats=None, stars=None, issues=(), page=100, ids=None):
         self.entries = entries
+        self.ids = ids or {}  # repo -> databaseId GitHub reports for that name
         self.discussions = discussions  # {repo: [node, ...]}
         numbers = {normalize(r): i + 1 for i, r in enumerate(discussions)}
         self.by_number = {numbers[normalize(r)]: n for r, n in discussions.items()}
@@ -104,7 +106,7 @@ class World:
             if stars is None or stars == "forbidden":
                 errors.append({"type": "NOT_FOUND" if stars is None else "FORBIDDEN", "path": [f"r{i}"]})
             out[f"r{i}"] = None if stars is None or stars == "forbidden" else {
-                "nameWithOwner": key, "stargazerCount": stars,
+                "nameWithOwner": key, "databaseId": self.ids.get(key, 1), "stargazerCount": stars,
                 "primaryLanguage": {"name": "Go", "color": "#00ADD8"},
                 "pushedAt": "2026-11-01T00:00:00Z", "owner": {"avatarUrl": "https://a/x.png"}}
             i += 1
@@ -735,6 +737,24 @@ class Writes(unittest.TestCase):
         meta = w.written("meta.json")
         self.assertEqual((meta["o/a"]["stars"], meta["o/ip"]), (3, old))
         self.assertEqual(w.written("likes.json")["o/ip"]["likes"], 1)
+
+    def test_replaced_repo_keeps_last_card_and_is_flagged(self):
+        # A different repo at the listed name: its stars and avatar mustn't reach the card or Trending.
+        old = {"stars": 9, "language": "Go", "language_color": "#00ADD8",
+               "pushed_at": "2026-10-01T00:00:00Z", "avatar_url": "https://a/old.png"}
+        for status in ("live", "flagged"):
+            w = World([entry("o/a", repo_id=1), entry("o/sq", status, repo_id=5)],
+                      {"o/a": [node("x")], "o/sq": [node("y")]},
+                      stars={"o/a": 3, "o/sq": 500}, ids={"o/a": 1, "o/sq": 6}, stats={"meta.json": {"o/sq": old}})
+            with self.assertLogs(level="WARNING") as logs:
+                w.run()
+            self.assertTrue(any("o/sq" in m for m in logs.output))
+            meta = w.written("meta.json")
+            self.assertEqual((meta["o/a"]["stars"], meta["o/sq"]), (3, old))
+            self.assertNotIn("repo_id", meta["o/a"])
+            likes = w.written("likes.json")
+            self.assertTrue(likes["o/sq"]["flagged"], status)
+            self.assertFalse(likes["o/a"]["flagged"])
 
     def test_meta_batched_per_50(self):
         repos = {f"o/r{i:03}": [] for i in range(51)}

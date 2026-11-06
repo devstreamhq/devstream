@@ -98,8 +98,13 @@ class BlockedLoginsTest(unittest.TestCase):
     def test_lowercased_set_from_one_listing(self):
         g = FakeGitHub({BLOCKS: [{"login": "Alice"}, {"login": "bob"}]})
         self.assertEqual(blocked_logins(g), {"alice", "bob"})
-        self.assertEqual([c[1] for c in g.calls],
-                         ["/orgs/devstreamhq/blocks?per_page=1", "/orgs/devstreamhq/blocks?per_page=100"])
+        self.assertEqual([c[1] for c in g.calls], ["/orgs/devstreamhq/blocks?per_page=100"])
+
+    def test_404_on_the_listing_itself_raises(self):
+        # Only the listing answers 404: it must never read as "nobody blocked".
+        with self.assertRaises(GitHubError) as c:
+            blocked_logins(FakeGitHub({"GET /orgs/devstreamhq/blocks?per_page=1": []}))
+        self.assertEqual(c.exception.status, 404)
 
     def test_empty_list_ok(self):
         self.assertEqual(blocked_logins(FakeGitHub({BLOCKS: []})), set())

@@ -50,7 +50,7 @@ class FakeGitHub:
     Only .get returns None on a missing route; post, patch, put and delete raise
     GitHubError(404). A route whose value is None answers a write like a
     204. paginate yields nothing for a missing route (the real client does
-    the same for a 404 on the first page; the fake has a single page).
+    the same for a 404 on the first page, unless must_exist; the fake has a single page).
 
     .last_redirect is reset at the start of every call.
 
@@ -98,9 +98,13 @@ class FakeGitHub:
             return v.code
         return 404 if v is None else 200
 
-    def paginate(self, path, params=None):
+    def paginate(self, path, params=None, must_exist=False):
         self.last_redirect = None
         page = self._find("GET", path, params, None)
+        if isinstance(page, Status) and self._ok(page):
+            page = None
+        if page is None and must_exist:
+            raise GitHubError(404, f"page not found: {path}")
         if isinstance(page, dict) and "items" in page:
             page = page["items"]
         yield from page or []

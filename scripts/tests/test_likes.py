@@ -595,6 +595,24 @@ class Snapshots(unittest.TestCase):
         a = self.likes_for(stats)["o/a"]
         self.assertEqual((a["delta_7d"], a["rank_delta_7d"]), (1, 2))
 
+    def test_impossible_and_non_ascii_dates_skipped(self):
+        stats = {**self.snap(3, {"o/a": {"likes": 2, "rank": 1}}),
+                 "snapshots/2026-10-35.json": {"o/a": {"likes": 0, "rank": 1}},
+                 "snapshots/2026-10-٣٠.json": {"o/a": {"likes": 0, "rank": 1}},
+                 "snapshots/2026-10-31.json.bak": {"o/a": {"likes": 0, "rank": 1}}}
+        self.assertEqual(self.likes_for(stats)["o/a"]["delta_7d"], 1)
+
+    def test_unreadable_baseline_raises_without_writes(self):
+        w = World([entry("o/a")], {"o/a": [node("x")]}, stats=self.snap(3, {}))
+        del w.routes[f"GET {API}/contents/snapshots/{NOW - timedelta(days=3):%Y-%m-%d}.json"]
+        with self.assertRaises(GitHubError):
+            w.run()
+        self.assertEqual(w.puts(), [])
+
+    def test_empty_baseline_file_counts_from_zero(self):
+        got = self.likes_for(self.snap(3, {}))
+        self.assertEqual(got["o/a"]["delta_7d"], 3)
+
     def test_only_today_snapshot_gives_zero(self):
         got = self.likes_for(self.snap(0, {"o/a": {"likes": 0, "rank": 1}}))
         self.assertEqual((got["o/a"]["delta_7d"], got["o/a"]["rank_delta_7d"]), (0, 0))

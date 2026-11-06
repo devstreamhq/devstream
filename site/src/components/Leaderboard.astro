@@ -1,6 +1,6 @@
 ---
 import type { Category, SiteEntry } from "../lib/data.ts";
-import { isFlagged, languages } from "../lib/data.ts";
+import { isFlagged, languages, trending } from "../lib/data.ts";
 import { ago, compact, icon, num, pct } from "../lib/format.ts";
 
 interface Props {
@@ -14,6 +14,7 @@ const { entries, all, categories, current, label } = Astro.props;
 const counts = Object.fromEntries(categories.map((c) => [c.slug, all.filter((e) => e.category === c.slug).length]));
 const langs = languages(entries);
 const max = Math.max(1, ...entries.map((e) => e.likes));
+const hot = new Set(trending(all).map((e) => e.repo));
 const now = Date.now();
 const ts = (iso: string | null) => (iso ? Date.parse(iso) : 0);
 const split = (repo: string) => {
@@ -110,7 +111,7 @@ const split = (repo: string) => {
                     data-stars={e.stars ?? 0}
                     data-pushed={ts(e.pushed_at)}
                     data-new={ts(e.submitted_at)}
-                    data-trend={!flagged && e.delta_7d > 0 ? "1" : undefined}
+                    data-trend={hot.has(e.repo) ? "1" : undefined}
                     data-lang={e.language ?? ""}
                     data-q={`${e.repo} ${e.description}`.toLowerCase()}
                   >

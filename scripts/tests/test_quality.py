@@ -174,6 +174,16 @@ class SubmitTest(unittest.TestCase):
         self.assertEqual(len(run(gh(readme=noise)).failures), 1)
         self.assertEqual(run(gh(readme=noise + "x" * 300)).failures, [])
 
+    def test_readme_hashtags_are_prose_and_setext_headings_are_not(self):
+        tags = "\n".join(["#rustlang #cli #tools #terminal #productivity"] * 7)
+        self.assertGreater(len(tags), 300)
+        self.assertEqual(run(gh(readme=tags)).failures, [])
+        setext = "\n".join([f"A heading that is long enough number {i}\n=====" for i in range(8)] +
+                           [f"Another long subheading number {i}\n---" for i in range(4)])
+        self.assertGreater(len(setext), 300)
+        self.assertEqual(len(run(gh(readme=setext)).failures), 1)
+        self.assertEqual(len(run(gh(readme="#\n## Usage\n### " + "x" * 400)).failures), 1)
+
     def test_readme_exactly_300(self):
         self.assertEqual(run(gh(readme="a" * 300)).failures, [])
         self.assertEqual(len(run(gh(readme="a" * 299)).failures), 1)
@@ -189,8 +199,11 @@ class SubmitTest(unittest.TestCase):
         r = run(none)
         self.assertEqual(len(r.failures), 1)
         self.assertIn("CONTRIBUTING", r.failures[0])
-        # one extra is not enough
-        self.assertEqual(len(run(gh(topics=(), coc=False)).failures), 1)
+        self.assertIn("Add at least two of these", r.failures[0])
+        # one extra is not enough, and the message says one more is
+        r = run(gh(topics=(), coc=False))
+        self.assertEqual(len(r.failures), 1)
+        self.assertTrue(r.failures[0].startswith("Add one more of these to the repo: a topic or two, a code of conduct"))
         # two is
         self.assertEqual(run(gh(topics=(), coc=False, contributing=True, extra={f"GET {R}/releases?per_page=1": [{}]})).failures, [])
 
@@ -207,6 +220,19 @@ class SubmitTest(unittest.TestCase):
             self.assertEqual(r.failures, [], name)
             r = run(gh(**base, extra=extra))
             self.assertEqual(len(r.failures), 1, name)
+
+    def test_extras_without_a_community_profile(self):
+        # Forks have no community profile (404), so the files are looked up directly.
+        base = dict(topics=(), extra={f"GET {R}/community/profile": None})
+        self.assertEqual(len(run(gh(**base)).failures), 1)
+        listings = {f"GET {R}/contents": [{"name": "README.md"}, {"name": "CONTRIBUTING.md"}],
+                    f"GET {R}/contents/.github": [{"name": "ISSUE_TEMPLATE", "type": "dir"}]}
+        g = gh(topics=(), extra={f"GET {R}/community/profile": None, **listings})
+        self.assertEqual(run(g).failures, [])
+        listings = {f"GET {R}/contents/docs": [{"name": "code_of_conduct.md"}, {"name": "contributing-notes.md"}]}
+        r = run(gh(topics=(), extra={f"GET {R}/community/profile": None, **listings}))
+        self.assertEqual(len(r.failures), 1)
+        self.assertIn("one more", r.failures[0])
 
     def test_extras_short_circuit(self):
         g = gh()  # topics + contributing already = 2
@@ -349,10 +375,12 @@ class SubmitTest(unittest.TestCase):
             run(gh(extra={f"GET {R}/readme": bad}))
 
     def test_bad_base64_is_undecided(self):
-        bad = {"encoding": "base64", "content": "abcde"}
-        for mode in ("submit", "rot"):
-            with self.assertRaises(Undecided):
-                run(gh(extra={f"GET {R}/readme": bad}), mode)
+        # "!!!!" used to be dropped silently and read as an empty, short README.
+        for content in ("abcde", "!!!!", b64(README)["content"] + "!!!!"):
+            bad = {"encoding": "base64", "content": content}
+            for mode in ("submit", "rot"):
+                with self.assertRaises(Undecided, msg=content):
+                    run(gh(extra={f"GET {R}/readme": bad}), mode)
 
     def test_null_pushed_at(self):
         r = run(gh({"pushed_at": None}))

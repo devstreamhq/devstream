@@ -276,7 +276,8 @@ def file_bytes(gh, r, data: dict, what: str) -> bytes:
     if data.get("encoding") != "base64":
         raise Undecided(0, f"{what} of {r} has no readable content")
     try:
-        return base64.b64decode("".join((data.get("content") or "").split()), validate=False)
+        # validate=True: otherwise stray characters are dropped and garbage decodes as a short file.
+        return base64.b64decode("".join((data.get("content") or "").split()), validate=True)
     except (binascii.Error, ValueError) as e:
         raise Undecided(0, f"{what} of {r} could not be decoded: {e}") from e
 

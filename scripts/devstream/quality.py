@@ -62,7 +62,11 @@ class RepoResult:
 def _readme_text_length(text: str) -> int:
     text = text[:README_SCAN]  # also bounds the regex work below
     text = re.sub(r"```.*?(```|\Z)", " ", text, flags=re.S)
-    text = re.sub(r"^\s{0,3}#.*$", " ", text, flags=re.M)
+    # ATX headings need a space (or nothing) after the #s, so a #hashtag line is prose.
+    text = re.sub(r"^ {0,3}#{1,6}(?:[ \t].*)?$", " ", text, flags=re.M)
+    # Setext headings: a line underlined with === or ---.
+    # The lookahead scans each line once; [^\n]*\S[^\n]* would backtrack on a long blank line.
+    text = re.sub(r"^(?=[^\n]*\S)[^\n]*\n {0,3}(?:=+|-+)[ \t]*$", " ", text, flags=re.M)
     text = re.sub(r"<[^>]{0,2000}>", " ", text)
     text = re.sub(r"!\[[^\]]{0,500}\]\([^)]{0,2000}\)", " ", text)
     text = re.sub(r"\[([^\]]{0,500})\]\([^)]{0,2000}\)", r"\1", text)
@@ -102,6 +106,25 @@ def _fork_diverged(repo, gh) -> bool:
     return cmp_ is not None and cmp_.get("ahead_by", 0) > 0
 
 
+def _community_files(gh, r) -> dict[str, bool]:
+    """Which community files exist. The profile 404s for forks, so then look where GitHub would."""
+    profile = gh.get(f"/repos/{r}/community/profile")
+    if profile is not None:
+        return {k: v is not None for k, v in (profile.get("files") or {}).items()}
+    names = set()
+    for d in ("", "/.github", "/docs"):
+        listing = gh.get(f"/repos/{r}/contents{d}")
+        if isinstance(listing, list):
+            names |= {(f.get("name") or "").lower() for f in listing}
+
+    def has(stem):
+        return any(n == stem or n.startswith(stem + ".") for n in names)
+    return {k: has(k) for k in ("contributing", "code_of_conduct", "issue_template", "pull_request_template")}
+
+
+EXTRAS = 7
+
+
 def _extras_missing(repo, gh, r) -> list[str]:
     """Empty list when 2+ extras exist. Cheap checks first; stops at 2."""
     found = 0
@@ -117,11 +140,11 @@ def _extras_missing(repo, gh, r) -> list[str]:
 
     if tally(len(repo.get("topics") or []) >= 1, "a topic or two"):
         return []
-    files = (gh.get(f"/repos/{r}/community/profile") or {}).get("files") or {}
+    files = _community_files(gh, r)
     checks = [
-        (files.get("contributing") is not None, "a CONTRIBUTING guide"),
-        (files.get("code_of_conduct") is not None, "a code of conduct"),
-        (files.get("issue_template") is not None or files.get("pull_request_template") is not None,
+        (files.get("contributing", False), "a CONTRIBUTING guide"),
+        (files.get("code_of_conduct", False), "a code of conduct"),
+        (files.get("issue_template", False) or files.get("pull_request_template", False),
          "an issue or pull request template"),
     ]
     for ok, label in checks:
@@ -214,5 +237,7 @@ def check_repo(full: str, gh, now: datetime, mode: Literal["submit", "rot"],
         failures.append(MSG_DEPRECATED.format(deprecated))
     missing = _extras_missing(repo, gh, r)
     if missing:
-        failures.append("Add at least two of these to the repo: " + ", ".join(missing) + ".")
+        # Only a full miss reaches here, so every extra was checked and the rest were found.
+        need = "one more" if EXTRAS - len(missing) == 1 else "at least two"
+        failures.append(f"Add {need} of these to the repo: " + ", ".join(missing) + ".")
     return RepoResult(True, r, failures, "ok", meta, repo.get("id"))

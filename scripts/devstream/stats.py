@@ -21,6 +21,12 @@ def read_json(gh, path):
     cur = gh.get(f"{API}/contents/{path}", {"ref": "stats"})
     if cur is None:
         return None, None
+    if cur.get("encoding") == "none":
+        # Over 1 MB the contents API leaves content empty; the blobs API serves up to 100 MB.
+        blob = gh.get(f"{API}/git/blobs/{cur['sha']}")
+        if blob is None:
+            raise GitHubError(404, f"blob for {path} not found")
+        cur = blob
     return json.loads(base64.b64decode(cur["content"])), cur["sha"]
 
 
@@ -34,10 +40,11 @@ def list_dir(gh, path) -> list[str]:
     return [f["name"] for f in got if f.get("type") == "file"]
 
 
-def write_json(gh, path, data, sha, message) -> None:
+def write_json(gh, path, data, sha, message, compact=False) -> None:
+    text = json.dumps(data, sort_keys=True, **({"separators": (",", ":")} if compact else {"indent": 2}))
     body = {
         "message": message,
-        "content": base64.b64encode((json.dumps(data, indent=2, sort_keys=True) + "\n").encode()).decode(),
+        "content": base64.b64encode((text + "\n").encode()).decode(),
         "branch": "stats",
         "committer": {"name": BOT, "email": BOT_EMAIL},
     }
@@ -46,7 +53,7 @@ def write_json(gh, path, data, sha, message) -> None:
     gh.put(f"{API}/contents/{path}", body)
 
 
-def update_json(gh, path, mutate, message) -> None:
+def update_json(gh, path, mutate, message, compact=False) -> None:
     """Read, mutate(data) -> new data, write. On a 409 (another writer got there first) re-read and retry once."""
     for attempt in (1, 2):
         data, sha = read_json(gh, path)
@@ -54,7 +61,23 @@ def update_json(gh, path, mutate, message) -> None:
         if new == (data or {}):
             return
         try:
-            write_json(gh, path, new, sha, message)
+            write_json(gh, path, new, sha, message, compact)
+            return
+        except GitHubError as e:
+            if e.status != 409 or attempt == 2:
+                raise
+
+
+def delete_file(gh, path, message) -> None:
+    """Delete a stats-branch file; already gone is fine. Retries once on a 409 like update_json."""
+    for attempt in (1, 2):
+        cur = gh.get(f"{API}/contents/{path}", {"ref": "stats"})
+        if cur is None:
+            return
+        body = {"message": message, "sha": cur["sha"], "branch": "stats",
+                "committer": {"name": BOT, "email": BOT_EMAIL}}
+        try:
+            gh.delete(f"{API}/contents/{path}", body)
             return
         except GitHubError as e:
             if e.status != 409 or attempt == 2:

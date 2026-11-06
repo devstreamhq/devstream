@@ -120,8 +120,9 @@ def _finish_listed(gh, issue, entry) -> None:
     n = issue["number"]
     try:
         if "accepted" not in {lb["name"] for lb in issue["labels"]}:
-            gh.post(f"{API}/issues/{n}/comments", {"body": comment({"entry": entry}, "accepted")})
+            # Label first: a comment is a create, sent at most once, and the label marks it as tried.
             gh.post(f"{API}/issues/{n}/labels", {"labels": ["accepted"]})
+            gh.post(f"{API}/issues/{n}/comments", {"body": comment({"entry": entry}, "accepted")})
         gh.patch(f"{API}/issues/{n}", {"state": "closed", "state_reason": "completed"})
     except GitHubError as e:
         # Tried again next sweep; one bad issue mustn't stop the dispatches.

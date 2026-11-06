@@ -111,7 +111,7 @@ class SweepTest(unittest.TestCase):
         sweep(g, NOW, [listed(9), listed(8), listed(7, age=timedelta(minutes=20))])
         writes = [(m, p) for m, p, _ in g.calls if m in ("POST", "PATCH")]
         self.assertEqual(writes, [
-            ("POST", f"{API}/issues/9/comments"), ("POST", f"{API}/issues/9/labels"),
+            ("POST", f"{API}/issues/9/labels"), ("POST", f"{API}/issues/9/comments"),
             ("PATCH", f"{API}/issues/9"),
             ("PATCH", f"{API}/issues/8"),
             ("POST", f"{API}/actions/workflows/submit.yml/dispatches"),
@@ -120,6 +120,16 @@ class SweepTest(unittest.TestCase):
         self.assertIn("`o/r` is on the list", body[f"{API}/issues/9/comments"]["body"])
         self.assertEqual(body[f"{API}/issues/9"], {"state": "closed", "state_reason": "completed"})
         self.assertEqual(dispatched(g), ["7"])
+
+    def test_failed_comment_is_not_sent_again(self):
+        def boom(b):
+            raise GitHubError(502, "timeout")
+        g = gh([issue(9)], routes={f"POST {API}/issues/9/labels": {}, f"POST {API}/issues/9/comments": boom})
+        sweep(g, NOW, [listed(9)])
+        # Next sweep the label is on, so only the close is tried.
+        g = gh([issue(9, labels=("submission", "accepted"))], routes={f"PATCH {API}/issues/9": {}})
+        sweep(g, NOW, [listed(9)])
+        self.assertEqual([(m, p) for m, p, _ in g.calls if m in ("POST", "PATCH")], [("PATCH", f"{API}/issues/9")])
 
     def test_failed_close_is_logged_and_the_sweep_goes_on(self):
         def boom(b):

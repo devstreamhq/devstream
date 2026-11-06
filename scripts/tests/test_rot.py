@@ -308,6 +308,23 @@ class PrepareTest(unittest.TestCase):
         self.assertEqual(kinds([Action(**a) for a in plan["actions"]]), [("warn", "bob/other")])
         self.assertEqual({e["repo"]: e["status"] for e in load(self.path)}, {"alice/tool": "live", "bob/other": "warned"})
 
+    def test_ip_allow_listed_repo_is_undecided_not_an_abort(self):
+        def check(full, gh, now, mode, **kw):
+            if full == "alice/tool":
+                raise GitHubError(403, "the `alice` organization has an IP allow list enabled")
+            return warn(full)
+
+        plan = self.run_prepare(FakeGitHub(routes()), check)
+        self.assertEqual(kinds([Action(**a) for a in plan["actions"]]), [("warn", "bob/other")])
+        self.assertEqual({e["repo"]: e["status"] for e in load(self.path)}, {"alice/tool": "live", "bob/other": "warned"})
+
+    def test_other_403_still_aborts(self):
+        def check(full, gh, now, mode, **kw):
+            raise GitHubError(403, "Resource not accessible by integration")
+
+        with self.assertRaises(GitHubError):
+            self.run_prepare(FakeGitHub(routes()), check)
+
     def test_undecided_three_weeks_running_opens_one_review_issue(self):
         def check(full, gh, now, mode, **kw):
             if full == "alice/tool":

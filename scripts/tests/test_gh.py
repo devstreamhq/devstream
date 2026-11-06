@@ -123,6 +123,8 @@ class H(BaseHTTPRequestHandler):
             errs = [{"type": "NOT_FOUND", "path": ["r0"]}]
             if body["variables"]["nf"] == 2:
                 errs.append({"type": "FORBIDDEN"})
+            if body["variables"]["nf"] == 3:
+                errs.append({"type": "FORBIDDEN", "path": ["r1"]})
             self._send(200, {"data": {"r0": None}, "errors": errs})
         elif body["variables"].get("bad"):
             self._send(200, {"errors": [{"message": "x"}]})
@@ -209,6 +211,10 @@ class GitHubTest(unittest.TestCase):
             self.gh.graphql("query Q { x }", {"nf": 1})
         with self.assertRaises(GitHubError):
             self.gh.graphql("query Q { x }", {"nf": 2}, allow_not_found=True)
+        with self.assertRaises(GitHubError):  # pathless FORBIDDEN is the whole query, not one alias
+            self.gh.graphql("query Q { x }", {"nf": 2}, allow_not_found=True, allow_forbidden=True)
+        self.assertEqual(self.gh.graphql("query Q { x }", {"nf": 3}, allow_not_found=True, allow_forbidden=True),
+                         {"r0": None})
 
     def test_write_success(self):
         for m in ("post", "patch", "put"):
@@ -414,6 +420,8 @@ class FakeTest(unittest.TestCase):
             f.graphql("query Q { x }", {})
         with self.assertRaises(GitHubError):
             f.graphql("query B { x }", {}, allow_not_found=True)
+        with self.assertRaises(GitHubError):
+            f.graphql("query B { x }", {}, allow_not_found=True, allow_forbidden=True)
 
     def test_status_routes(self):
         f = FakeGitHub({"GET /b": Status(204), "GET /x": {"a": 1}, "GET /e": Status(500)})

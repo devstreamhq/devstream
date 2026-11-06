@@ -38,6 +38,11 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
+def _allowed(e: dict, not_found: bool, forbidden: bool) -> bool:
+    # A FORBIDDEN with no path is the whole query refused, never one hidden repo.
+    return (not_found and e.get("type") == "NOT_FOUND") or (forbidden and e.get("type") == "FORBIDDEN" and bool(e.get("path")))
+
+
 class GitHub:
     def __init__(self, token: str, base: str = "https://api.github.com", sleep=time.sleep):
         self.token = token
@@ -184,8 +189,10 @@ class GitHub:
     def delete(self, path, body=None):
         return self._write("DELETE", path, body)
 
-    def graphql(self, query: str, variables: dict, allow_not_found: bool = False) -> dict:
-        """allow_not_found returns data with nulls where only NOT_FOUND errors occurred."""
+    def graphql(self, query: str, variables: dict, allow_not_found: bool = False,
+                allow_forbidden: bool = False) -> dict:
+        """allow_not_found returns data with nulls where only NOT_FOUND errors occurred.
+        allow_forbidden also lets through FORBIDDEN errors on one alias (an org IP allow list)."""
         self.last_redirect = None
         r = self._request("POST", "/graphql", body={"query": query, "variables": variables},
                           read=bool(READ_QUERY.match(query, LEADING_COMMENTS.match(query).end())))
@@ -195,6 +202,6 @@ class GitHub:
         errors = out.get("errors")
         if any(e.get("type") == "RATE_LIMITED" for e in errors or []):
             raise RateLimited(int(r[0].get("x-ratelimit-reset") or time.time() + 60))
-        if errors and not (allow_not_found and all(e.get("type") == "NOT_FOUND" for e in errors)):
+        if errors and not all(_allowed(e, allow_not_found, allow_forbidden) for e in errors):
             raise GitHubError(200, json.dumps(out["errors"])[:500])
         return out.get("data")

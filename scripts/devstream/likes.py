@@ -82,7 +82,7 @@ def fetch_reactors(gh, numbers: list[int]) -> dict[int, list[dict] | None]:
 
 
 def fetch_meta(gh, repos: list[str]) -> dict[str, dict]:
-    """Repo card data keyed as given. A deleted repo is left out; rot handles it."""
+    """Repo card data keyed as given. A deleted or IP-allow-listed repo is left out; rot handles the deleted."""
     out = {}
     for i in range(0, len(repos), META_BATCH):
         chunk = repos[i:i + META_BATCH]
@@ -91,7 +91,8 @@ def fetch_meta(gh, repos: list[str]) -> dict[str, dict]:
         variables = {}
         for j, r in enumerate(chunk):
             variables[f"o{j}"], variables[f"n{j}"] = r.split("/", 1)
-        data = gh.graphql(f"query RepoMeta({params}) {{ {body} }}", variables, allow_not_found=True)
+        data = gh.graphql(f"query RepoMeta({params}) {{ {body} }}", variables, allow_not_found=True,
+                          allow_forbidden=True)
         for j, r in enumerate(chunk):
             m = data.get(f"r{j}")
             if m is None:

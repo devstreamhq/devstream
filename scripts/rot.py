@@ -17,7 +17,7 @@ from datetime import datetime, timedelta, timezone
 
 from scripts.devstream.discussions import REMOVED_PREFIX
 from scripts.devstream.entries import DEFAULT_PATH, find, load, normalize_repo, save, sort_key
-from scripts.devstream.gh import GitHub
+from scripts.devstream.gh import GitHub, GitHubError
 from scripts.devstream.license_detect import extra_licenses_for
 from scripts.devstream.quality import (
     MSG_GONE,
@@ -203,7 +203,7 @@ def select(entries, raw):
 
 
 def prepare(gh, now, path=DEFAULT_PATH, repo=None, check=check_repo) -> dict:
-    """Check, plan and write the new entries.json locally. Any GitHubError aborts before a write."""
+    """Check, plan and write the new entries.json locally. Any other GitHubError aborts before a write."""
     entries = load(path)
     targets = [e for e in select(entries, repo) if e["status"] in CHECKED]
     ensure_branch(gh)
@@ -214,7 +214,10 @@ def prepare(gh, now, path=DEFAULT_PATH, repo=None, check=check_repo) -> dict:
     for e in targets:
         try:
             results[e["repo"]] = check(e["repo"], gh, now, "rot", allowed_extra=extra_licenses_for(e["category"]))
-        except Undecided as exc:
+        except GitHubError as exc:
+            # An owner's IP allow list hides the repo from our token; that says nothing about the repo.
+            if not isinstance(exc, Undecided) and not (exc.status == 403 and "IP allow list" in exc.message):
+                raise
             logging.warning("skipping %s: %s", e["repo"], exc)
             undecided[normalize_repo(e["repo"])] = str(exc)
     review = []

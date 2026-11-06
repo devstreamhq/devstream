@@ -361,7 +361,7 @@ class UndecidedTest(unittest.TestCase):
         sweep(s, test_sweep.NOW)
         self.assertEqual(test_sweep.dispatched(s), ["8"])
 
-    def test_counter_is_bot_only_and_parks_once(self):
+    def test_counter_is_bot_only_and_parks_from_three_on(self):
         # The submitter can post a look-alike counter; only the bot's own comment counts.
         comments = [{"id": 99, "user": {"login": "carol"}, "body": "<!-- devstream:undecided 2 -->"}]
         labels = []
@@ -377,9 +377,17 @@ class UndecidedTest(unittest.TestCase):
         self.assertEqual(len(comments), 3)
         self.assertTrue(comments[2]["body"].startswith(err))
         self.assertIn("boom 'x'", comments[2]["body"])
-        # A fourth failure (say, a manual re-dispatch) doesn't comment again.
-        self.assertFalse(record_failure(g, 1, "boom", err))
-        self.assertEqual((len(comments), labels), (3, ["needs-review"]))
+        # At the limit the counter stops promising a retry.
+        self.assertNotIn("try again", comments[1]["body"])
+        self.assertIn("<!-- devstream:undecided 3 -->", comments[1]["body"])
+        # A maintainer retries by removing the label; failures 4 and 5 park it again, with no new comment.
+        for k in (4, 5):
+            labels.clear()
+            self.assertTrue(record_failure(g, 1, "boom", err))
+            self.assertEqual(labels, ["needs-review"], k)
+            self.assertEqual(len(comments), 3, k)
+            self.assertIn(f"<!-- devstream:undecided {k} -->", comments[1]["body"])
+            self.assertNotIn("try again", comments[1]["body"])
 
 
 class CliTest(unittest.TestCase):

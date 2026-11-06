@@ -33,6 +33,7 @@ ISSUE_CAP = 5
 LABELS = ["report", "needs-review"]
 BOT = "devstreamhq-bot[bot]"
 AGGREGATE_TITLE = re.compile(r"Like burst: [0-9]+ entr(y|ies)")
+AGGREGATE_LINE = re.compile(r"^- (\S+)$", re.M)
 # How long a reviewed (closed) issue holds off a new one for the same entry.
 COOLDOWN = {"burst": DAY, "drip": WEEK}
 SNAPSHOTS_KEPT = 30
@@ -68,7 +69,7 @@ def _review(gh, flags: dict, now: datetime) -> None:
         try:
             issue = gh.get(f"{API}/issues/{n}")
         except GitHubError as e:
-            if e.status != 410:  # 410: deleted
+            if e.status not in (404, 410):  # deleted
                 # Its record stays pending and is looked up again next hour; the rest still sync.
                 logging.warning("could not look up issue #%s: %s", n, e)
                 continue
@@ -149,9 +150,9 @@ def _baseline(gh, now: datetime, renames: dict) -> dict | None:
     return data
 
 
-def _open_reports(gh) -> dict[str, int]:
+def _open_reports(gh) -> dict[str, dict]:
     """The bot's open Like issues by title. Only the bot can author these, so a title can't be forged here."""
-    return {i["title"]: i["number"] for i in gh.paginate(f"{API}/issues", {"state": "open", "labels": LABELS[0],
+    return {i["title"]: i for i in gh.paginate(f"{API}/issues", {"state": "open", "labels": LABELS[0],
                                                                             "per_page": 100})
             if (i.get("user") or {}).get("login") == BOT and "pull_request" not in i}
 
@@ -162,7 +163,7 @@ def _report(gh, todo: list[tuple[str, str, str, str]], flags: dict, now: datetim
     opened = _open_reports(gh)
     for kind, key, repo, body in todo[:ISSUE_CAP]:
         title = f"Like {kind}: {repo}"
-        n = opened.get(title) or gh.post(f"{API}/issues", {"title": title, "body": body, "labels": LABELS})["number"]
+        n = (opened.get(title) or {}).get("number") or gh.post(f"{API}/issues", {"title": title, "body": body, "labels": LABELS})["number"]
         flags.setdefault(key, {})[kind] = _record(kind, n, now)
     overflow = [(key, kind) for kind, key, _, _ in todo[ISSUE_CAP:]]
     if not overflow:
@@ -170,8 +171,12 @@ def _report(gh, todo: list[tuple[str, str, str, str]], flags: dict, now: datetim
     # A flood of decoys must not become a flood of issues, nor let the target slip its flag.
     agg = next((r["issue"] for recs in flags.values() for r in recs.values()
                 if r.get("aggregate") and r["reviewed_at"] is None), None)
+    kept = []
     if agg is None:
-        agg = next((n for t, n in opened.items() if AGGREGATE_TITLE.fullmatch(t)), None)
+        adopted = next((i for t, i in opened.items() if AGGREGATE_TITLE.fullmatch(t)), None)
+        if adopted is not None:
+            # Its records were lost, so the entries it already lists come from its body.
+            agg, kept = adopted["number"], AGGREGATE_LINE.findall(adopted.get("body") or "")
     if agg is None:
         agg = gh.post(f"{API}/issues", {**_aggregate(overflow), "labels": LABELS})["number"]
         for key, kind in overflow:
@@ -181,6 +186,7 @@ def _report(gh, todo: list[tuple[str, str, str, str]], flags: dict, now: datetim
         flags.setdefault(key, {})[kind] = _record(kind, agg, now, aggregate=True)
     listed = [(k, kind) for k, recs in flags.items() for kind, r in recs.items()
               if r["issue"] == agg and r["reviewed_at"] is None]
+    listed += [(k, None) for k in kept if k not in {key for key, _ in listed}]
     try:
         state = (gh.patch(f"{API}/issues/{agg}", _aggregate(listed)) or {}).get("state")
     except GitHubError as e:

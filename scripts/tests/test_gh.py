@@ -1,5 +1,7 @@
+import http.client
 import json
 import socket
+import ssl
 import threading
 import urllib.error
 import time
@@ -394,6 +396,16 @@ class Retries(unittest.TestCase):
             self.assertEqual(gh.get("/a"), {"ok": True})
             self.assertEqual(len(sent), 2)
 
+    def test_ssl_and_http_client_errors_are_network_errors(self):
+        for err in (ssl.SSLError("bad record"), http.client.IncompleteRead(b"")):
+            gh, sent, _ = self.gh(err, 200)
+            self.assertEqual(gh.get("/a"), {"ok": True})
+            self.assertEqual(len(sent), 2)
+            gh, sent, _ = self.gh(err, 200)
+            with self.assertRaises(GitHubError) as c:
+                gh.post("/a", {})
+            self.assertEqual((c.exception.status, len(sent)), (0, 1))
+
     def test_three_network_errors_raise(self):
         gh, sent, _ = self.gh(TimeoutError(), TimeoutError(), TimeoutError(), 200)
         with self.assertRaises(GitHubError):
@@ -523,6 +535,11 @@ class FakeTest(unittest.TestCase):
         self.assertEqual(f.last_redirect, "/b")
         f.get("/c")
         self.assertIsNone(f.last_redirect)
+
+    def test_paginate_non_list_page_raises(self):
+        for page in (None, {"a": 1}):
+            with self.assertRaises(GitHubError):
+                list(FakeGitHub({"GET /x": page}).paginate("/x"))
 
     def test_paginate_missing_first_page_empty(self):
         self.assertEqual(list(FakeGitHub({}).paginate("/x")), [])

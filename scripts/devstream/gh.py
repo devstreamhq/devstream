@@ -1,3 +1,4 @@
+import http.client
 import json
 import random
 import re
@@ -15,7 +16,8 @@ MAX_HOPS = 5
 TIMEOUT = 30
 ATTEMPTS = 3
 TRANSIENT = (502, 503, 504)
-NETWORK = (urllib.error.URLError, TimeoutError, ConnectionError)
+# OSError covers URLError, timeouts, resets and ssl; http.client raises its own on a cut-off response.
+NETWORK = (OSError, http.client.HTTPException)
 # Only a document that opens as a query is a read; anything else (a fragment first, say) may be a mutation.
 LEADING_COMMENTS = re.compile(r"(\s*#[^\n]*(\n|$))*")
 READ_QUERY = re.compile(r"\s*(query\b|\{)")

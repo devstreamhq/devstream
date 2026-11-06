@@ -558,6 +558,40 @@ class Burst(unittest.TestCase):
             self.assertEqual(w.written("flags.json")["o/s5"]["burst"]["issue"], w.next_issue - 1)
             self.assertNotEqual(w.next_issue - 1, agg)
 
+    def test_review_lookup_404_counts_as_reviewed(self):
+        w = World([entry("o/a")], {"o/a": [node("x")]}, stats=self.flags())
+
+        def gone(_):
+            raise GitHubError(404, "Not Found")
+        w.routes[f"GET {API}/issues/7"] = gone
+        w.run()
+        self.assertEqual(w.written("flags.json")["o/a"]["burst"]["reviewed_at"], iso(NOW))
+
+    def test_adopted_aggregate_keeps_the_entries_it_listed(self):
+        first = {f"o/r{j}": burst_nodes(10, 10) for j in range(6)}
+        later = {f"o/s{j}": [] for j in range(6)}
+        w = World([entry(r) for r in {**first, **later}], {**first, **later})
+
+        def boom(_):
+            raise GitHubError(502, "bad gateway")
+        w.routes[f"PUT {API}/contents/flags.json"] = boom
+        with self.assertRaises(GitHubError):
+            w.run()
+        agg = w.next_issue - 1
+        w.routes[f"GET {API}/issues/{agg}"]["body"] = w.issues_opened()[-1]["body"]
+        w.persist()
+        w.routes.pop(f"GET {API}/contents/flags.json")  # that PUT never landed
+        w.routes[f"PUT {API}/contents/flags.json"] = {}
+        w.set_nodes("o/r5", [])
+        for r in later:
+            w.set_nodes(r, burst_nodes(10, 10, reacted=iso(NOW + timedelta(minutes=30))))
+        w.run(now=NOW + timedelta(hours=1))
+        [(_, path, body)] = w.patches()
+        self.assertEqual(path, f"{API}/issues/{agg}")
+        self.assertEqual(body["title"], "Like burst: 7 entries")
+        self.assertIn("- o/r5", body["body"])
+        self.assertIn("- o/s5", body["body"])
+
     def test_one_failed_review_lookup_skips_only_that_issue(self):
         stats = {"flags.json": {r: {"burst": {"kind": "burst", "issue": n, "opened_at": iso(NOW),
                                               "reviewed_at": None}} for r, n in (("o/a", 7), ("o/b", 8))}}

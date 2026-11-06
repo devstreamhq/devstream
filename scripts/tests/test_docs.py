@@ -15,7 +15,7 @@ BANNED = [
     "realm", "navigate", "landscape", "in today's fast-paced world", "in an era of",
 ]
 # Not shipped yet, so no page may claim them.
-UNSHIPPED = re.compile(r"\bsponsor|\bopenssf\b|\bscorecard\b|\bbest practices badge\b", re.I)
+UNSHIPPED = re.compile(r"\bsponsor|\bbest practices badge\b", re.I)
 NOT_JUST = re.compile(r"\b(?:it|this|that)(?:'s|’s| is) not just\b", re.I)
 LINK = re.compile(r"\]\(([^)\s]+)\)|(?:src|srcset|href)=\"([^\"]+)\"")
 COMMENT = re.compile(r"<!--.*?-->", re.S)

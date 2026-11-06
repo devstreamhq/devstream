@@ -795,6 +795,18 @@ class Conflicts(unittest.TestCase):
         w.run(now=NOW + timedelta(minutes=5))
         self.assertEqual(w.issues_opened(), [])
 
+    def test_likes_and_meta_409_after_someone_else_wrote_skips_this_hour(self):
+        w = World([entry("o/a")], {"o/a": [node("x"), node("y")]})
+        theirs = {"o/a": {"likes": 9}}
+        for path in ("likes.json", "meta.json"):
+            def someone_wrote(path=path):
+                w.routes[f"GET {API}/contents/{path}"] = {
+                    "content": base64.b64encode(json.dumps(theirs).encode()).decode(), "sha": "sha-theirs"}
+            n = self.conflict_once(w, path, someone_wrote)
+            w.run()
+            self.assertEqual(len(n), 1, path)
+            w.gh.calls.clear()
+
     def test_likes_409_then_success(self):
         w = World([entry("o/a")], {"o/a": [node("x"), node("y")]})
         n = self.conflict_once(w, "likes.json")
@@ -833,17 +845,39 @@ class Size(unittest.TestCase):
 
 
 class HalfDoneRename(unittest.TestCase):
-    def test_listed_key_unmapped_while_unlisted_key_mapped_writes_nothing(self):
+    ROW = {"likes": 2, "delta_7d": 0, "rank": 1, "rank_delta_7d": 0, "flagged": False}
+
+    def world(self, likes_age):
         # The rename PR merged but rot's finish hasn't moved discussions.json yet.
-        w = World([entry("o/new")], {"o/old": [node("x"), node("y")]})
+        w = World([entry("o/new")], {"o/old": [node("x"), node("y")]}, stats={"likes.json": {"o/old": self.ROW}})
+        w.routes[f"GET {API}/commits"] = [{"commit": {"committer": {"date": iso(NOW - likes_age)}}}]
+        return w
+
+    def writes(self, w):
+        return [c for c in w.gh.calls if c[0] in ("PUT", "POST", "PATCH", "DELETE")]
+
+    def test_rename_within_3_hours_writes_nothing(self):
+        w = self.world(timedelta(hours=2))
         w.run()
-        self.assertFalse([c for c in w.gh.calls if c[0] in ("PUT", "POST", "PATCH", "DELETE")])
+        self.assertEqual(self.writes(w), [])
+
+    def test_rename_after_3_hours_syncs_anyway(self):
+        w = self.world(timedelta(hours=4))
+        with self.assertLogs(level="ERROR"):
+            w.run()
+        self.assertIn("o/new", w.written("likes.json"))
+
+    def test_removed_entry_and_new_entry_still_sync(self):
+        # o/gone was removed long ago: it isn't in likes.json, so it's no rename in flight.
+        w = World([entry("o/a"), entry("o/b")], {"o/a": [node("x")], "o/gone": [node("y")]},
+                  stats={"likes.json": {"o/a": self.ROW}})
+        w.run()
+        self.assertEqual(sorted(w.written("likes.json")), ["o/a", "o/b"])
 
     def test_new_entry_without_thread_still_syncs(self):
         w = World([entry("o/a"), entry("o/b")], {"o/a": [node("x")]})
         w.run()
         self.assertEqual(w.written("likes.json")["o/b"]["likes"], 0)
-
 
 if __name__ == "__main__":
     unittest.main()

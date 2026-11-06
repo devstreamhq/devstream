@@ -69,3 +69,32 @@ class DeleteFile(unittest.TestCase):
 
     def test_already_gone_is_fine(self):
         delete_file(FakeGitHub({}), "a.json", "m")
+
+
+class UpdateJson(unittest.TestCase):
+    def puts(self, fails):
+        n = []
+
+        def put(_):
+            n.append(1)
+            if len(n) <= fails:
+                raise GitHubError(409, "conflict")
+            return {}
+        return FakeGitHub({f"PUT {API}/contents/a.json": put}), n
+
+    def test_two_409s_then_success(self):
+        gh, n = self.puts(2)
+        update_json(gh, "a.json", lambda _: {"a": 1}, "m")
+        self.assertEqual(len(n), 3)
+
+    def test_three_409s_raise(self):
+        gh, n = self.puts(3)
+        with self.assertRaises(GitHubError):
+            update_json(gh, "a.json", lambda _: {"a": 1}, "m")
+        self.assertEqual(len(n), 3)
+
+
+class DeleteGone(unittest.TestCase):
+    def test_404_on_delete_is_already_gone(self):
+        gh = FakeGitHub({f"GET {API}/contents/a.json": {"content": "", "sha": "s9"}})  # no DELETE route: 404
+        delete_file(gh, "a.json", "m")

@@ -9,6 +9,7 @@ from scripts.devstream.gh import GitHubError
 API = "/repos/devstreamhq/devstream"
 BOT = "devstreamhq-bot[bot]"
 BOT_EMAIL = "353074438+devstreamhq-bot[bot]@users.noreply.github.com"
+ATTEMPTS = 3
 
 
 def ensure_branch(gh) -> None:
@@ -54,8 +55,8 @@ def write_json(gh, path, data, sha, message, compact=False) -> None:
 
 
 def update_json(gh, path, mutate, message, compact=False) -> None:
-    """Read, mutate(data) -> new data, write. On a 409 (another writer got there first) re-read and retry once."""
-    for attempt in (1, 2):
+    """Read, mutate(data) -> new data, write. On a 409 (another writer got there first) re-read and retry, 3 attempts in all."""
+    for attempt in range(1, ATTEMPTS + 1):
         data, sha = read_json(gh, path)
         new = mutate(copy.deepcopy(data) if data is not None else {})
         if new == (data or {}):
@@ -64,13 +65,13 @@ def update_json(gh, path, mutate, message, compact=False) -> None:
             write_json(gh, path, new, sha, message, compact)
             return
         except GitHubError as e:
-            if e.status != 409 or attempt == 2:
+            if e.status != 409 or attempt == ATTEMPTS:
                 raise
 
 
 def delete_file(gh, path, message) -> None:
-    """Delete a stats-branch file; already gone is fine. Retries once on a 409 like update_json."""
-    for attempt in (1, 2):
+    """Delete a stats-branch file; already gone is fine. Retries a 409 like update_json."""
+    for attempt in range(1, ATTEMPTS + 1):
         cur = gh.get(f"{API}/contents/{path}", {"ref": "stats"})
         if cur is None:
             return
@@ -80,5 +81,7 @@ def delete_file(gh, path, message) -> None:
             gh.delete(f"{API}/contents/{path}", body)
             return
         except GitHubError as e:
-            if e.status != 409 or attempt == 2:
+            if e.status == 404:  # another run deleted it first
+                return
+            if e.status != 409 or attempt == ATTEMPTS:
                 raise

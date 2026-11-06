@@ -34,6 +34,8 @@ LABELS = ["report", "needs-review"]
 # How long a reviewed (closed) issue holds off a new one for the same entry.
 COOLDOWN = {"burst": DAY, "drip": WEEK}
 SNAPSHOTS_KEPT = 30
+# A rename's finish normally follows its merge within minutes; past this, sync rather than freeze the board.
+RENAME_WAIT = timedelta(hours=3)
 
 
 def _parse(s: str) -> datetime:
@@ -181,6 +183,25 @@ def _merge_flags(flags: dict, before: dict):
     return mutate
 
 
+def _rename_in_flight(gh, now, entries, keys, mapping, prev_likes) -> bool:
+    """True while a rename has merged but rot's finish hasn't moved discussions.json yet.
+
+    The tell: a listed key has no thread, and a key that was ranked last time has a thread but is no
+    longer listed. An entry removed for good drops out of likes.json, so it can't hold the board.
+    """
+    listed = {normalize_repo(e["repo"]) for e in entries}
+    moved = [k for k in mapping if k not in listed and k in prev_likes]
+    if not moved or all(k in mapping for k in keys):
+        return False
+    got = gh.get(f"{API}/commits", {"path": "likes.json", "sha": "stats", "per_page": 1}) or []
+    at = got[0]["commit"]["committer"]["date"] if got else None
+    if at is not None and now - _parse(at) <= RENAME_WAIT:
+        logging.warning("a rename of %s is half done; skipping this sync", ", ".join(moved))
+        return True
+    logging.error("%s still mapped but unlisted after %s; syncing anyway", ", ".join(moved), RENAME_WAIT)
+    return False
+
+
 def _prune_snapshots(gh, today: str) -> None:
     names = sorted({n for n in list_dir(gh, "snapshots") if _snapshot_date(n)} | {today})
     for n in names[:-SNAPSHOTS_KEPT]:
@@ -202,15 +223,12 @@ def run(gh, entries, now: datetime, excluded: set[str]) -> None:
         if e["status"] in RANKED:
             ranked.setdefault(normalize_repo(e["repo"]), e)
     keys = sorted(ranked)
-    listed = {normalize_repo(e["repo"]) for e in entries}
-    if any(k not in mapping for k in keys) and any(k not in listed for k in mapping):
-        # Rename merged, rot's finish hasn't moved discussions.json yet; the next hourly run picks it up.
-        logging.warning("a rename is half done; skipping this sync")
+    prev_likes = read_json(gh, "likes.json")[0]
+    if _rename_in_flight(gh, now, entries, keys, mapping, prev_likes or {}):
         return
 
     meta = fetch_meta(gh, keys)
     reactors = fetch_reactors(gh, sorted({mapping[k] for k in keys if k in mapping}))
-    prev_likes = read_json(gh, "likes.json")[0]
     prev_flags = read_json(gh, "flags.json")[0]
     flags = copy.deepcopy(prev_flags or {})
     _review(gh, flags, now)
@@ -265,6 +283,7 @@ def run(gh, entries, now: datetime, excluded: set[str]) -> None:
             "flagged": ranked[k]["status"] == "flagged" or k in bursts or _under_review(flags, k),
         }
 
+    prev_meta = read_json(gh, "meta.json")[0]
     snap_path = f"snapshots/{now:%Y-%m-%d}.json"
     flags_write = ("flags.json", _merge_flags(flags, prev_flags or {}), "chore(stats): record Like reviews")
 
@@ -283,8 +302,9 @@ def run(gh, entries, now: datetime, excluded: set[str]) -> None:
     snap = {k: {"likes": v["likes"], "rank": v["rank"]} for k, v in out.items()}
     # Each is re-applied onto a fresh read if another writer 409s it first.
     update_json(gh, *flags_write)  # first, so a later failed write can't lose the record of issues opened
-    update_json(gh, "meta.json", lambda _: meta, "chore(stats): update repo meta")
-    update_json(gh, "likes.json", lambda _: out, "chore(stats): update likes")
+    # Built from the file as it was read; if someone else changed it since, theirs stands until next hour.
+    update_json(gh, "meta.json", lambda cur: meta if cur == (prev_meta or {}) else cur, "chore(stats): update repo meta")
+    update_json(gh, "likes.json", lambda cur: out if cur == (prev_likes or {}) else cur, "chore(stats): update likes")
     update_json(gh, snap_path, lambda cur: cur or snap, f"chore(stats): snapshot likes for {now:%Y-%m-%d}")
     # Past the TTL a record is never read again, and unpruned the file passes 1 MB.
     fresh = {k: v for k, v in cache.entries.items() if cache.get(k, now) is not None}

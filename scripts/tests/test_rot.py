@@ -522,7 +522,7 @@ class FinishTest(unittest.TestCase):
                                         {"alice/tool": rec}))
         self.assertEqual(state["rot.json"], {"alice/tool": {**rec, "notified": True}})
 
-    def test_stats_write_retries_once_after_409(self):
+    def test_stats_write_retries_after_409(self):
         r, state = store({"discussions.json": {"alice/tool": 5}, "flags.json": {"alice/tool": {"burst": 1}}},
                          threads({5: "alice/tool"}), conflicts={"flags.json": 1})
         finish(FakeGitHub(r), self.plan([Action("rename", "alice/tool-ng", "", "alice/tool")]))
@@ -533,7 +533,7 @@ class FinishTest(unittest.TestCase):
     def test_comments_still_post_when_a_stats_write_fails(self):
         titles = {5: "alice/tool"}
         r, state = store({"discussions.json": {"alice/tool": 5, "bob/other": 6}, "flags.json": {"alice/tool": {}}},
-                         threads(titles), conflicts={"flags.json": 2})
+                         threads(titles), conflicts={"flags.json": 3})
         g = FakeGitHub(r)
         with self.assertRaises(SystemExit):
             finish(g, self.plan([Action("rename", "alice/tool-ng", "", "alice/tool"),
@@ -547,7 +547,7 @@ class FinishTest(unittest.TestCase):
         _, actions, rot = plan_rot([entry()], {"alice/tool": gone()}, NOW, {"alice/tool": old_rec})
         self.assertEqual(kinds(actions), [("notice", "alice/tool")])
         r, state = store({"rot.json": {"alice/tool": old_rec}, "discussions.json": {"alice/tool": 5}},
-                         threads({5: "alice/tool"}), conflicts={"rot.json": 2})
+                         threads({5: "alice/tool"}), conflicts={"rot.json": 3})
         g = FakeGitHub(r)
         with self.assertRaises(SystemExit):
             finish(g, {"changed": True, "actions": [a.__dict__ for a in actions], "rot_state": rot})
@@ -560,7 +560,7 @@ class FinishTest(unittest.TestCase):
     def test_no_retitle_when_the_key_move_fails(self):
         titles = {5: "alice/tool", 6: "bob/kept"}
         r, state = store({"discussions.json": {"alice/tool": 5, "bob/kept": 6}}, threads(titles),
-                         conflicts={"discussions.json": 2})
+                         conflicts={"discussions.json": 3})
         g = FakeGitHub(r)
         with self.assertRaises(SystemExit):
             finish(g, self.plan([Action("rename", "alice/tool-ng", "", "alice/tool"),

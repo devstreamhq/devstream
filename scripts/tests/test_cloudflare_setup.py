@@ -1,5 +1,8 @@
 import importlib.util
+import io
+import json
 import unittest
+from unittest import mock
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -75,6 +78,29 @@ class CloudflareSetup(unittest.TestCase):
         with self.assertRaises(SystemExit):
             cf.run(api, "acct")
         self.assertEqual(api.writes, [])
+
+
+class Response(io.BytesIO):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+
+def respond(body):
+    return mock.patch("urllib.request.urlopen", return_value=Response(json.dumps(body).encode()))
+
+
+class HttpApi(unittest.TestCase):
+    def test_returns_result_on_success(self):
+        with respond({"success": True, "result": [{"id": "z"}]}):
+            self.assertEqual(cf.http_api("t")("GET", "/zones"), [{"id": "z"}])
+
+    def test_raises_when_success_is_not_true(self):
+        for body in ({"success": False, "errors": [{"message": "nope"}], "result": None}, {"result": []}):
+            with self.subTest(body=body), respond(body), self.assertRaises(cf.ApiError):
+                cf.http_api("t")("GET", "/zones")
 
 
 if __name__ == "__main__":

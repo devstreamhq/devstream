@@ -31,9 +31,13 @@ def http_api(token):
         req.add_header("Content-Type", "application/json")
         try:
             with urllib.request.urlopen(req, timeout=30) as resp:
-                return json.load(resp)["result"]
+                body = json.load(resp)
         except urllib.error.HTTPError as err:
             raise ApiError(err.code, err.read().decode(errors="replace")) from None
+        # Cloudflare can answer 200 with success false; that is still a failure.
+        if body.get("success") is not True:
+            raise ApiError(200, json.dumps(body.get("errors")))
+        return body["result"]
 
     return call
 

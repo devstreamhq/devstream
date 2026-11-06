@@ -1,31 +1,39 @@
 name: Deploy site
 
 # Builds the leaderboard from main plus the stats branch and ships it to
-# Cloudflare Pages. Called after merges and Likes syncs, so the site follows
-# the data within minutes.
+# Cloudflare Pages, after every merge, Likes sync and site change.
 on:
-  workflow_call:
-  workflow_dispatch:
   push:
     branches: [main]
     paths: ["site/**", "data/**"]
+  workflow_run:
+    workflows: ["Create entry Discussions", "Sync Likes"]
+    types: [completed]
+  workflow_dispatch:
 
 permissions: {}
 
+# Only the newest build matters: an older one would ship older numbers.
+concurrency:
+  group: deploy
+  cancel-in-progress: true
+
+env:
+  # Must match site/package.json; site/tests/config.test.mjs checks it.
+  WRANGLER_VERSION: "4.158.0"
+
 jobs:
-  deploy:
+  build:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    # Set on the job so it also holds when this runs as a called workflow.
-    # Only the newest build matters: an older one would ship older numbers.
-    concurrency:
-      group: deploy
-      cancel-in-progress: true
     steps:
       - uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
         with:
           egress-policy: audit
+      # workflow_run always runs main's copy of this file; build main too,
+      # never the triggering run's head_sha.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
@@ -46,6 +54,37 @@ jobs:
         working-directory: site
       - run: npm run build
         working-directory: site
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: site-dist
+          path: site/dist
+          retention-days: 1
+          if-no-files-found: error
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+          sparse-checkout: scripts/admin
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: site-dist
+          path: site/dist
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+      # Only wrangler, at the pinned version, with no install scripts. The
+      # action finds it and skips its own install.
+      - run: npm install --no-save --no-package-lock --ignore-scripts --prefix site "wrangler@$WRANGLER_VERSION"
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
@@ -57,4 +96,6 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy site/dist --project-name=devstream --branch=main
+          workingDirectory: site
+          wranglerVersion: ${{ env.WRANGLER_VERSION }}
+          command: pages deploy dist --project-name=devstream --branch=main

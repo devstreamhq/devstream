@@ -130,8 +130,17 @@ class LicenseSearchTest(unittest.TestCase):
         self.assertLess(time.monotonic() - t, 1)
 
     def test_loose_phrases_rejected(self):
-        for text in (JSON_LIC, "This is non-commercial only. " + MIT, "PolyForm Noncommercial 1.0.0", "All rights reserved."):
+        for text in (JSON_LIC, "This is non-commercial only. " + MIT, "PolyForm Noncommercial 1.0.0", "Copyright 2020 X. All rights reserved.", "This software is proprietary."):
             self.assertIn("isn't an open-source license", run(lic_gh({"LICENSE": text})).failures[0], text)
+
+    def test_all_rights_reserved_with_osi_text_passes(self):
+        bsd3 = (
+            "Copyright (c) 2020 X. All rights reserved.\nRedistribution and use in source and binary forms, "
+            "with or without modification, are permitted. Neither the name of X nor the names of contributors "
+            "may be used. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS AS IS."
+        )
+        self.assertEqual(run(lic_gh({"LICENSE": bsd3})).failures, [])
+        self.assertEqual(run(lic_gh({"LICENSE": "Copyright (c) 2020 X. All rights reserved.\n" + MIT}), "rot").rot, "ok")
 
     def test_opener_alone_is_not_mit(self):
         g = lic_gh({"LICENSE": "Permission is hereby granted, free of charge, to anyone."})

@@ -26,9 +26,12 @@ NON_OSI = [
     ("PolyForm", "PolyForm"),
     ("Functional Source License", "Functional Source License"),
     ("Fair Source", "Fair Source"),
+    ("good, not evil", "JSON License"),
+]
+# Standard BSD and MIT headers say "All rights reserved", so these only count when no OSI license is found.
+WEAK_NON_OSI = [
     ("proprietary", "proprietary"),
     ("all rights reserved", "all rights reserved"),
-    ("good, not evil", "JSON License"),
 ]
 
 # (SPDX ID, phrases that must all appear, phrases that must not). The first phrase is the
@@ -86,9 +89,9 @@ def _norm(text: str) -> str:
     return re.sub(r"\s+", " ", text).lower()
 
 
-def _non_osi(text: str) -> str | None:
+def _non_osi(text: str, markers=NON_OSI) -> str | None:
     t = _norm(text)
-    return next((name for marker, name in NON_OSI if marker.lower() in t), None)
+    return next((name for marker, name in markers if marker.lower() in t), None)
 
 
 def _id_ok(i: str) -> bool:
@@ -197,7 +200,7 @@ def _detect_text(text: str) -> tuple[str | None, str | None]:
     for spdx, need, forbid in PHRASES:
         if all(p in t for p in need) and not any(p in t for p in forbid):
             return spdx, None
-    return None, None
+    return None, _non_osi(text, WEAK_NON_OSI)
 
 
 def _readme_license(readme: str) -> tuple[str | None, str | None]:
@@ -224,6 +227,9 @@ def _readme_license(readme: str) -> tuple[str | None, str | None]:
             m = NAME_RE.search(low)
             if m and not NEGATION_RE.search(low):
                 return NAMES[m.group(1)], None
+        bad = _non_osi(section, WEAK_NON_OSI)
+        if bad:
+            return None, bad
     return None, None
 
 

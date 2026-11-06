@@ -209,6 +209,7 @@ def routes(rot=None, discussions=None, flags=None, extra=None):
         f"PUT {API}/contents/rot.json": None,
         f"PUT {API}/contents/discussions.json": None,
         f"PUT {API}/contents/flags.json": None,
+        f"PUT {API}/contents/renames.json": None,
         f"GET {API}/git/ref/heads/stats": {"ref": "refs/heads/stats"},
     }
     r.update(extra or {})
@@ -241,7 +242,7 @@ def store(files=None, extra=None, conflicts=()):
         return answer
 
     r = {f"GET {API}/git/ref/heads/stats": {"ref": "refs/heads/stats"}}
-    for path in ("rot.json", "discussions.json", "flags.json"):
+    for path in ("rot.json", "discussions.json", "flags.json", "likes.json", "meta.json", "renames.json"):
         r[f"GET {API}/contents/{path}"] = get(path)
         r[f"PUT {API}/contents/{path}"] = put(path)
     r.update(extra or {})
@@ -482,6 +483,20 @@ class FinishTest(unittest.TestCase):
         last_put = max(i for i, c in enumerate(g.calls) if c[0] == "PUT")
         first_gql = min(i for i, c in enumerate(g.calls) if c[0] == "GRAPHQL")
         self.assertLess(last_put, first_gql)
+
+    def test_rename_moves_likes_and_meta_and_records_the_rename(self):
+        likes = {"likes": 9, "delta_7d": 1, "rank": 1, "rank_delta_7d": 0, "flagged": False}
+        stale = {"to": "x/y", "at": iso(NOW - timedelta(days=8))}
+        recent = {"to": "c/d", "at": iso(NOW - timedelta(days=6))}
+        r, state = store({"discussions.json": {"alice/tool": 5}, "likes.json": {"alice/tool": likes},
+                          "meta.json": {"alice/tool": {"stars": 3}},
+                          "renames.json": {"old/gone": stale, "a/b": recent}}, threads({5: "alice/tool"}))
+        finish(FakeGitHub(r), self.plan([Action("rename", "alice/tool-ng", "", "alice/tool")]), now=NOW)
+        # The deploy after this run reads likes.json and meta.json under the new name.
+        self.assertEqual(state["likes.json"], {"alice/tool-ng": likes})
+        self.assertEqual(state["meta.json"], {"alice/tool-ng": {"stars": 3}})
+        # sync_likes reads old snapshots through this; past the 7-day baseline a record is dead weight.
+        self.assertEqual(state["renames.json"], {"a/b": recent, "alice/tool": {"to": "alice/tool-ng", "at": iso(NOW)}})
 
     def test_comments_on_each_entry_discussion(self):
         r = routes(

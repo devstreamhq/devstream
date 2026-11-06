@@ -51,6 +51,9 @@ RATE_LIMIT = "You've hit the daily limit of 5 reports. Try again tomorrow."
 COUNTED = ("spam", "other")
 # A spam or other report counts toward a hide for this long.
 REPORT_MAX_AGE = timedelta(days=30)
+# hidden.json saying hidden while the entry is visible means "just un-hidden" only while on_merge is keeping it fresh.
+JUST_UNHIDDEN = timedelta(hours=2)
+TIMESTAMP = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z")
 ERROR = "Something went wrong on our side while handling this report. We've been pinged and will sort it out.\n"
 
 
@@ -125,18 +128,23 @@ def _unedited(gh, numbers: list[int]) -> set[int]:
     return {n for k, n in enumerate(numbers) if (data.get(f"i{k}") or {"lastEditedAt": "gone"})["lastEditedAt"] is None}
 
 
-def _parse(s: str) -> datetime:
-    return datetime.fromisoformat(s.replace("Z", "+00:00"))
+def _parse(s) -> datetime:
+    """Strict UTC timestamp: fromisoformat would take a bare date or a naive time."""
+    if not isinstance(s, str) or not TIMESTAMP.fullmatch(s):
+        raise ValueError(f"bad timestamp: {s!r}")
+    return datetime.strptime(s, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
 
 
 def _counts_since(repo: str, gh, now: datetime) -> datetime:
     """Reports filed before this don't count: too old, or already reviewed when a maintainer un-hid the entry."""
     since = now - REPORT_MAX_AGE
+    # No hidden.json yet means the plain 30-day window, as before it existed.
     rec = (read_json(gh, "hidden.json")[0] or {}).get(normalize_repo(repo)) or {}
-    if rec.get("hidden"):
-        # Hidden at on_merge's last look but visible now: un-hidden within the hour, after every report so far.
+    # Hidden at on_merge's last look but visible now: un-hidden since, after every report so far.
+    # A stale look means on_merge is failing, so fall back rather than block hides indefinitely.
+    if rec.get("hidden") and now - _parse(rec.get("seen_at")) <= JUST_UNHIDDEN:
         return now
-    if rec.get("unhidden_at"):
+    if rec.get("unhidden_at") is not None:
         since = max(since, _parse(rec["unhidden_at"]))
     return since
 

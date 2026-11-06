@@ -142,11 +142,29 @@ class ThresholdTest(unittest.TestCase):
         self.assertIn("hide", kinds(run(g=g, open_reports=after)))
 
     def test_unhidden_since_the_last_snapshot_counts_nothing_yet(self):
-        g = gh(extra=hidden_json({"alice/tool": {"hidden": True, "unhidden_at": None}}))
+        rec = {"hidden": True, "unhidden_at": None, "seen_at": iso(NOW - timedelta(minutes=50))}
+        g = gh(extra=hidden_json({"alice/tool": rec}))
         self.assertNotIn("hide", kinds(run(g=g, open_reports=[report(8, "dave"), report(9, "erin")])))
 
+    def test_stale_snapshot_falls_back_to_the_window(self):
+        rec = {"hidden": True, "unhidden_at": None, "seen_at": iso(NOW - timedelta(hours=3))}
+        g = gh(extra=hidden_json({"alice/tool": rec}))
+        self.assertIn("hide", kinds(run(g=g, open_reports=[report(8, "dave"), report(9, "erin")])))
+
+    def test_unreadable_hidden_json_raises_and_hides_nothing(self):
+        raw = base64.b64encode(b"{not json").decode()
+        g = gh(extra={f"GET {API}/contents/hidden.json": {"content": raw, "sha": "h1"}})
+        with self.assertRaises(ValueError):
+            run(g=g, open_reports=[report(8, "dave"), report(9, "erin")])
+
+    def test_malformed_or_naive_unhidden_at_raises(self):
+        for bad in ("2026-11-05", "2026-11-05T10:00:00", "2026-11-05T10:00:00+00:00", "２０２６-11-05T10:00:00Z", 5):
+            g = gh(extra=hidden_json({"alice/tool": {"hidden": False, "unhidden_at": bad}}))
+            with self.assertRaises(ValueError, msg=bad):
+                run(g=g, open_reports=[report(8, "dave"), report(9, "erin")])
+
     def test_unhide_of_another_entry_does_not_matter(self):
-        g = gh(extra=hidden_json({"alice/other": {"hidden": True, "unhidden_at": None}}))
+        g = gh(extra=hidden_json({"alice/other": {"hidden": True, "unhidden_at": None, "seen_at": iso(NOW)}}))
         self.assertIn("hide", kinds(run(g=g, open_reports=[report(8, "dave"), report(9, "erin")])))
 
     def test_something_else_counts_the_same_way(self):

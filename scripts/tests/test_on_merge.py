@@ -1,12 +1,13 @@
 import base64
 import json
 import unittest
+from unittest import mock
 from pathlib import Path
 
 from scripts.devstream.gh import GitHubError
 from datetime import datetime, timezone
 
-from scripts.on_merge import CAP, run, track_hidden
+from scripts.on_merge import CAP, main, run, track_hidden
 from scripts.tests.fake_gh import FakeGitHub
 
 FILE = "/repos/devstreamhq/devstream/contents/discussions.json"
@@ -175,7 +176,7 @@ class TrackHidden(unittest.TestCase):
     def test_records_hidden_entries_only(self):
         g = hidden_gh()
         track_hidden(g, [entry(1), entry(2, "hidden")], AT)
-        self.assertEqual(written(g), {"o/r2": {"hidden": True, "unhidden_at": None}})
+        self.assertEqual(written(g), {"o/r2": {"hidden": True, "unhidden_at": None, "seen_at": "2026-11-06T15:00:00Z"}})
 
     def test_stamps_an_unhide(self):
         g = hidden_gh({"o/r1": {"hidden": True, "unhidden_at": None}})
@@ -189,12 +190,27 @@ class TrackHidden(unittest.TestCase):
         self.assertEqual(written(g), {"o/r1": stamp})
         g = hidden_gh({"o/r1": stamp})
         track_hidden(g, [entry(1, "hidden")], AT)
-        self.assertEqual(written(g), {"o/r1": {"hidden": True, "unhidden_at": "2026-10-01T00:00:00Z"}})
+        self.assertEqual(written(g), {"o/r1": {"hidden": True, "unhidden_at": "2026-10-01T00:00:00Z",
+                                               "seen_at": "2026-11-06T15:00:00Z"}})
 
     def test_no_put_when_unchanged(self):
-        g = hidden_gh({"o/r2": {"hidden": True, "unhidden_at": None}})
-        track_hidden(g, [entry(1), entry(2, "hidden")], AT)
+        g = hidden_gh({"o/r2": {"hidden": False, "unhidden_at": "2026-10-01T00:00:00Z"}})
+        track_hidden(g, [entry(1), entry(2)], AT)
         self.assertEqual(puts(g), [])
+
+    def test_failed_hidden_write_still_syncs_discussions(self):
+        g = gh()
+
+        def boom(b):
+            raise GitHubError(500, "boom")
+        g.routes[f"PUT {HIDDEN}"] = boom
+        with mock.patch("scripts.on_merge.GitHub", return_value=g), \
+                mock.patch("scripts.on_merge.entries_mod.load", return_value=[entry(1), entry(2, "hidden")]), \
+                mock.patch.dict("os.environ", {"GITHUB_TOKEN": "t"}), \
+                self.assertLogs(level="ERROR") as logs:
+            main()
+        self.assertIn("could not write hidden.json", logs.output[0])
+        self.assertEqual(written(g), {"o/r1": 101})
 
 
 class Workflows(unittest.TestCase):

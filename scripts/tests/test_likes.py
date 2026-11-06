@@ -394,6 +394,26 @@ class Burst(unittest.TestCase):
         rec = {"kind": kind, "issue": issue, "opened_at": iso(NOW - timedelta(days=2)), "reviewed_at": reviewed}
         return {"flags.json": {"o/a": {kind: rec}}}
 
+    def test_spent_flags_are_pruned(self):
+        def rec(kind, reviewed):
+            return {"kind": kind, "issue": 7, "opened_at": iso(NOW - timedelta(days=30)),
+                    "reviewed_at": None if reviewed is None else iso(NOW - reviewed)}
+        stats = {"flags.json": {
+            "o/a": {"burst": rec("burst", timedelta(days=2)), "drip": rec("drip", timedelta(days=3))},
+            "o/b": {"burst": rec("burst", timedelta(hours=2)), "drip": rec("drip", timedelta(days=8))},
+            "o/gone": {"burst": rec("burst", None)},
+        }}
+        w = World([entry("o/a"), entry("o/b", status="hidden")], {"o/a": [node("x")], "o/b": []},
+                  stats=stats, issues=[{"number": 7}])
+        w.run()
+        # Past its cooldown, off the list, or both kinds gone: dropped. Inside its cooldown: kept.
+        self.assertEqual(w.written("flags.json"), {"o/a": {"drip": rec("drip", timedelta(days=3))},
+                                                   "o/b": {"burst": rec("burst", timedelta(hours=2))}})
+        # Nothing else is spent, so the next run writes nothing.
+        w.persist()
+        w.run()
+        self.assertIsNone(w.written("flags.json"))
+
     def test_flag_persists_while_issue_open(self):
         w = World([entry("o/a")], {"o/a": [node("x")]}, stats=self.flags(), issues=[{"number": 7}])
         w.run()

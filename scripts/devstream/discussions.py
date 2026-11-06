@@ -4,6 +4,9 @@ from scripts.devstream.gh import GitHubError
 BOT_LOGIN = "devstreamhq-bot"
 SITE = "https://devstream.jamesconway.dev"
 REMOVED_PREFIX = "Removed: "
+# The thread's trust line, matching trust.py and the site. COUNTS_OLD is what threads made before it say.
+COUNTS = "Each account counts once, if it's at least 30 days old and has a public repo or a contribution in the last year."
+COUNTS_OLD = "Every GitHub account counts once."
 
 _CATEGORY = """query LikesCategory {
   repository(owner: "devstreamhq", name: "devstream") {
@@ -69,9 +72,7 @@ def ensure_discussion(entry, gh, repo_id: str, category_id: str, existing: dict[
     body = (
         f"{entry['description'].replace('@', '@' + chr(0x200b))}\n\n"
         f"**Repo:** https://github.com/{repo}\n\n"
-        # Matches trust.py: newer or inactive accounts (and blocked ones) count zero.
-        "React with 👍 to Like it. Each GitHub account counts once, "
-        "as long as it's at least 30 days old and has some public activity.\n\n"
+        f"React with 👍 to Like it. {COUNTS}\n\n"
         f"See where it ranks: {SITE}"
     )
     data = gh.graphql(

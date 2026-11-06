@@ -134,7 +134,7 @@ class LicenseSearchTest(unittest.TestCase):
         self.assertLess(time.monotonic() - t, 1)
 
     def test_loose_phrases_rejected(self):
-        for text in (JSON_LIC, "This is non-commercial only.", "PolyForm Noncommercial 1.0.0", "Copyright 2020 X. All rights reserved.", "This software is proprietary."):
+        for text in (JSON_LIC, "PolyForm Noncommercial 1.0.0"):
             self.assertIn("isn't an open-source license", run(lic_gh({"LICENSE": text})).failures[0], text)
 
     def test_all_rights_reserved_with_osi_text_passes(self):
@@ -154,8 +154,13 @@ class LicenseSearchTest(unittest.TestCase):
                 text = "Copyright (c) 2024 Example. All rights reserved.\n\n" + f.read_text()
                 self.assertEqual(run(lic_gh({"LICENSE": text})).failures, [])
 
-    def test_noncommercial_alone_is_rejected(self):
-        self.assertIn("non-commercial", run(lic_gh({"LICENSE": "For noncommercial use only."})).failures[0])
+    def test_weak_markers_alone_are_not_found(self):
+        for text in ("Copyright 2020 X. All rights reserved.", "This software is proprietary.", "For noncommercial use only."):
+            self.assertEqual(run(lic_gh({"LICENSE": text})).failures, [MSG_NOT_FOUND], text)
+
+    def test_readme_weak_marker_is_not_found(self):
+        r = run(lic_gh({}, readme=README + "\n## License\n\nProprietary.\n"))
+        self.assertEqual(r.failures, [MSG_NOT_FOUND])
 
     def test_deep_parens_fail_closed(self):
         for depth in (499, 60):

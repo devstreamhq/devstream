@@ -26,13 +26,6 @@ NON_OSI = [
     ("Fair Source", "Fair Source"),
     ("good, not evil", "JSON License"),
 ]
-# GPL-2 and GPL-3 say "noncommercial" in their own text, and standard BSD and MIT headers say "All rights reserved", so these only count when no OSI license is found.
-WEAK_NON_OSI = [
-    ("non-commercial", "non-commercial"),
-    ("noncommercial", "non-commercial"),
-    ("proprietary", "proprietary"),
-    ("all rights reserved", "all rights reserved"),
-]
 
 # (SPDX ID, phrases that must all appear, phrases that must not). The first phrase is the
 # license's opening, the rest are standard text from deeper in the same license, so a
@@ -207,7 +200,7 @@ def _detect_text(text: str) -> tuple[str | None, str | None]:
     for spdx, need, forbid in PHRASES:
         if all(p in t for p in need) and not any(p in t for p in forbid):
             return spdx, None
-    return None, _non_osi(text, WEAK_NON_OSI)
+    return None, None
 
 
 def _readme_license(readme: str) -> tuple[str | None, str | None]:
@@ -234,9 +227,6 @@ def _readme_license(readme: str) -> tuple[str | None, str | None]:
             m = NAME_RE.search(low)
             if m and not NEGATION_RE.search(low):
                 return NAMES[m.group(1)], None
-        bad = _non_osi(section, WEAK_NON_OSI)
-        if bad:
-            return None, bad
     return None, None
 
 

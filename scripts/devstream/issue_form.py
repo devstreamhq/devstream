@@ -12,6 +12,9 @@ HEADINGS = {
 CHECKS = ("i read the quality bar", "this repo is open source")
 BAD_REPO = "That doesn't look like a GitHub repo link."
 INCOMPLETE = "The form looks incomplete. Please open a new submission and fill in every field."
+HEADING_IN_DESCRIPTION = (
+    "Your description has a line starting with ###, which cuts it short. Please remove it and submit again."
+)
 REPO_RE = re.compile(r"^[A-Za-z0-9-]{1,39}/[A-Za-z0-9._-]{1,100}$")
 HOST_RE = re.compile(r"^(?:https?://)?(?:www\.)?github\.com/", re.I)
 
@@ -30,9 +33,10 @@ def _repo(raw: str) -> str:
         raise FormError(BAD_REPO)
     if len(parts) < 2:
         raise FormError(BAD_REPO)
-    owner, name = parts[0], parts[1].removesuffix(".git")
+    owner, name = parts[0], re.sub(r"\.git$", "", parts[1], flags=re.I)
     cand = f"{owner}/{name}"
-    if not REPO_RE.match(cand) or not name.strip("."):
+    # GitHub drops a .git suffix from new repo names, so a second one is never a real repo.
+    if not REPO_RE.match(cand) or not name.strip(".") or name.lower().endswith(".git"):
         raise FormError(BAD_REPO)
     return normalize_repo(cand)
 
@@ -60,6 +64,11 @@ def parse_submission(body: str) -> dict[str, str]:
     for k in HEADINGS.values():
         if not sections.get(k):
             raise FormError(INCOMPLETE)
+    # The form puts Checklist right after Description; any other heading there was typed into the answer.
+    heads = [h.strip().lower() for h in re.findall(r"^### (.+?)\s*$", body.replace("\r\n", "\n"), re.M)]
+    i = heads.index("description")
+    if heads[i + 1:i + 2] != ["checklist"]:
+        raise FormError(HEADING_IN_DESCRIPTION)
 
     checked = {
         m.group(1).strip().lower()

@@ -46,15 +46,19 @@ NON_OSI = [
 # Kept to wording that restricts; plenty of OSI texts talk about commercial use without limiting it.
 _MAY_NOT = r"\b(?:(?:may|must|shall|can|will)(?: not|not| never)|can't|cannot|won't|mustn't|shan't)"
 _USE = r"(?:use|used|usage|purposes?|projects?|products?)"
+# "No commercial use restrictions" lifts a limit rather than adding one.
+_NOT_A_LIMIT = r"(?![^.;]{0,30}?\b(?:restrictions?|limits?|limitations?|fees?)\b)"
 RESTRICTION_RE = re.compile("|".join([
     rf"{_MAY_NOT} (?:be )?(?:used?|sold|sell|resold|resell|redistributed?|distributed?)\b[^.;]{{0,40}}\bcommercial",
     rf"{_MAY_NOT} (?:be )?(?:sold|sell|resold|resell)\b",
     r"\bcommercial (?:use|usage|purposes?|distribution|exploitation)\b[^.;]{0,40}\b(?:is|are) "
     r"(?:not (?:permitted|allowed)|prohibited|forbidden)",
-    r"\b(?:no|without) commercial (?:use|usage|purposes?)\b",
+    rf"\b(?:no|without) commercial (?:use|usage|purposes?)\b{_NOT_A_LIMIT}",
     rf"\b(?:personal|private|non-?commercial|educational|academic) {_USE} only\b",
     rf"\bonly (?:for|be used for|be used in) (?:personal|private|non-?commercial|educational|academic) {_USE}",
-    r"\bcommercial (?:use|usage|purposes?)\b[^.;]{0,40}\brequires?\b",
+    # ...unless all it requires is the attribution or notice the license already asks for.
+    rf"\bcommercial (?:use|usage|purposes?)\b[^.;]{{0,40}}\brequires?\b{_NOT_A_LIMIT}"
+    r"(?![^.;]{0,40}?\b(?:attribution|notice|credit)\b)",
 ]))
 
 # (SPDX ID, phrases that must all appear, phrases that must not). The first phrase is the
@@ -232,8 +236,18 @@ def _spdx_scan(text: str, allowed: frozenset = frozenset()) -> tuple[str | None,
     return found, bad
 
 
+# A limit on using someone's trademark (MIT's Kerberos notice, bundled in MySQL's LICENSE) isn't a license term.
+TRADEMARK_RE = re.compile(r"\btrade ?marks?\b|\btrade names?\b|\bservice marks?\b|\blogos?\b")
+
+
 def _restricted(text: str) -> bool:
-    return bool(RESTRICTION_RE.search(_norm(text).replace("\u2019", "'")))
+    t = _norm(text).replace("\u2019", "'")
+    for m in RESTRICTION_RE.finditer(t):
+        start = max(t.rfind(".", 0, m.start()), t.rfind(";", 0, m.start())) + 1
+        end = min((i for i in (t.find(".", m.end()), t.find(";", m.end())) if i != -1), default=len(t))
+        if not TRADEMARK_RE.search(t[start:end]):
+            return True
+    return False
 
 
 def _detect_text(text: str, allowed: frozenset = frozenset()) -> tuple[str | None, str | None]:

@@ -86,7 +86,11 @@ export const badge = (live: SiteEntry[]) => ({
 });
 
 // shortcut: widths are estimated at 6.6px a character, not measured; fine for short ASCII labels.
-export function flatBadge(label: string, message: string, color: string): string {
+export function flatBadge(
+  label: string,
+  message: string,
+  color: string,
+): string {
   const lw = Math.round(label.length * 6.6 + 10);
   const rw = Math.round(message.length * 6.6 + 10);
   const w = lw + rw;

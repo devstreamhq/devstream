@@ -14,6 +14,7 @@ import re
 import sys
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from scripts.devstream.discussions import REMOVED_PREFIX
 from scripts.devstream.entries import DEFAULT_PATH, find, load, normalize_repo, save, sort_key
@@ -107,6 +108,15 @@ class Action:
     key: str  # stats key at the start of the run, which finds the Discussion
 
 
+# Dates people read are in US Central, like the site; stored times stay UTC.
+CENTRAL = ZoneInfo("America/Chicago")
+
+
+def _day(d: datetime) -> str:
+    d = d.astimezone(CENTRAL)
+    return f"{d.day} {d:%B %Y}"
+
+
 def _iso(d: datetime) -> str:
     return d.strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -138,7 +148,7 @@ def _verdict(e, r, now, rot) -> tuple[dict | None, list[Action]]:
             rot[key] = {"first_seen": _iso(now), "reason": " ".join(r.failures)}
             reasons = [f for f in r.failures if f in REMOVAL_REASONS] or r.failures
             date = now + CONFIRM
-            msg = NOTICE.format(repo=repo, date=f"{date.day} {date:%B %Y}", reasons=_bullets(reasons))
+            msg = NOTICE.format(repo=repo, date=_day(date), reasons=_bullets(reasons))
             acts.append(Action("notice", repo, msg, old))
         elif now - _parse(rec["first_seen"]) >= CONFIRM:
             del rot[key]
@@ -150,7 +160,7 @@ def _verdict(e, r, now, rot) -> tuple[dict | None, list[Action]]:
         if e["status"] == "live" or (e["status"] == "warned" and not e["warned_at"]):
             e = {**e, "status": "warned", "warned_at": _iso(now)}
             date = now + GRACE
-            msg = WARN.format(repo=repo, date=f"{date.day} {date:%B %Y}", reasons=_bullets(r.failures))
+            msg = WARN.format(repo=repo, date=_day(date), reasons=_bullets(r.failures))
             acts.append(Action("warn", repo, msg, old))
         elif e["status"] == "warned" and now - _parse(e["warned_at"]) >= GRACE:
             e = {**e, "status": "archived"}

@@ -97,7 +97,7 @@ jobs:
       group: list-writes
       cancel-in-progress: false
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
     permissions:
       contents: read
     steps:
@@ -195,9 +195,16 @@ jobs:
           GITHUB_TOKEN: ${{ steps.issues_token.outputs.token }}
           RESULT: ${{ runner.temp }}/result/result.json
         run: python -m scripts.reports issue --result "$RESULT"
-      # A genuine failure (apply error, push, PR, merge timeout) is parked for a maintainer:
+      # A cancel or job timeout releases the lock, so the armed PR must not merge behind the next writer.
+      # Timeouts reach this step too: the runner re-evaluates later steps' if: on any job cancellation.
+      - if: cancelled() && steps.pr.outputs.url != ''
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          PR_URL: ${{ steps.pr.outputs.url }}
+        run: gh pr close "$PR_URL" || true # fails if it merged meanwhile
+      # A genuine failure (apply error, push, PR, merge timeout, cancel) is parked for a maintainer:
       # needs-review stops the sweeper retrying it. The issue stays open.
-      - if: failure() && steps.issues_token.outputs.token != '' && steps.meta.outputs.issue != ''
+      - if: (failure() || cancelled()) && steps.issues_token.outputs.token != '' && steps.meta.outputs.issue != ''
         env:
           GITHUB_TOKEN: ${{ steps.issues_token.outputs.token }}
           RESULT: ${{ runner.temp }}/result/result.json

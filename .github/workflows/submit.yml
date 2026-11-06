@@ -72,7 +72,7 @@ jobs:
     needs: decide
     if: needs.decide.outputs.ok == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
     permissions:
       contents: read
     steps:
@@ -199,9 +199,16 @@ jobs:
           gh issue comment "$ISSUE" --body-file "$RUNNER_TEMP/comment.md"
           gh issue edit "$ISSUE" --add-label rejected
           gh issue close "$ISSUE" --reason "not planned"
-      # A genuine failure (apply error, push, PR, merge timeout) is parked for a human:
+      # A cancel or job timeout releases the lock, so the armed PR must not merge behind the next writer.
+      # Timeouts reach this step too: the runner re-evaluates later steps' if: on any job cancellation.
+      - if: cancelled() && steps.pr.outputs.url != ''
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          PR_URL: ${{ steps.pr.outputs.url }}
+        run: gh pr close "$PR_URL" || true # fails if it merged meanwhile
+      # A genuine failure (apply error, push, PR, merge timeout, cancel) is parked for a human:
       # the sweeper skips needs-review, so it can't retry forever. The issue stays open.
-      - if: failure() && steps.issues_token.outputs.token != '' && steps.meta.outputs.issue != ''
+      - if: (failure() || cancelled()) && steps.issues_token.outputs.token != '' && steps.meta.outputs.issue != ''
         env:
           GH_TOKEN: ${{ steps.issues_token.outputs.token }}
           RESULT: ${{ runner.temp }}/result/result.json

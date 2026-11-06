@@ -20,7 +20,7 @@ concurrency:
 
 env:
   # Must match site/package.json; site/tests/config.test.mjs checks it.
-  WRANGLER_VERSION: "4.158.0"
+  WRANGLER_VERSION: "4.157.0"
 
 jobs:
   build:

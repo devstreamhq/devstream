@@ -1,3 +1,4 @@
+import base64
 import io
 import json
 import os
@@ -33,9 +34,9 @@ def body(entry="https://github.com/alice/tool", reason="Spam or SEO", superseded
     )
 
 
-def report(n=7, login="carol", user_type="User", **kw):
+def report(n=7, login="carol", user_type="User", age=timedelta(hours=1), **kw):
     return {"number": n, "title": "Report: alice/tool", "user": {"login": login, "type": user_type},
-            "body": body(**kw), "labels": [{"name": "report"}], "state": "open"}
+            "body": body(**kw), "labels": [{"name": "report"}], "state": "open", "created_at": iso(NOW - age)}
 
 
 def entry(repo="alice/tool", status="live"):
@@ -98,6 +99,11 @@ def gh(counts=None, extra=None, edited=(), current=7):
     return FakeGitHub(routes)
 
 
+def hidden_json(data):
+    raw = base64.b64encode(json.dumps(data).encode()).decode()
+    return {f"GET {API}/contents/hidden.json": {"content": raw, "sha": "h1"}}
+
+
 def run(i=None, g=None, entries=None, open_reports=()):
     i = report() if i is None else i
     return handle_report(i, g or gh(), [entry()] if entries is None else entries,
@@ -123,6 +129,43 @@ class ThresholdTest(unittest.TestCase):
         self.assertIn(("hide", "alice/tool"), [(a.kind, a.value) for a in actions])
         self.assertIn("needs-review", labels(actions))
         self.assertIn("`alice/tool` is hidden", comments(actions)[0])
+
+    def test_old_reports_stop_counting(self):
+        self.assertNotIn("hide", kinds(run(open_reports=[report(8, "dave"), report(9, "erin", age=timedelta(days=31))])))
+        self.assertIn("hide", kinds(run(open_reports=[report(8, "dave"), report(9, "erin", age=timedelta(days=29))])))
+
+    def test_only_reports_after_an_unhide_count(self):
+        g = gh(extra=hidden_json({"alice/tool": {"hidden": False, "unhidden_at": iso(NOW - timedelta(hours=2))}}))
+        before = [report(8, "dave", age=timedelta(hours=3)), report(9, "erin", age=timedelta(hours=3))]
+        self.assertNotIn("hide", kinds(run(g=g, open_reports=before)))
+        after = [report(8, "dave"), report(9, "erin")]
+        self.assertIn("hide", kinds(run(g=g, open_reports=after)))
+
+    def test_unhidden_since_the_last_snapshot_counts_nothing_yet(self):
+        rec = {"hidden": True, "unhidden_at": None, "seen_at": iso(NOW - timedelta(minutes=50))}
+        g = gh(extra=hidden_json({"alice/tool": rec}))
+        self.assertNotIn("hide", kinds(run(g=g, open_reports=[report(8, "dave"), report(9, "erin")])))
+
+    def test_stale_snapshot_falls_back_to_the_window(self):
+        rec = {"hidden": True, "unhidden_at": None, "seen_at": iso(NOW - timedelta(hours=3))}
+        g = gh(extra=hidden_json({"alice/tool": rec}))
+        self.assertIn("hide", kinds(run(g=g, open_reports=[report(8, "dave"), report(9, "erin")])))
+
+    def test_unreadable_hidden_json_raises_and_hides_nothing(self):
+        raw = base64.b64encode(b"{not json").decode()
+        g = gh(extra={f"GET {API}/contents/hidden.json": {"content": raw, "sha": "h1"}})
+        with self.assertRaises(ValueError):
+            run(g=g, open_reports=[report(8, "dave"), report(9, "erin")])
+
+    def test_malformed_or_naive_unhidden_at_raises(self):
+        for bad in ("2026-11-05", "2026-11-05T10:00:00", "2026-11-05T10:00:00+00:00", "２０２６-11-05T10:00:00Z", 5):
+            g = gh(extra=hidden_json({"alice/tool": {"hidden": False, "unhidden_at": bad}}))
+            with self.assertRaises(ValueError, msg=bad):
+                run(g=g, open_reports=[report(8, "dave"), report(9, "erin")])
+
+    def test_unhide_of_another_entry_does_not_matter(self):
+        g = gh(extra=hidden_json({"alice/other": {"hidden": True, "unhidden_at": None, "seen_at": iso(NOW)}}))
+        self.assertIn("hide", kinds(run(g=g, open_reports=[report(8, "dave"), report(9, "erin")])))
 
     def test_something_else_counts_the_same_way(self):
         others = [report(8, "dave"), report(9, "erin")]

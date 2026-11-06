@@ -41,6 +41,7 @@ jobs:
           python-version: "3.12"
       # Org block reads need an App token; GITHUB_TOKEN can't see them.
       # actions: read lists recent health checks, so a dead report doesn't queue a repeat.
+      # contents: read reads hidden.json on the stats branch, so reports from before an un-hide don't count.
       - id: token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
@@ -49,6 +50,7 @@ jobs:
           permission-organization-user-blocking: read
           permission-issues: read
           permission-actions: read
+          permission-contents: read
       # An API failure exits non-zero with no result file, so nothing is acted on.
       # It also writes undecided.json, counted below; a rate limit that hasn't reset yet writes nothing.
       # A dispatched issue that is already handled, or a bot's issue, exits 0 with no result file.

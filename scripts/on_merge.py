@@ -1,6 +1,7 @@
 import os
 import logging
 import time
+from datetime import datetime, timezone
 
 from scripts.devstream import entries as entries_mod
 from scripts.devstream.discussions import ensure_discussion, likes_category, list_discussions
@@ -76,8 +77,41 @@ def run(gh, entries, sleep=time.sleep):
             logging.exception("could not write discussions.json or renames.json")
 
 
+def track_hidden(gh, entries, now: datetime) -> None:
+    """Keep hidden.json: which entries are hidden, and when a maintainer last un-hid one.
+
+    reports.py ignores reports filed before an un-hide, so the reports already reviewed can't hide it again.
+    seen_at on a hidden record says when this run last saw it hidden.
+    shortcut: an hourly snapshot misses a hide and un-hide inside the same hour; record both from
+    the hide job if that ever matters.
+    shortcut: records are keyed by name, so a hidden entry renamed by rot loses its record; key by
+    repo_id if that matters.
+    """
+    listed = {normalize_repo(e["repo"]): e["status"] == "hidden" for e in entries}
+    stamp = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    def mutate(stored):
+        out = {}
+        for k, hidden in listed.items():
+            was = stored.get(k) or {}
+            if hidden:
+                out[k] = {"hidden": True, "unhidden_at": was.get("unhidden_at"), "seen_at": stamp}
+            elif was.get("hidden"):
+                out[k] = {"hidden": False, "unhidden_at": stamp}
+            elif was:
+                out[k] = was
+        return out
+    update_json(gh, "hidden.json", mutate, "chore(stats): track hidden entries")
+
+
 def main():
-    run(GitHub(os.environ["GITHUB_TOKEN"]), entries_mod.load())
+    gh, entries = GitHub(os.environ["GITHUB_TOKEN"]), entries_mod.load()
+    try:
+        track_hidden(gh, entries, datetime.now(timezone.utc))
+    except Exception:
+        # Old reports may count for a while; that mustn't stop the Discussions sync.
+        logging.exception("could not write hidden.json")
+    run(gh, entries)
 
 
 if __name__ == "__main__":

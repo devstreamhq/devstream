@@ -23,6 +23,7 @@ from scripts.devstream.attempts import note_failure, record_from_file, spends_at
 from scripts.devstream.entries import DEFAULT_PATH, find, load, normalize_repo, save
 from scripts.devstream.gh import GitHub
 from scripts.devstream.issue_form import FormError, _repo, parse_report
+from scripts.devstream.stats import read_json
 from scripts.devstream.trust import ACTIVITY_QUERY, LOGIN_RE, blocked_logins, check_user
 from scripts.validate_data import validate
 
@@ -48,6 +49,11 @@ UNTRUSTED = (
 )
 RATE_LIMIT = "You've hit the daily limit of 5 reports. Try again tomorrow."
 COUNTED = ("spam", "other")
+# A spam or other report counts toward a hide for this long.
+REPORT_MAX_AGE = timedelta(days=30)
+# hidden.json saying hidden while the entry is visible means "just un-hidden" only while on_merge is keeping it fresh.
+JUST_UNHIDDEN = timedelta(hours=2)
+TIMESTAMP = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z")
 ERROR = "Something went wrong on our side while handling this report. We've been pinged and will sort it out.\n"
 
 
@@ -122,11 +128,32 @@ def _unedited(gh, numbers: list[int]) -> set[int]:
     return {n for k, n in enumerate(numbers) if (data.get(f"i{k}") or {"lastEditedAt": "gone"})["lastEditedAt"] is None}
 
 
-def _reporters(repo: str, open_reports: list[dict], gh) -> set[str]:
-    """Distinct human logins with an open, unedited spam or other report on repo."""
+def _parse(s) -> datetime:
+    """Strict UTC timestamp: fromisoformat would take a bare date or a naive time."""
+    if not isinstance(s, str) or not TIMESTAMP.fullmatch(s):
+        raise ValueError(f"bad timestamp: {s!r}")
+    return datetime.strptime(s, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+
+
+def _counts_since(repo: str, gh, now: datetime) -> datetime:
+    """Reports filed before this don't count: too old, or already reviewed when a maintainer un-hid the entry."""
+    since = now - REPORT_MAX_AGE
+    # No hidden.json yet means the plain 30-day window, as before it existed.
+    rec = (read_json(gh, "hidden.json")[0] or {}).get(normalize_repo(repo)) or {}
+    # Hidden at on_merge's last look but visible now: un-hidden since, after every report so far.
+    # A stale look means on_merge is failing, so fall back rather than block hides indefinitely.
+    if rec.get("hidden") and now - _parse(rec.get("seen_at")) <= JUST_UNHIDDEN:
+        return now
+    if rec.get("unhidden_at") is not None:
+        since = max(since, _parse(rec["unhidden_at"]))
+    return since
+
+
+def _reporters(repo: str, open_reports: list[dict], gh, since: datetime) -> set[str]:
+    """Distinct human logins with an open, unedited spam or other report on repo, filed after since."""
     found = {}
     for r in open_reports:
-        if _is_bot(r) or "pull_request" in r:
+        if _is_bot(r) or "pull_request" in r or _parse(r["created_at"]) < since:
             continue
         try:
             form = parse_report(r.get("body") or "")
@@ -190,7 +217,7 @@ def handle_report(issue: dict, gh, entries: list, open_reports: list[dict],
     if reason in ("spam", "other"):
         counted = 0
         others = [r for r in open_reports if r.get("number") != issue["number"]]
-        for who in sorted(_reporters(repo, [issue, *others], gh)):
+        for who in sorted(_reporters(repo, [issue, *others], gh, _counts_since(repo, gh, now))):
             if check_user(who, gh, now, excluded) is None and _established(who, gh, now):
                 counted += 1
                 if counted >= HIDE_AT:

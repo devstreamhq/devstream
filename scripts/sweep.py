@@ -24,6 +24,8 @@ ROT_RETRY = timedelta(days=1)
 ROT_BRANCH = re.compile(r"rot/[0-9]{1,20}")
 # rot.yml's run-name for a full run; a one-repo re-check ("Health check: owner/name") doesn't cover the list.
 FULL_ROT = "Health check"
+# Both are hourly; GitHub skips scheduled runs under load, so a sweep that runs restarts a stalled one.
+HOURLY_STALE = timedelta(hours=2)
 
 
 def _parse(s: str) -> datetime:
@@ -107,6 +109,19 @@ def _rot_overdue(gh, now) -> bool:
     return latest is None or now - latest > ROT_RETRY
 
 
+def _stale(gh, wf, now) -> bool:
+    page = gh.get(f"{API}/actions/workflows/{wf}/runs?per_page=1")["workflow_runs"]
+    return not page or now - _parse(page[0]["created_at"]) > HOURLY_STALE
+
+
+def _dispatch_if_stale(gh, wf, now) -> bool:
+    if not _stale(gh, wf, now):
+        return False
+    gh.post(f"{API}/actions/workflows/{wf}/dispatches", {"ref": "main"})
+    print(f"dispatched {wf}: no run in {HOURLY_STALE}")
+    return True
+
+
 def _list_write_waiting(gh) -> bool:
     # These share the list-writes group, which holds one waiting run.
     return any(
@@ -136,6 +151,8 @@ def sweep(gh, now: datetime, entries=()) -> None:
     busy = _sweep_branches(gh, now)
     _sweep_rot_branches(gh, now)
     _close_rot_prs(gh, now)
+    # Likes has its own concurrency group, so it never waits on list-writes.
+    _dispatch_if_stale(gh, "likes.yml", now)
     # The list-writes group keeps one pending run and cancels older ones, so never queue behind a waiting run.
     if _list_write_waiting(gh):
         print("a list-writes run is already waiting")
@@ -165,6 +182,8 @@ def sweep(gh, now: datetime, entries=()) -> None:
                 continue
             todo.append((issue, workflow))
     if not todo:
+        # Nothing else wants the list-writes slot, so a stalled hourly on-merge can have it.
+        _dispatch_if_stale(gh, "on-merge.yml", now)
         return
     oldest, workflow = min(todo, key=lambda t: _parse(t[0]["created_at"]))
     gh.post(f"{API}/actions/workflows/{workflow}/dispatches",

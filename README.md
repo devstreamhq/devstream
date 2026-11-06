@@ -12,6 +12,7 @@
   <a href="https://github.com/devstreamhq/devstream/discussions"><img src="https://img.shields.io/badge/discussions-join%20in-blue?logo=github" alt="GitHub Discussions"></a>
   <a href="https://devstream.jamesconway.dev"><img src="https://img.shields.io/badge/site-devstream.jamesconway.dev-c4155f" alt="Website"></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/devstreamhq/devstream"><img src="https://devstream.jamesconway.dev/scorecard.svg" alt="OpenSSF Scorecard"></a>
+  <a href="https://www.bestpractices.dev/projects/16375"><img src="https://www.bestpractices.dev/projects/16375/badge" alt="OpenSSF Best Practices"></a>
 </p>
 
 Awesome lists rot. That link someone merged in 2019 is still sitting there, long after the repo's last commit, and the star count beside it only tells you who got excited once. DevStream checks a repo before it lands and again every week. Then it ranks what survives by Likes, one per account.

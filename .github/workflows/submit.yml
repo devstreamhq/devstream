@@ -164,9 +164,25 @@ jobs:
           [ "$(gh pr view "$PR_URL" --json state --jq .state)" = MERGED ] && exit 0
           echo "::error::$PR_URL did not merge within 15 minutes and is now closed"
           exit 1
+      # Minted after the merge wait, so no later step runs on a token that expired during it.
+      - id: late_token
+        if: always() && steps.pr.outputs.url != ''
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+      - id: late_issues_token
+        if: always() && steps.issues_token.outputs.token != ''
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-issues: write
       - if: steps.apply.outputs.branch != ''
         env:
-          GH_TOKEN: ${{ steps.issues_token.outputs.token }}
+          GH_TOKEN: ${{ steps.late_issues_token.outputs.token || steps.issues_token.outputs.token }}
           RESULT: ${{ runner.temp }}/result/result.json
           ISSUE: ${{ steps.meta.outputs.issue }}
         run: |
@@ -191,7 +207,7 @@ jobs:
         run: python -m scripts.on_merge
       - if: steps.apply.outputs.branch == ''
         env:
-          GH_TOKEN: ${{ steps.issues_token.outputs.token }}
+          GH_TOKEN: ${{ steps.late_issues_token.outputs.token || steps.issues_token.outputs.token }}
           RESULT: ${{ runner.temp }}/result/result.json
           ISSUE: ${{ steps.meta.outputs.issue }}
         run: |
@@ -203,14 +219,14 @@ jobs:
       # Timeouts reach this step too: the runner re-evaluates later steps' if: on any job cancellation.
       - if: cancelled() && steps.pr.outputs.url != ''
         env:
-          GH_TOKEN: ${{ steps.token.outputs.token }}
+          GH_TOKEN: ${{ steps.late_token.outputs.token || steps.token.outputs.token }}
           PR_URL: ${{ steps.pr.outputs.url }}
         run: gh pr close "$PR_URL" || true # fails if it merged meanwhile
       # A genuine failure (apply error, push, PR, merge timeout, cancel) is parked for a human:
       # the sweeper skips needs-review, so it can't retry forever. The issue stays open.
       - if: (failure() || cancelled()) && steps.issues_token.outputs.token != '' && steps.meta.outputs.issue != ''
         env:
-          GH_TOKEN: ${{ steps.issues_token.outputs.token }}
+          GH_TOKEN: ${{ steps.late_issues_token.outputs.token || steps.issues_token.outputs.token }}
           RESULT: ${{ runner.temp }}/result/result.json
           ISSUE: ${{ steps.meta.outputs.issue }}
         run: |

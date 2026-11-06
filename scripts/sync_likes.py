@@ -35,7 +35,7 @@ LABELS = ["report", "needs-review"]
 COOLDOWN = {"burst": DAY, "drip": WEEK}
 SNAPSHOTS_KEPT = 30
 # A rename's finish normally follows its merge within minutes; past this, sync rather than freeze the board.
-RENAME_WAIT = timedelta(hours=3)
+RENAME_WAIT = timedelta(hours=3)  # timed from likes.json's last commit, which a quiet board may have aged past 3h already
 
 
 def _parse(s: str) -> datetime:

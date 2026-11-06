@@ -4,7 +4,9 @@ import unittest
 from pathlib import Path
 
 from scripts.devstream.gh import GitHubError
-from scripts.on_merge import CAP, run
+from datetime import datetime, timezone
+
+from scripts.on_merge import CAP, run, track_hidden
 from scripts.tests.fake_gh import FakeGitHub
 
 FILE = "/repos/devstreamhq/devstream/contents/discussions.json"
@@ -156,6 +158,43 @@ WORKFLOWS = Path(__file__).resolve().parents[2] / ".github" / "workflows"
 def step_after(text, marker):
     """The text from marker to the end of the file."""
     return text[text.index(marker):]
+
+
+HIDDEN = "/repos/devstreamhq/devstream/contents/hidden.json"
+AT = datetime(2026, 11, 6, 15, 0, tzinfo=timezone.utc)
+
+
+def hidden_gh(stored=None):
+    routes = {f"PUT {HIDDEN}": {}}
+    if stored is not None:
+        routes[f"GET {HIDDEN}"] = {"content": base64.b64encode(json.dumps(stored).encode()).decode(), "sha": "h1"}
+    return FakeGitHub(routes)
+
+
+class TrackHidden(unittest.TestCase):
+    def test_records_hidden_entries_only(self):
+        g = hidden_gh()
+        track_hidden(g, [entry(1), entry(2, "hidden")], AT)
+        self.assertEqual(written(g), {"o/r2": {"hidden": True, "unhidden_at": None}})
+
+    def test_stamps_an_unhide(self):
+        g = hidden_gh({"o/r1": {"hidden": True, "unhidden_at": None}})
+        track_hidden(g, [entry(1)], AT)
+        self.assertEqual(written(g), {"o/r1": {"hidden": False, "unhidden_at": "2026-11-06T15:00:00Z"}})
+
+    def test_keeps_the_stamp_and_drops_entries_off_the_list(self):
+        stamp = {"hidden": False, "unhidden_at": "2026-10-01T00:00:00Z"}
+        g = hidden_gh({"o/r1": stamp, "o/gone": {"hidden": True, "unhidden_at": None}})
+        track_hidden(g, [entry(1)], AT)
+        self.assertEqual(written(g), {"o/r1": stamp})
+        g = hidden_gh({"o/r1": stamp})
+        track_hidden(g, [entry(1, "hidden")], AT)
+        self.assertEqual(written(g), {"o/r1": {"hidden": True, "unhidden_at": "2026-10-01T00:00:00Z"}})
+
+    def test_no_put_when_unchanged(self):
+        g = hidden_gh({"o/r2": {"hidden": True, "unhidden_at": None}})
+        track_hidden(g, [entry(1), entry(2, "hidden")], AT)
+        self.assertEqual(puts(g), [])
 
 
 class Workflows(unittest.TestCase):

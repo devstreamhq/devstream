@@ -23,6 +23,7 @@ from scripts.devstream.attempts import note_failure, record_from_file, spends_at
 from scripts.devstream.entries import DEFAULT_PATH, find, load, normalize_repo, save
 from scripts.devstream.gh import GitHub
 from scripts.devstream.issue_form import FormError, _repo, parse_report
+from scripts.devstream.stats import read_json
 from scripts.devstream.trust import ACTIVITY_QUERY, LOGIN_RE, blocked_logins, check_user
 from scripts.validate_data import validate
 
@@ -48,6 +49,8 @@ UNTRUSTED = (
 )
 RATE_LIMIT = "You've hit the daily limit of 5 reports. Try again tomorrow."
 COUNTED = ("spam", "other")
+# A spam or other report counts toward a hide for this long.
+REPORT_MAX_AGE = timedelta(days=30)
 ERROR = "Something went wrong on our side while handling this report. We've been pinged and will sort it out.\n"
 
 
@@ -122,11 +125,27 @@ def _unedited(gh, numbers: list[int]) -> set[int]:
     return {n for k, n in enumerate(numbers) if (data.get(f"i{k}") or {"lastEditedAt": "gone"})["lastEditedAt"] is None}
 
 
-def _reporters(repo: str, open_reports: list[dict], gh) -> set[str]:
-    """Distinct human logins with an open, unedited spam or other report on repo."""
+def _parse(s: str) -> datetime:
+    return datetime.fromisoformat(s.replace("Z", "+00:00"))
+
+
+def _counts_since(repo: str, gh, now: datetime) -> datetime:
+    """Reports filed before this don't count: too old, or already reviewed when a maintainer un-hid the entry."""
+    since = now - REPORT_MAX_AGE
+    rec = (read_json(gh, "hidden.json")[0] or {}).get(normalize_repo(repo)) or {}
+    if rec.get("hidden"):
+        # Hidden at on_merge's last look but visible now: un-hidden within the hour, after every report so far.
+        return now
+    if rec.get("unhidden_at"):
+        since = max(since, _parse(rec["unhidden_at"]))
+    return since
+
+
+def _reporters(repo: str, open_reports: list[dict], gh, since: datetime) -> set[str]:
+    """Distinct human logins with an open, unedited spam or other report on repo, filed after since."""
     found = {}
     for r in open_reports:
-        if _is_bot(r) or "pull_request" in r:
+        if _is_bot(r) or "pull_request" in r or _parse(r["created_at"]) < since:
             continue
         try:
             form = parse_report(r.get("body") or "")
@@ -190,7 +209,7 @@ def handle_report(issue: dict, gh, entries: list, open_reports: list[dict],
     if reason in ("spam", "other"):
         counted = 0
         others = [r for r in open_reports if r.get("number") != issue["number"]]
-        for who in sorted(_reporters(repo, [issue, *others], gh)):
+        for who in sorted(_reporters(repo, [issue, *others], gh, _counts_since(repo, gh, now))):
             if check_user(who, gh, now, excluded) is None and _established(who, gh, now):
                 counted += 1
                 if counted >= HIDE_AT:

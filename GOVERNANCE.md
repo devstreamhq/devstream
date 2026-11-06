@@ -22,7 +22,7 @@ When a case doesn't fit the rules, a human looks at it. Anything a bot can't dec
 
 ## Moderation
 
-Anyone can [report an entry](https://github.com/devstreamhq/devstream/issues/new?template=report-entry.yml), and every report about a listed repo goes into the review queue. Some reports also act straight away. When 3 established accounts report the same entry as spam, or one established account reports it as malicious, the entry is hidden while I review it. A report that an entry is dead queues a health check.
+Anyone can [report an entry](https://github.com/devstreamhq/devstream/issues/new?template=report-entry.yml), and every report about a listed repo goes into the review queue. Some reports also act straight away. When 3 established accounts report the same entry as spam within 30 days, or one established account reports it as malicious, the entry is hidden while I review it. If I un-hide it, only reports filed after that count toward hiding it again. A report that an entry is dead queues a health check.
 
 Submissions whose description matches a term in `scripts/blocklist.txt` (SEO, casino, scam and similar spam) are rejected. Everything else is moderated by hand.
 

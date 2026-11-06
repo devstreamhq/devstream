@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22.6"
+    "node": ">=22.12"
   },
   "scripts": {
     "dev": "astro dev",
@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@primer/octicons": "19.15.0",
-    "astro": "5.18.2"
+    "astro": "7.3.3"
   },
   "devDependencies": {
     "wrangler": "4.157.0"

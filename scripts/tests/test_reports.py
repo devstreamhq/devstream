@@ -306,16 +306,16 @@ class ReasonTest(unittest.TestCase):
         call = next(c for c in g.calls if c[1].startswith(f"{API}/actions/workflows/rot.yml/runs"))
         self.assertIn("created=%3E%3D2026-11-04T12%3A00%3A00Z", call[1])
 
-    def test_sixth_dead_report_within_an_hour_is_parked(self):
+    def test_fourth_dead_report_within_an_hour_is_parked(self):
         dead = report(reason="Dead or abandoned")
-        five = [(timedelta(minutes=10 * k + 5), f"Health check: x/r{k}") for k in range(5)]
-        g = gh(extra=rot_runs(*five))
+        three = [(timedelta(minutes=15 * k + 5), f"Health check: x/r{k}") for k in range(3)]
+        g = gh(extra=rot_runs(*three))
         actions = run(dead, g)
         self.assertNotIn("dispatch_rot", kinds(actions))
         self.assertEqual(labels(actions), {"needs-review"})
         self.assertIn("a maintainer", comments(actions)[0])
-        # Four in the hour (the fifth is older) still dispatches.
-        g = gh(extra=rot_runs(*five[:4], (timedelta(minutes=61), "Health check: x/r4")))
+        # Two in the hour (the third is older) still dispatches.
+        g = gh(extra=rot_runs(*three[:2], (timedelta(minutes=61), "Health check: x/r2")))
         self.assertIn("dispatch_rot", kinds(run(dead, g)))
 
     def test_superseded_labels_and_validates(self):

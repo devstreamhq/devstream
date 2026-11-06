@@ -215,14 +215,23 @@ class GitHub:
         """allow_not_found returns data with nulls where only NOT_FOUND errors occurred.
         allow_forbidden also lets through FORBIDDEN errors on one alias (an org IP allow list)."""
         self.last_redirect = None
-        r = self._request("POST", "/graphql", body={"query": query, "variables": variables},
-                          read=bool(READ_QUERY.match(query, LEADING_COMMENTS.match(query).end())))
-        if r is None:
-            raise GitHubError(404, "graphql endpoint not found")
-        out = r[1] or {}
-        errors = out.get("errors")
-        if any(isinstance(e, dict) and e.get("type") == "RATE_LIMITED" for e in errors or []):
-            raise RateLimited(int(r[0].get("x-ratelimit-reset") or time.time() + 60))
+        read = bool(READ_QUERY.match(query, LEADING_COMMENTS.match(query).end()))
+        retried = False
+        while True:
+            r = self._request("POST", "/graphql", body={"query": query, "variables": variables}, read=read)
+            if r is None:
+                raise GitHubError(404, "graphql endpoint not found")
+            out = r[1] or {}
+            errors = out.get("errors")
+            if not any(isinstance(e, dict) and e.get("type") == "RATE_LIMITED" for e in errors or []):
+                break
+            # Like a REST rate limit: wait once for a near reset. GitHub refuses the whole
+            # document before running it, so a mutation is safe to send again.
+            reset = int(r[0].get("x-ratelimit-reset") or time.time() + 60)
+            if reset - time.time() > MAX_SLEEP or retried:
+                raise RateLimited(reset)
+            self.sleep(max(0, reset - time.time()))
+            retried = True
         if errors and not all(_allowed(e, allow_not_found, allow_forbidden) for e in errors):
             raise GitHubError(200, json.dumps(out["errors"])[:500])
         return out.get("data")

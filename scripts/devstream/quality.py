@@ -25,8 +25,8 @@ README_DEPRECATED = re.compile(
 )
 # Title lines like "foo - DEPRECATED" or "# foo (deprecated)"; first non-blank line only.
 README_TITLE_DEPRECATED = re.compile(r"[-\u2013\u2014:|(\[][ \t]{0,3}(?P<d>" + _MARK + r")" + _END, re.I)
-# Only GitHub's takedown wording: an IP allow list or a token problem is also a 403 and says nothing about the repo.
-BLOCKED = re.compile(r"access blocked|repository (?:has been|is) disabled|access to this repository has been disabled", re.I)
+# GitHub's whole takedown message: an IP allow list or a token problem is also a 403, and a false match removes a live repo.
+BLOCKED = "repository access blocked"
 README_MIN = 300
 README_SCAN = 200_000
 
@@ -172,7 +172,17 @@ def _old_enough(created_at, now) -> bool:
 
 def blocked(e: GitHubError) -> bool:
     """A repo GitHub itself took down (DMCA 451, or a terms-of-service block): gone for good, like a 404."""
-    return e.status == 451 or (e.status == 403 and bool(BLOCKED.search(e.message)))
+    if e.status == 451:
+        return True
+    if e.status != 403:
+        return False
+    try:
+        body = json.loads(e.message)
+    except ValueError:
+        body = {"message": e.message}
+    if not isinstance(body, dict):
+        return False
+    return isinstance(body.get("block"), dict) or str(body.get("message") or "").strip().lower() == BLOCKED
 
 
 def get_repo(gh, path: str) -> dict | None:

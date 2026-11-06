@@ -435,7 +435,8 @@ class RotTest(unittest.TestCase):
         # Bodies GitHub sends for a DMCA takedown (451) and a terms-of-service block (403).
         for code, body in ((451, '{"message":"Repository access blocked","block":{"reason":"dmca"}}'),
                            (403, '{"message":"Repository access blocked","block":{"reason":"tos"}}'),
-                           (403, '{"message":"Access to this repository has been disabled by GitHub Staff."}')):
+                           (403, '{"message":"REPOSITORY ACCESS BLOCKED"}'),
+                           (403, '{"message":"Forbidden","block":{"reason":"tos"}}')):
             def blocked(_, code=code, body=body):
                 raise GitHubError(code, body)
 
@@ -444,7 +445,12 @@ class RotTest(unittest.TestCase):
                 self.assertEqual((r.exists, r.failures, r.rot), (False, ["This repo no longer exists."], "remove"))
 
     def test_other_403_on_the_repo_still_raises(self):
-        for msg in ("Resource not accessible by integration", "the `alice` organization has an IP allow list enabled"):
+        # A false match would remove a live repo, so only GitHub's exact takedown phrase or block object counts.
+        for msg in ('{"message":"Resource not accessible by integration"}',
+                    "the `alice` organization has an IP allow list enabled",
+                    '{"message":"You have exceeded a secondary rate limit. Please wait a few minutes."}',
+                    '{"message":"Access to this repository has been disabled by GitHub Staff."}',
+                    '{"message":"Repository access blocked-ish"}', '{"message":"x","block":null}'):
             def e403(_, msg=msg):
                 raise GitHubError(403, msg)
 

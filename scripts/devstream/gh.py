@@ -1,5 +1,7 @@
 import json
+import random
 import re
+import socket
 import time
 import urllib.error
 import urllib.parse
@@ -9,6 +11,9 @@ from typing import Iterator
 MAX_SLEEP = 600
 MAX_HOPS = 5
 TIMEOUT = 30
+ATTEMPTS = 3
+TRANSIENT = (502, 503, 504)
+NETWORK = (urllib.error.URLError, TimeoutError, ConnectionError)
 
 
 class GitHubError(Exception):
@@ -69,14 +74,38 @@ class GitHub:
             return int(time.time()) + int(retry)
         return int(headers.get("x-ratelimit-reset") or time.time() + 60)
 
+    @staticmethod
+    def _retryable(method, status=None, exc=None) -> bool:
+        if exc is None:
+            return status in TRANSIENT or (method == "GET" and status == 500)
+        if method == "GET":
+            return True
+        # A write that may have reached GitHub is never resent: a duplicate issue or comment is worse than a failed run.
+        return isinstance(getattr(exc, "reason", None), (ConnectionRefusedError, socket.gaierror))
+
+    def _backoff(self, fails):
+        self.sleep(2 ** (fails - 1) * (1 + random.random() / 2))
+
     def _request(self, method, path, params=None, body=None):
         """Return (headers, parsed json) or None on 404."""
         if params:
             path += ("&" if "?" in path else "?") + urllib.parse.urlencode(params)
         retried = False
         hops = 0
+        fails = 0
         while True:
-            status, headers, raw = self._send(method, self.base + path, body)
+            try:
+                status, headers, raw = self._send(method, self.base + path, body)
+            except NETWORK as e:
+                fails += 1
+                if fails >= ATTEMPTS or not self._retryable(method, exc=e):
+                    raise
+                self._backoff(fails)
+                continue
+            if self._retryable(method, status) and fails + 1 < ATTEMPTS:
+                fails += 1
+                self._backoff(fails)
+                continue
             reset = self._rate_limit_reset(status, headers)
             if reset is not None:
                 if reset - time.time() > MAX_SLEEP or retried:
@@ -147,8 +176,8 @@ class GitHub:
     def put(self, path, body):
         return self._write("PUT", path, body)
 
-    def delete(self, path):
-        return self._write("DELETE", path, None)
+    def delete(self, path, body=None):
+        return self._write("DELETE", path, body)
 
     def graphql(self, query: str, variables: dict, allow_not_found: bool = False) -> dict:
         """allow_not_found returns data with nulls where only NOT_FOUND errors occurred."""

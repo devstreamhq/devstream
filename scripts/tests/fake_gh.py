@@ -118,8 +118,8 @@ class FakeGitHub:
     def put(self, path, body):
         return self._write("PUT", path, body)
 
-    def delete(self, path):
-        return self._write("DELETE", path, None)
+    def delete(self, path, body=None):
+        return self._write("DELETE", path, body)
 
     def graphql(self, query: str, variables: dict, allow_not_found: bool = False) -> dict:
         self.last_redirect = None

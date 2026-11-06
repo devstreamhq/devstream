@@ -51,7 +51,10 @@ if (rows) {
     rows.append(...list, ...all.filter((r) => !list.includes(r)));
     all.forEach((r) => (r.hidden = !list.slice(0, limit).includes(r)));
     more.hidden = list.length <= limit;
-    $("none").hidden = list.length > 0;
+    // An empty Trending tab with no filters on is quiet, not a failed search.
+    const quiet = !list.length && tab === "trending" && !t && !lang.value;
+    $("none").hidden = list.length > 0 || quiet;
+    $("none-trending").hidden = !quiet;
     $("count").textContent =
       `${Math.min(limit, list.length)} of ${list.length} repos`;
     for (const th of heads) {

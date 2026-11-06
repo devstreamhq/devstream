@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Spotted something on the list that shouldn't be there? Tell us which repo and why. A maintainer reads every report.
+        Spotted something on the list that shouldn't be there? Tell us which repo and why. A maintainer reads every report, up to 5 a day from any one account.
   - type: input
     id: entry
     attributes:

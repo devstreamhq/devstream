@@ -21,15 +21,15 @@ NON_OSI = [
     ("Commons Clause", "Commons Clause"),
     ("source-available", "source-available"),
     ("source available", "source-available"),
-    ("non-commercial", "non-commercial"),
-    ("noncommercial", "non-commercial"),
     ("PolyForm", "PolyForm"),
     ("Functional Source License", "Functional Source License"),
     ("Fair Source", "Fair Source"),
     ("good, not evil", "JSON License"),
 ]
-# Standard BSD and MIT headers say "All rights reserved", so these only count when no OSI license is found.
+# GPL-2 and GPL-3 say "noncommercial" in their own text, and standard BSD and MIT headers say "All rights reserved", so these only count when no OSI license is found.
 WEAK_NON_OSI = [
+    ("non-commercial", "non-commercial"),
+    ("noncommercial", "non-commercial"),
     ("proprietary", "proprietary"),
     ("all rights reserved", "all rights reserved"),
 ]
@@ -73,10 +73,11 @@ NAMES = {
 NAME_RE = re.compile(
     r"(?<![\w-])(" + "|".join(re.escape(n) for n in sorted(NAMES, key=len, reverse=True)) + r")(?![\w-])"
 )
-NEGATION_RE = re.compile(r"\bnot\b|isn't|\bno longer\b")
+NEGATION_RE = re.compile(r"\bnot\b|isn't|\bno longer\b|\bformerly\b")
 HEADING_RE = re.compile(r"\s{0,3}(#{1,6})\s+(.*)")
 SPDX_MAX_LINES = 10
 SPDX_MAX_CHARS = 500
+SPDX_MAX_DEPTH = 50
 ID_NAME_RE = re.compile(r"^[A-Za-z0-9.+-]{1,64}$")
 GENERIC = "a non-open-source license"
 
@@ -116,17 +117,23 @@ def _spdx_eval(expr: str) -> tuple[bool, str | None]:
         pos += 1
         return toks[pos - 1]
 
+    depth = 0
+
     def atom():
-        nonlocal bad
+        nonlocal bad, depth
         t = peek()
         if t is None or t in ("AND", "OR", "WITH", ")"):
             raise _Bad
         take()
         if t == "(":
+            depth += 1
+            if depth > SPDX_MAX_DEPTH:
+                raise _Bad
             v = or_()
             if peek() != ")":
                 raise _Bad
             take()
+            depth -= 1
             return v
         if peek() == "WITH":
             take()
@@ -169,12 +176,12 @@ def _spdx_scan(text: str) -> tuple[str | None, str | None]:
         seen += 1
         if seen > SPDX_MAX_LINES:
             break
-        expr = " ".join(line[i + 24:].split("*/")[0].split("-->")[0].split())
+        expr = " ".join(line[i + 24:].split("*/")[0].split("-->")[0].replace("|", " ").split()).strip(" .,;:*#")
         try:
             if len(expr) > SPDX_MAX_CHARS:
                 raise _Bad
             ok, name = _spdx_eval(expr)
-        except _Bad:
+        except (_Bad, RecursionError):
             bad = bad or GENERIC
             continue
         if ok:

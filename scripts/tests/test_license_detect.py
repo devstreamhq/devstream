@@ -1,6 +1,7 @@
 import base64
 import time
 import unittest
+from pathlib import Path
 
 from scripts.devstream.gh import GitHubError
 from scripts.tests.fake_gh import FakeGitHub
@@ -34,6 +35,9 @@ def lic_gh(files, readme=README, repo_kw=NOASSERT):
     extra = {f"GET {R}/contents/": [{"name": n, "type": "file"} for n in files]}
     extra.update({f"GET {R}/contents/{n}": file(c) for n, c in files.items()})
     return gh(repo_kw, readme=readme, extra=extra)
+
+
+FIXTURES = Path(__file__).parent / "fixtures" / "licenses"
 
 
 class LicenseSearchTest(unittest.TestCase):
@@ -130,7 +134,7 @@ class LicenseSearchTest(unittest.TestCase):
         self.assertLess(time.monotonic() - t, 1)
 
     def test_loose_phrases_rejected(self):
-        for text in (JSON_LIC, "This is non-commercial only. " + MIT, "PolyForm Noncommercial 1.0.0", "Copyright 2020 X. All rights reserved.", "This software is proprietary."):
+        for text in (JSON_LIC, "This is non-commercial only.", "PolyForm Noncommercial 1.0.0", "Copyright 2020 X. All rights reserved.", "This software is proprietary."):
             self.assertIn("isn't an open-source license", run(lic_gh({"LICENSE": text})).failures[0], text)
 
     def test_all_rights_reserved_with_osi_text_passes(self):
@@ -141,6 +145,31 @@ class LicenseSearchTest(unittest.TestCase):
         )
         self.assertEqual(run(lic_gh({"LICENSE": bsd3})).failures, [])
         self.assertEqual(run(lic_gh({"LICENSE": "Copyright (c) 2020 X. All rights reserved.\n" + MIT}), "rot").rot, "ok")
+
+    def test_canonical_texts_are_detected(self):
+        files = sorted(FIXTURES.glob("*.txt"))
+        self.assertEqual(len(files), 17)
+        for f in files:
+            with self.subTest(f.stem):
+                text = "Copyright (c) 2024 Example. All rights reserved.\n\n" + f.read_text()
+                self.assertEqual(run(lic_gh({"LICENSE": text})).failures, [])
+
+    def test_noncommercial_alone_is_rejected(self):
+        self.assertIn("non-commercial", run(lic_gh({"LICENSE": "For noncommercial use only."})).failures[0])
+
+    def test_deep_parens_fail_closed(self):
+        for depth in (499, 60):
+            r = self.spdx("(" * depth + "MIT" + ")" * depth) if depth == 60 else self.spdx("(" * depth)
+            self.assertIn("isn't an open-source license", r.failures[0])
+        self.assertEqual(self.spdx("(" * 40 + "MIT" + ")" * 40).failures, [])
+
+    def test_spdx_table_pipes(self):
+        g = lic_gh({"LICENSE": "| SPDX-License-Identifier: | BSD-3-Clause WITH PCRE2-exception |"})
+        self.assertEqual(run(g).failures, [])
+
+    def test_readme_formerly(self):
+        r = run(lic_gh({}, readme=README + "\n## License\n\nFormerly MIT, now relicensed.\n"))
+        self.assertEqual(r.failures, [MSG_NOT_FOUND])
 
     def test_opener_alone_is_not_mit(self):
         g = lic_gh({"LICENSE": "Permission is hereby granted, free of charge, to anyone."})

@@ -14,6 +14,9 @@ TIMEOUT = 30
 ATTEMPTS = 3
 TRANSIENT = (502, 503, 504)
 NETWORK = (urllib.error.URLError, TimeoutError, ConnectionError)
+# Only a document that opens as a query is a read; anything else (a fragment first, say) may be a mutation.
+LEADING_COMMENTS = re.compile(r"(\s*#[^\n]*(\n|$))*")
+READ_QUERY = re.compile(r"\s*(query\b|\{)")
 
 
 class GitHubError(Exception):
@@ -185,7 +188,7 @@ class GitHub:
         """allow_not_found returns data with nulls where only NOT_FOUND errors occurred."""
         self.last_redirect = None
         r = self._request("POST", "/graphql", body={"query": query, "variables": variables},
-                          read=not query.lstrip().startswith("mutation"))
+                          read=bool(READ_QUERY.match(query, LEADING_COMMENTS.match(query).end())))
         if r is None:
             raise GitHubError(404, "graphql endpoint not found")
         out = r[1] or {}

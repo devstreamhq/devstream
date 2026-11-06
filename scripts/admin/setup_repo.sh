@@ -48,8 +48,8 @@ RULESET=$(cat <<'J'
       "parameters": {
         "required_approving_review_count": 1,
         "dismiss_stale_reviews_on_push": true,
-        "require_code_owner_review": false,
-        "require_last_push_approval": false,
+        "require_code_owner_review": true,
+        "require_last_push_approval": true,
         "required_review_thread_resolution": false,
         "require_extra_approval_for_unattributed_changes": true
       }

@@ -820,3 +820,11 @@ class FinishTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NoticeDates(unittest.TestCase):
+    def test_dates_people_read_are_us_central(self):
+        from scripts.rot import _day
+        # 03:00 UTC on the 11th is still the evening of the 10th in Chicago.
+        self.assertEqual(_day(datetime(2026, 11, 11, 3, 0, tzinfo=timezone.utc)), "10 November 2026")
+        self.assertEqual(_day(datetime(2026, 11, 11, 18, 0, tzinfo=timezone.utc)), "11 November 2026")

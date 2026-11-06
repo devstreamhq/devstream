@@ -87,6 +87,8 @@ NAMES = {
 NAME_RE = re.compile(
     r"(?<![\w-])(" + "|".join(re.escape(n) for n in sorted(NAMES, key=len, reverse=True)) + r")(?![\w-])"
 )
+# A CC name next to one of these is a restricted variant (or a mix), so it is not a match.
+NC_ND = frozenset({"nc", "noncommercial", "non", "nd", "noderivatives"})
 NEGATION_RE = re.compile(r"\bnot\b|isn't|\bno longer\b|\bformerly\b")
 HEADING_RE = re.compile(r"\s{0,3}(#{1,6})\s+(.*)")
 SPDX_MAX_LINES = 10
@@ -250,7 +252,8 @@ def _readme_license(readme: str, allowed: frozenset = frozenset()) -> tuple[str 
         for ln in first:
             low = _norm(ln)
             m = NAME_RE.search(low)
-            if m and not NEGATION_RE.search(low) and _id_ok(NAMES[m.group(1)], allowed):
+            if m and not NEGATION_RE.search(low) and not NC_ND.intersection(re.findall(r"[a-z0-9]+", low)) \
+                    and _id_ok(NAMES[m.group(1)], allowed):
                 return NAMES[m.group(1)], None
     return None, None
 
@@ -282,20 +285,24 @@ def find_license(gh, r, readme_text: str | None, allowed: frozenset = frozenset(
         # license-like names first so the real license is inside the cap
         key=lambda e: (not LICENSE_RE.match(e[0]), e[0].lower(), e[0]),
     )[:MAX_FILES]
-    # Read once; the CC hint below re-detects over the same texts.
-    texts = [_read_file(gh, r, name) for name, kind in entries if kind == "file"]
-
-    def detect(ok: frozenset):
-        if not entries:
-            return _readme_license(readme_text or "", ok)
-        found = None
-        for text in texts:
-            osi, bad = _detect_text(text, ok)
-            if bad:
-                return None, bad
-            found = found or osi
-        return found, None
-
-    found, bad = detect(allowed)
-    cc_only = not (found or bad or allowed) and bool(detect(CONTENT_LICENSES)[0])
-    return found, bad, cc_only
+    if not entries:
+        found, bad = _readme_license(readme_text or "", allowed)
+        cc_only = not (found or bad or allowed) and bool(_readme_license(readme_text or "", CONTENT_LICENSES)[0])
+        return found, bad, cc_only
+    # One read per file, in order, stopping at the first rejection so a later unreadable file can't hide it.
+    texts = []
+    found = None
+    for name, kind in entries:
+        if kind != "file":
+            continue  # a symlink counts as a license file but isn't followed
+        text = _read_file(gh, r, name)
+        texts.append(text)
+        osi, bad = _detect_text(text, allowed)
+        if bad:
+            return None, bad, False
+        found = found or osi
+    if found or allowed:
+        return found, None, False
+    # Nothing here, so see whether a content license (already read) is what's present.
+    cc_only = any(_detect_text(t, CONTENT_LICENSES)[0] for t in texts)
+    return None, None, cc_only

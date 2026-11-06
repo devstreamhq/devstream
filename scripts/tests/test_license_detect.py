@@ -364,6 +364,28 @@ class ContentLicenseTest(unittest.TestCase):
                 g = lic_gh({}, readme=self.readme(name))
                 self.assertEqual(run_cc(g, allowed=frozenset()).failures, [MSG_NOT_FOUND_CC])
 
+    def test_readme_nc_nd_phrasings_not_found(self):
+        for name in ("CC BY 4.0 NC", "Creative Commons Attribution 4.0 NonCommercial",
+                     "CC BY 4.0 / CC BY-NC 4.0", "CC BY 4.0 ND", "CC BY 4.0 Non-Commercial"):
+            with self.subTest(name):
+                self.assertEqual(run_cc(lic_gh({}, readme=self.readme(name))).failures, [MSG_NOT_FOUND])
+
+    def test_readme_mit_and_cc0_still_pass(self):
+        self.assertEqual(run_cc(lic_gh({}, readme=self.readme("MIT"))).failures, [])
+        self.assertEqual(run_cc(lic_gh({}, readme=self.readme("CC0"))).failures, [])
+
+    def test_cc_hint_is_submit_only(self):
+        g = lic_gh({"LICENSE": self.text("CC0-1.0")})
+        r = run_cc(g, mode="rot", allowed=frozenset())
+        self.assertIn(MSG_NOT_FOUND, r.failures)
+        self.assertNotIn(MSG_NOT_FOUND_CC, r.failures)
+
+    def test_early_rejection_survives_a_later_oversized_file(self):
+        g = lic_gh({"LICENSE": SSPL.replace("Server Side Public License", "Business Source License"), "LICENSE.md": ""})
+        g.routes[f"GET {R}/contents/LICENSE.md"] = {"type": "file", "encoding": "none"}
+        self.assertEqual(run(g).failures, [MSG_NON_OSI.format("Business Source License")])
+        self.assertEqual(run(g, "rot").rot, "remove")
+
     def test_readme_noncommercial_names_rejected(self):
         for name in ("CC BY-NC 4.0", "CC BY-ND 4.0", "CC BY-NC-SA 4.0", "Creative Commons Attribution-NonCommercial 4.0"):
             with self.subTest(name):

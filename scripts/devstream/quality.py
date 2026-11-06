@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Literal
 
 from scripts.devstream.gh import GitHubError
-from scripts.devstream.license_detect import OSI, Undecided, extra_licenses_for, find_license
+from scripts.devstream.license_detect import OSI, Undecided, find_license
 
 NO_LICENSE = {None, "NOASSERTION", "NONE"}
 DEPRECATED = re.compile(r"\b(deprecated|unmaintained|no longer maintained)\b", re.I)
@@ -70,7 +70,7 @@ def _readme_text_length(text: str) -> int:
     return len(re.sub(r"\s+", " ", text).strip())
 
 
-def _license(repo, gh, r, readme_text, allowed=frozenset()) -> str | None:
+def _license(repo, gh, r, readme_text, allowed=frozenset(), mode="submit") -> str | None:
     """None when fine, else the failure message."""
     spdx = (repo.get("license") or {}).get("spdx_id")
     if spdx == "NOASSERTION":
@@ -84,7 +84,7 @@ def _license(repo, gh, r, readme_text, allowed=frozenset()) -> str | None:
         return None
     if bad:
         return MSG_NON_OSI.format(bad)
-    return MSG_NOT_FOUND_CC if cc_only else MSG_NOT_FOUND
+    return MSG_NOT_FOUND_CC if cc_only and mode == "submit" else MSG_NOT_FOUND
 
 
 def _readme(gh, r) -> tuple[str | None, int] | None:
@@ -173,7 +173,7 @@ def check_repo(full: str, gh, now: datetime, mode: Literal["submit", "rot"],
         raise Undecided(0, f"{r} has no pushed_at")
     age = None if pushed is None else now - datetime.fromisoformat(pushed)
     readme = _readme(gh, r)
-    license_msg = _license(repo, gh, r, readme[0] if readme else None, allowed_extra)
+    license_msg = _license(repo, gh, r, readme[0] if readme else None, allowed_extra, mode)
     license_ok = license_msg is None
     readme_ok = readme is not None and readme[1] >= README_MIN
     text = (readme[0] if readme else None) or ""

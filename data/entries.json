@@ -925,6 +925,19 @@
       "added_by_seed": true
     },
     {
+      "repo": "ClementTsang/bottom",
+      "repo_id": 205042455,
+      "category": "cli-terminal",
+      "description": "A cross-platform process and system monitor for the terminal, with graphs for CPU, memory, network and disks.",
+      "submitted_by": "jamesconwaydev",
+      "submitted_at": "2026-11-06T21:06:31Z",
+      "issue": 339,
+      "status": "live",
+      "warned_at": null,
+      "superseded_by": null,
+      "added_by_seed": false
+    },
+    {
       "repo": "cli/cli",
       "repo_id": 212613049,
       "category": "developer-tools",

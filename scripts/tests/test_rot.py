@@ -1,6 +1,7 @@
 import base64
 import json
 import os
+import re
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
@@ -16,7 +17,7 @@ from scripts.devstream.quality import (
     Undecided,
     check_repo,
 )
-from scripts.rot import Action, finish, plan_rot, pr_body, prepare, select
+from scripts.rot import Action, finish, open_reviews, plan_rot, pr_body, prepare, select
 from scripts.tests.fake_gh import FakeGitHub, Redirect
 
 NOW = datetime(2026, 11, 5, 6, 0, tzinfo=timezone.utc)
@@ -324,8 +325,12 @@ class PrepareTest(unittest.TestCase):
         r, state = store(extra={f"GET {API}/issues": lambda _: [fake, *issues], f"POST {API}/issues": open_issue})
         g = FakeGitHub(r)
         for week in range(5):
-            prepare(g, NOW + timedelta(days=7 * week), self.path, None, check=check)
+            plan = prepare(g, NOW + timedelta(days=7 * week), self.path, None, check=check)
             self.assertEqual(state["undecided.json"]["alice/tool"]["weeks"], week + 1)
+            self.assertEqual([r["repo"] for r in plan["review"]], [] if week < 2 else ["alice/tool"])
+            # The plan step opens nothing; the review step does, with its own issues-only token.
+            self.assertFalse([c for c in g.calls if c[:2] == ("POST", f"{API}/issues")][len(issues):])
+            open_reviews(g, plan["review"])
             self.assertEqual(len(issues), 0 if week < 2 else 1, week)
         posts = [b for m, p, b in g.calls if m == "POST" and p == f"{API}/issues"]
         self.assertEqual(posts[0]["labels"], ["needs-review"])
@@ -340,6 +345,14 @@ class PrepareTest(unittest.TestCase):
         # Decided again: the count starts over.
         prepare(g, NOW + timedelta(days=35), self.path, None, check=lambda full, *a, **kw: ok(full))
         self.assertEqual(state["undecided.json"], {})
+
+    def test_review_issue_step_has_its_own_issues_only_token(self):
+        text = (Path(__file__).resolve().parents[2] / ".github" / "workflows" / "rot.yml").read_text()
+        blocks = text.split("create-github-app-token@")
+        scopes = [re.findall(r"permission-([\w-]+): (\w+)", b.split("- ")[0]) for b in blocks[1:]]
+        self.assertIn([("issues", "write")], scopes)
+        self.assertFalse([sc for sc in scopes if ("issues", "write") in sc and len(sc) > 1])
+        self.assertIn("python -m scripts.rot review", text)
 
     def test_skips_hidden_and_superseded(self):
         save([entry(status="hidden"), entry("bob/other", status="superseded", issue=2)], self.path)

@@ -41,8 +41,6 @@ jobs:
           permission-contents: write
           permission-pull-requests: write
           permission-discussions: write
-          # Opens a needs-review issue for an entry left undecided 3 weeks running.
-          permission-issues: write
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
@@ -57,6 +55,21 @@ jobs:
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}
           REPO_INPUT: ${{ inputs.repo }}
         run: python -m scripts.rot plan --out "$RUNNER_TEMP/plan.json" >> "$GITHUB_OUTPUT"
+      # Entries left undecided 3 weeks running get a needs-review issue. Its own token, so the one
+      # that can push never carries issues: write, and a failure here never stops the check.
+      - id: issues_token
+        if: steps.plan.outputs.review == 'true'
+        continue-on-error: true
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-issues: write
+      - if: steps.issues_token.outputs.token != ''
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ steps.issues_token.outputs.token }}
+        run: python -m scripts.rot review --plan "$RUNNER_TEMP/plan.json"
       - id: pr
         if: steps.plan.outputs.changed == 'true'
         env:

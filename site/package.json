@@ -12,7 +12,7 @@
     "test": "node --experimental-strip-types --no-warnings=ExperimentalWarning --test tests/*.test.mjs"
   },
   "dependencies": {
-    "@primer/octicons": "19.15.0",
+    "@primer/octicons": "19.42.0",
     "astro": "5.18.2"
   },
   "devDependencies": {

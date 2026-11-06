@@ -12,7 +12,7 @@ const W = 720;
 const ROW = 44;
 const TOP = 76;
 
-const esc = (v: unknown) =>
+export const esc = (v: unknown) =>
   String(v)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -84,3 +84,19 @@ export const badge = (live: SiteEntry[]) => ({
   message: `${live.length} ${live.length === 1 ? "repo" : "repos"}`,
   color: BRAND_HEX,
 });
+
+// shortcut: widths are estimated at 6.6px a character, not measured; fine for short ASCII labels.
+export function flatBadge(label: string, message: string, color: string): string {
+  const lw = Math.round(label.length * 6.6 + 10);
+  const rw = Math.round(message.length * 6.6 + 10);
+  const w = lw + rw;
+  const t = (x: number, s: string) =>
+    `<text x="${x}" y="14" fill="#fff" text-anchor="middle">${esc(s)}</text>`;
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="20" role="img" aria-label="${esc(label)}: ${esc(message)}">` +
+    `<title>${esc(label)}: ${esc(message)}</title>` +
+    `<clipPath id="r"><rect width="${w}" height="20" rx="3"/></clipPath>` +
+    `<g clip-path="url(#r)"><rect width="${lw}" height="20" fill="#555"/><rect x="${lw}" width="${rw}" height="20" fill="${esc(color)}"/></g>` +
+    `<g font-family="${esc(FONT)}" font-size="11">${t(lw / 2, label)}${t(lw + rw / 2, message)}</g></svg>`
+  );
+}

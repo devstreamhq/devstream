@@ -104,18 +104,34 @@ J
 )
 
 upsert_ruleset() {
-  local id
-  id=$(gh api "repos/$REPO/rulesets" --jq ".[] | select(.name==\"$1\") | .id")
-  if [ -n "$id" ]; then
-    echo "$2" | gh api -X PUT "repos/$REPO/rulesets/$id" --input - >/dev/null
+  local ids
+  # This repo's own rulesets only: an org ruleset with the same name can't be updated from here.
+  mapfile -t ids < <(gh api --paginate "repos/$REPO/rulesets?includes_parents=false" \
+    --jq ".[] | select(.name==\"$1\") | .id" | sort -n)
+  if [ "${#ids[@]}" -gt 1 ]; then
+    # Deleting a ruleset is a call to make by hand, so update the oldest and say which others exist.
+    echo "warning: ${#ids[@]} rulesets are named $1 (ids ${ids[*]}); updating ${ids[0]}, delete the rest by hand" >&2
+  fi
+  if [ "${#ids[@]}" -gt 0 ]; then
+    echo "$2" | gh api -X PUT "repos/$REPO/rulesets/${ids[0]}" --input - >/dev/null
   else
     echo "$2" | gh api -X POST "repos/$REPO/rulesets" --input - >/dev/null
   fi
 }
 upsert_ruleset main-protection "$RULESET"
 upsert_ruleset release-tags "$TAG_RULESET"
-# Last: fails while the org forbids Actions approving PRs (org setting).
-gh api -X PUT "repos/$REPO/actions/permissions/workflow" \
+# The org setting caps this one: while the org forbids Actions approving PRs, GitHub refuses it.
+if ! gh api -X PUT "repos/$REPO/actions/permissions/workflow" \
   -f default_workflow_permissions=read \
-  -F can_approve_pull_request_reviews=true >/dev/null
+  -F can_approve_pull_request_reviews=true >/dev/null 2>&1; then
+  org=$(gh api "orgs/${REPO%%/*}/actions/permissions/workflow" --jq .can_approve_pull_request_reviews 2>/dev/null || true)
+  if [ "$org" != false ]; then
+    echo "error: could not set the repo's Actions workflow permissions" >&2
+    exit 1
+  fi
+  # Still make the default token read-only; only the approval part waits on the org.
+  gh api -X PUT "repos/$REPO/actions/permissions/workflow" -f default_workflow_permissions=read >/dev/null
+  echo "note: the ${REPO%%/*} org doesn't let GitHub Actions approve pull requests, so auto-approve.yml can't" >&2
+  echo "  approve bot PRs yet. Allow it under the org's Settings > Actions > General, then run this again." >&2
+fi
 echo "done"

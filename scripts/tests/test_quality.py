@@ -326,6 +326,21 @@ class SubmitTest(unittest.TestCase):
         # A deprecation marker in a big README is seen too.
         self.assertEqual(len(run(gh(extra=big("This project is no longer maintained. " + README * 5_000))).failures), 1)
 
+    def test_readme_over_5mb_is_undecided_without_a_download(self):
+        huge = {f"GET {R}/readme": {"encoding": "none", "content": "", "size": 100_000_000, "sha": "big"},
+                f"GET {R}/git/blobs/big": {"encoding": "base64", "sha": "big", "content": b64(README)["content"]}}
+        g = gh(extra=huge)
+        for mode in ("submit", "rot"):
+            with self.assertRaises(Undecided):
+                run(g, mode)
+        self.assertFalse([c for c in g.calls if "/git/blobs/" in c[1]])
+        # 3 MB is still read.
+        g = gh(extra={f"GET {R}/readme": {"encoding": "none", "content": "", "size": 3_000_000, "sha": "big"},
+                      f"GET {R}/git/blobs/big": {"encoding": "base64", "sha": "big",
+                                                 "content": b64(README * 7_000)["content"]}})
+        self.assertEqual(run(g).failures, [])
+        self.assertIn(("GET", f"{R}/git/blobs/big", None), g.calls)
+
     def test_readme_encoding_none_without_sha_is_undecided(self):
         bad = {"encoding": "none", "content": "", "size": 2_000_000}
         with self.assertRaises(Undecided):

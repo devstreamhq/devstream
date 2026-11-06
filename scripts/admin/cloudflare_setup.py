@@ -14,7 +14,6 @@ API = "https://api.cloudflare.com/client/v4"
 PROJECT = "devstream"
 ZONE = "jamesconway.dev"
 HOST = f"{PROJECT}.{ZONE}"
-TARGET = f"{PROJECT}.pages.dev"
 
 
 class ApiError(Exception):
@@ -53,11 +52,18 @@ def run(api, account):
         api("POST", base, {"name": PROJECT, "production_branch": "main"})
         print(f"Created Pages project {PROJECT}")
 
+    # Cloudflare may suffix the name (devstream-2lv.pages.dev) when devstream.pages.dev is taken; never guess.
+    target = (api("GET", f"{base}/{PROJECT}") or {}).get("subdomain")
+    if not target:
+        raise ApiError(200, f"Pages project {PROJECT} has no subdomain")
+
     if any(d["name"] == HOST for d in api("GET", f"{base}/{PROJECT}/domains")):
         print(f"Custom domain {HOST} is attached")
     else:
         api("POST", f"{base}/{PROJECT}/domains", {"name": HOST})
         print(f"Attached custom domain {HOST}")
+    status = api("GET", f"{base}/{PROJECT}/domains/{HOST}").get("status")
+    print(f"Custom domain {HOST} status: {status}")
 
     zones = api("GET", f"/zones?name={ZONE}")
     if not zones:
@@ -65,18 +71,18 @@ def run(api, account):
     zone = zones[0]["id"]
     records = api("GET", f"/zones/{zone}/dns_records?name={HOST}")
     if not records:
-        api("POST", f"/zones/{zone}/dns_records", {"type": "CNAME", "name": PROJECT, "content": TARGET, "proxied": True, "ttl": 1})
-        print(f"Created CNAME {HOST} -> {TARGET}")
+        api("POST", f"/zones/{zone}/dns_records", {"type": "CNAME", "name": PROJECT, "content": target, "proxied": True, "ttl": 1})
+        print(f"Created CNAME {HOST} -> {target}")
         return
     rec = records[0]
     if rec["type"] != "CNAME":
         # Someone pointed this name somewhere else on purpose; replacing it is a human call.
         sys.exit(f"{HOST} already has a {rec['type']} record; remove it by hand first")
-    if rec["content"] != TARGET or not rec["proxied"]:
-        api("PATCH", f"/zones/{zone}/dns_records/{rec['id']}", {"content": TARGET, "proxied": True})
-        print(f"Updated CNAME {HOST} -> {TARGET}")
+    if rec["content"] != target or not rec["proxied"]:
+        api("PATCH", f"/zones/{zone}/dns_records/{rec['id']}", {"content": target, "proxied": True})
+        print(f"Updated CNAME {HOST} -> {target}")
     else:
-        print(f"CNAME {HOST} -> {TARGET} is in place")
+        print(f"CNAME {HOST} -> {target} is in place")
 
 
 def main():

@@ -14,8 +14,8 @@ spec.loader.exec_module(cf)
 class FakeApi:
     """Answers the handful of Cloudflare calls the setup makes, and records every write."""
 
-    def __init__(self, project=True, domain=True, record=None):
-        self.project, self.domain, self.record = project, domain, record
+    def __init__(self, project=True, domain=True, record=None, subdomain="devstream-2lv.pages.dev"):
+        self.project, self.domain, self.record, self.subdomain = project, domain, record, subdomain
         self.writes = []
 
     def __call__(self, method, path, body=None):
@@ -24,9 +24,15 @@ class FakeApi:
         if path == "/accounts/acct/pages/projects/devstream":
             if not self.project:
                 raise cf.ApiError(404, "not found")
-            return {"name": "devstream"}
+            result = {"name": "devstream"}
+            if self.subdomain is not None:
+                result["subdomain"] = self.subdomain
+            return result
         if path == "/accounts/acct/pages/projects" and method == "POST":
+            self.project = True
             return {"name": "devstream"}
+        if path == "/accounts/acct/pages/projects/devstream/domains/devstream.jamesconway.dev":
+            return {"name": "devstream.jamesconway.dev", "status": "pending"}
         if path == "/accounts/acct/pages/projects/devstream/domains":
             if method == "GET":
                 return [{"name": "devstream.jamesconway.dev"}] if self.domain else [{"name": "other.example.com"}]
@@ -40,7 +46,7 @@ class FakeApi:
         raise AssertionError(f"unexpected call {method} {path}")
 
 
-GOOD = {"id": "r1", "type": "CNAME", "name": "devstream.jamesconway.dev", "content": "devstream.pages.dev", "proxied": True}
+GOOD = {"id": "r1", "type": "CNAME", "name": "devstream.jamesconway.dev", "content": "devstream-2lv.pages.dev", "proxied": True}
 
 
 class CloudflareSetup(unittest.TestCase):
@@ -60,7 +66,7 @@ class CloudflareSetup(unittest.TestCase):
                 (
                     "POST",
                     "/zones/zone1/dns_records",
-                    {"type": "CNAME", "name": "devstream", "content": "devstream.pages.dev", "proxied": True, "ttl": 1},
+                    {"type": "CNAME", "name": "devstream", "content": "devstream-2lv.pages.dev", "proxied": True, "ttl": 1},
                 ),
             ],
         )
@@ -70,8 +76,37 @@ class CloudflareSetup(unittest.TestCase):
         cf.run(api, "acct")
         self.assertEqual(
             api.writes,
-            [("PATCH", "/zones/zone1/dns_records/r1", {"content": "devstream.pages.dev", "proxied": True})],
+            [("PATCH", "/zones/zone1/dns_records/r1", {"content": "devstream-2lv.pages.dev", "proxied": True})],
         )
+
+    def test_cname_targets_project_subdomain(self):
+        api = FakeApi()
+        cf.run(api, "acct")
+        self.assertEqual(
+            api.writes,
+            [("POST", "/zones/zone1/dns_records", {"type": "CNAME", "name": "devstream", "content": "devstream-2lv.pages.dev", "proxied": True, "ttl": 1})],
+        )
+
+    def test_wrong_cname_is_corrected(self):
+        api = FakeApi(record=dict(GOOD, content="devstream.pages.dev"))
+        cf.run(api, "acct")
+        self.assertEqual(
+            api.writes,
+            [("PATCH", "/zones/zone1/dns_records/r1", {"content": "devstream-2lv.pages.dev", "proxied": True})],
+        )
+
+    def test_missing_subdomain_raises(self):
+        for sub in (None, ""):
+            with self.subTest(sub=sub):
+                api = FakeApi(subdomain=sub)
+                with self.assertRaises(cf.ApiError):
+                    cf.run(api, "acct")
+                self.assertEqual([w for w in api.writes if "dns_records" in w[1]], [])
+
+    def test_prints_custom_domain_status(self):
+        with mock.patch("sys.stdout", new_callable=io.StringIO) as out:
+            cf.run(FakeApi(record=dict(GOOD)), "acct")
+        self.assertIn("pending", out.getvalue())
 
     def test_refuses_to_replace_a_non_cname_record(self):
         api = FakeApi(record=dict(GOOD, type="A", content="192.0.2.1"))

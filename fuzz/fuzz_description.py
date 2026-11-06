@@ -14,16 +14,32 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 with atheris.instrument_imports(include=["scripts"]):
     from scripts.devstream import license_detect
-    from scripts.devstream.description import FORBIDDEN, MAX_LEN, MIN_LEN, clean_description
+    from scripts.devstream.description import FORBIDDEN, IGNORABLE, MAX_LEN, MIN_LEN, VARIATION, clean_description
+
+
+# Invisible characters people use to slip a blocked word past the filter.
+SNEAKY = [
+    "\u00ad", "\u034f", "\u061c", "\u115f", "\u1160", "\u17b4", "\u180b", "\u180e", "\u200b",
+    "\u200d", "\u202e", "\u2060", "\u2062", "\u3164", "\ufe08", "\ufe0f", "\ufeff", "\uffa0",
+    "\ufff0", "\U0001bca0", "\U0001d173", "\U000e0001", "\U000e0100", "\u2728",
+]
 
 
 def TestOneInput(data: bytes) -> None:
-    text = atheris.FuzzedDataProvider(data).ConsumeUnicodeNoSurrogates(len(data))
+    fdp = atheris.FuzzedDataProvider(data)
+    if fdp.ConsumeBool():
+        text = fdp.ConsumeUnicodeNoSurrogates(fdp.remaining_bytes())
+    else:
+        text = "".join(
+            fdp.PickValueInList(SNEAKY) if fdp.ConsumeBool() else fdp.ConsumeUnicodeNoSurrogates(8)
+            for _ in range(fdp.ConsumeIntInRange(0, 40))
+        )
     final, why = clean_description(text)
     assert (final is None) != (why is None), (final, why)
     if final is not None:
         assert MIN_LEN <= len(final) <= MAX_LEN, final
         assert not FORBIDDEN & set(final), final
+        assert not IGNORABLE.search(final) and not VARIATION.search(final), final
         assert clean_description(final) == (final, None), final
     license_detect._spdx_scan("SPDX-License-Identifier: " + text)
     license_detect._readme_license("## License\n\n" + text)

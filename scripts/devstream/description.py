@@ -14,9 +14,19 @@ IPV4 = re.compile(r"(?<![\w.])\d{1,3}(?:\.\d{1,3}){3}(?!\w)")
 ADDRESS_TAIL = re.compile(r"/|[:?]\S")
 
 
+# Default_Ignorable_Code_Point plus the Hangul fillers. The stdlib has no property
+# regex, so this is the table. U+FE00-FE0F is left to VARIATION: the emoji-run
+# check needs to see them first.
+IGNORABLE = re.compile(
+    "[\u00ad\u034f\u061c\u115f\u1160\u17b4\u17b5\u180b-\u180f\u200b-\u200f\u202a-\u202e"
+    "\u2060-\u206f\u3164\ufeff\uffa0\ufff0-\ufff8\U0001bca0-\U0001bca3\U0001d173-\U0001d17a"
+    "\U000e0000-\U000e0fff]"
+)
+
+
 def _strip_invisible(s: str) -> str:
-    # Cf covers zero-width, soft hyphen, invisible operators and U+180E; U+034F is Mn.
-    return "".join(c for c in s if unicodedata.category(c) != "Cf" and c != "\u034f")
+    # Cf also covers format characters outside the table, such as U+0600-0605.
+    return IGNORABLE.sub("", "".join(c for c in s if unicodedata.category(c) != "Cf"))
 
 
 def _load_blocklist() -> list[str]:
@@ -48,7 +58,7 @@ def _mixed_script(t: str) -> bool:
 
 def _has_url(t: str) -> bool:
     t = t.replace("。", ".")
-    if re.search(r"https?://|www\.", t, re.I):
+    if re.search(r"https?://|www\.(?=\w)", t, re.I):
         return True
     if IPV4.search(t):
         return True
@@ -72,7 +82,8 @@ def _emoji_run_too_long(t: str) -> bool:
 
 def clean_description(text: str) -> tuple[str | None, str | None]:
     # U+FE0F is kept through the emoji check, then dropped before matching.
-    t = " ".join(_strip_invisible(unicodedata.normalize("NFKC", text)).split())
+    # Strip on both sides of NFKC: it maps U+3164 and U+FFA0 onto the U+1160 filler.
+    t = " ".join(_strip_invisible(unicodedata.normalize("NFKC", _strip_invisible(text))).split())
     if len(t) < MIN_LEN:
         return None, f"Descriptions need to be between {MIN_LEN} and {MAX_LEN} characters."
     if _emoji_run_too_long(t):
@@ -83,7 +94,7 @@ def clean_description(text: str) -> tuple[str | None, str | None]:
     # would be stored at 141, and "Toolkit!!!" shrinks to an 8-character "Toolkit.".
     if not MIN_LEN <= len(final) <= MAX_LEN:
         return None, f"Descriptions need to be between {MIN_LEN} and {MAX_LEN} characters."
-    # Check the text we store: the added period turns a trailing "www" into "www.".
+    # Check the text we store, so validate_data's re-check reaches the same answer.
     t = final
     if _mixed_script(t):
         return None, "Please use one alphabet per word."

@@ -22,7 +22,7 @@ from scripts.devstream.likes import (
     fetch_reactors,
     rank_entries,
 )
-from scripts.devstream.stats import API, ensure_branch, list_dir, read_json, write_json
+from scripts.devstream.stats import API, delete_file, ensure_branch, list_dir, read_json, update_json
 from scripts.devstream.trust import TrustCache, ensure_block_access
 
 # Flagged entries stay listed and ranked; only Trending hides them.
@@ -33,6 +33,7 @@ ISSUE_CAP = 5
 LABELS = ["report", "needs-review"]
 # How long a reviewed (closed) issue holds off a new one for the same entry.
 COOLDOWN = {"burst": DAY, "drip": WEEK}
+SNAPSHOTS_KEPT = 30
 
 
 def _parse(s: str) -> datetime:
@@ -165,6 +166,27 @@ def _report(gh, todo: list[tuple[str, str, str, str]], flags: dict, now: datetim
     gh.patch(f"{API}/issues/{agg}", _aggregate(listed))
 
 
+def _merge_flags(flags: dict, before: dict):
+    """A mutate for update_json: lay this run's new and changed records over the stored copy.
+
+    Re-read on a 409, so records another writer stored survive, and so do the issue numbers
+    this run opened: losing one would open the same issue again next hour.
+    """
+    def mutate(cur):
+        for k, recs in flags.items():
+            for kind, r in recs.items():
+                if before.get(k, {}).get(kind) != r:
+                    cur.setdefault(k, {})[kind] = r
+        return cur
+    return mutate
+
+
+def _prune_snapshots(gh, today: str) -> None:
+    names = sorted({n for n in list_dir(gh, "snapshots") if _snapshot_date(n)} | {today})
+    for n in names[:-SNAPSHOTS_KEPT]:
+        delete_file(gh, f"snapshots/{n}", f"chore(stats): drop snapshot {n.removesuffix('.json')}")
+
+
 def _under_review(flags: dict, key: str) -> bool:
     # Closing the review issue is what clears a flag the burst window has outlived. Drips never flag.
     rec = flags.get(key, {}).get("burst")
@@ -180,16 +202,20 @@ def run(gh, entries, now: datetime, excluded: set[str]) -> None:
         if e["status"] in RANKED:
             ranked.setdefault(normalize_repo(e["repo"]), e)
     keys = sorted(ranked)
+    listed = {normalize_repo(e["repo"]) for e in entries}
+    if any(k not in mapping for k in keys) and any(k not in listed for k in mapping):
+        # Rename merged, rot's finish hasn't moved discussions.json yet; the next hourly run picks it up.
+        logging.warning("a rename is half done; skipping this sync")
+        return
 
     meta = fetch_meta(gh, keys)
     reactors = fetch_reactors(gh, sorted({mapping[k] for k in keys if k in mapping}))
-    prev_likes, likes_sha = read_json(gh, "likes.json")
-    prev_flags, flags_sha = read_json(gh, "flags.json")
+    prev_likes = read_json(gh, "likes.json")[0]
+    prev_flags = read_json(gh, "flags.json")[0]
     flags = copy.deepcopy(prev_flags or {})
     _review(gh, flags, now)
 
-    cache_data, cache_sha = read_json(gh, "trust-cache.json")
-    cache = _load_cache(cache_data)
+    cache = _load_cache(read_json(gh, "trust-cache.json")[0])
     ensure_block_access(gh)
     seen = {}
 
@@ -239,9 +265,8 @@ def run(gh, entries, now: datetime, excluded: set[str]) -> None:
             "flagged": ranked[k]["status"] == "flagged" or k in bursts or _under_review(flags, k),
         }
 
-    prev_meta, meta_sha = read_json(gh, "meta.json")
     snap_path = f"snapshots/{now:%Y-%m-%d}.json"
-    snap_sha = read_json(gh, snap_path)[1]
+    flags_write = ("flags.json", _merge_flags(flags, prev_flags or {}), "chore(stats): record Like reviews")
 
     if candidates:
         try:
@@ -250,25 +275,21 @@ def run(gh, entries, now: datetime, excluded: set[str]) -> None:
             # Without the records of issues already opened, the next run would open them again.
             if flags != (prev_flags or {}):
                 try:
-                    write_json(gh, "flags.json", flags, flags_sha, "chore(stats): record Like reviews")
+                    update_json(gh, *flags_write)
                 except Exception:
                     logging.exception("could not write flags.json")
             raise
 
-    writes = [
-        # First, so a later failed write can't lose the record of issues already opened.
-        ("flags.json", flags, prev_flags or {}, flags_sha, "chore(stats): record Like reviews"),
-        ("meta.json", meta, prev_meta, meta_sha, "chore(stats): update repo meta"),
-        ("likes.json", out, prev_likes, likes_sha, "chore(stats): update likes"),
-    ]
-    if snap_sha is None:
-        snap = {k: {"likes": v["likes"], "rank": v["rank"]} for k, v in out.items()}
-        writes.append((snap_path, snap, None, None, f"chore(stats): snapshot likes for {now:%Y-%m-%d}"))
-    writes.append(("trust-cache.json", cache.entries, cache_data, cache_sha, "chore(stats): update trust cache"))
-    for path, data, before, sha, message in writes:
-        if data != before:
-            write_json(gh, path, data, sha, message)
-
+    snap = {k: {"likes": v["likes"], "rank": v["rank"]} for k, v in out.items()}
+    # Each is re-applied onto a fresh read if another writer 409s it first.
+    update_json(gh, *flags_write)  # first, so a later failed write can't lose the record of issues opened
+    update_json(gh, "meta.json", lambda _: meta, "chore(stats): update repo meta")
+    update_json(gh, "likes.json", lambda _: out, "chore(stats): update likes")
+    update_json(gh, snap_path, lambda cur: cur or snap, f"chore(stats): snapshot likes for {now:%Y-%m-%d}")
+    # Past the TTL a record is never read again, and unpruned the file passes 1 MB.
+    fresh = {k: v for k, v in cache.entries.items() if cache.get(k, now) is not None}
+    update_json(gh, "trust-cache.json", lambda _: fresh, "chore(stats): update trust cache", compact=True)
+    _prune_snapshots(gh, snap_path.removeprefix("snapshots/"))
 
 def main():
     excluded = {u.strip().lower() for u in os.environ.get("EXCLUDED_USERS", "").split(",") if u.strip()}

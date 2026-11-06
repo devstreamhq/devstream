@@ -7,8 +7,7 @@ run-name: "${{ inputs.repo && format('Health check: {0}', inputs.repo) || 'Healt
 # days later, brings back the ones that recover, follows renames and removes
 # repos that are gone (only once a second run a week later agrees).
 on:
-  schedule:
-    - cron: "0 6 * * 1"
+  # Started on time by the scheduler Worker (scheduler/); a stalled one is restarted by the sweep.
   workflow_dispatch:
     inputs:
       repo:

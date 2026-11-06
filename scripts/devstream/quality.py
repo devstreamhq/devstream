@@ -12,6 +12,15 @@ from scripts.devstream.license_detect import OSI, Undecided, find_license
 
 NO_LICENSE = {None, "NOASSERTION", "NONE"}
 DEPRECATED = re.compile(r"\b(deprecated|unmaintained|no longer maintained)\b", re.I)
+# Project-level README statements only: a marker opening a line (after quote, heading or
+# admonition syntax), or "this <project> is <marker>". Every repeat is capped, so no ReDoS.
+README_DEPRECATED = re.compile(
+    r"^[ \t]{0,3}(?:>[ \t]{0,3}){0,5}(?:#{1,6}[ \t]{1,5})?(?:\[![A-Za-z]{1,20}\][ \t]{0,5})?[*_]{0,3}"
+    r"(?P<a>deprecated|unmaintained|no longer maintained)\b"
+    r"|\bthis[ \t]{1,5}(?:project|repo|repository|library|package|tool|crate|module|app|plugin)[ \t]{1,5}"
+    r"(?:is|has been)[ \t]{1,5}(?:now[ \t]{1,5})?(?P<b>deprecated|unmaintained|archived|no[ \t]{1,5}longer[ \t]{1,5}maintained)\b",
+    re.I | re.M,
+)
 README_MIN = 300
 README_SCAN = 200_000
 
@@ -158,8 +167,9 @@ def check_repo(full: str, gh, now: datetime, mode: Literal["submit", "rot"]) -> 
     license_ok = license_msg is None
     readme_ok = readme is not None and readme[1] >= README_MIN
     text = (readme[0] if readme else None) or ""
-    m = DEPRECATED.search(repo.get("description") or "") or DEPRECATED.search(text[:500])
-    deprecated = m.group(0) if m else None
+    m = DEPRECATED.search(repo.get("description") or "")
+    rm = README_DEPRECATED.search(text[:500])
+    deprecated = m.group(0) if m else (rm.group("a") or rm.group("b") if rm else None)
 
     failures = []
     if not license_ok:

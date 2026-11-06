@@ -230,6 +230,26 @@ class SubmitTest(unittest.TestCase):
         self.assertEqual(len(run(gh(readme="This project is no longer maintained. " + README)).failures), 1)
         self.assertEqual(run(gh(readme=README + " " * 600 + "deprecated")).failures, [])
 
+    def test_readme_deprecated_only_for_project_level_statements(self):
+        spark = (
+            "# Apache Spark\n\nSpark is a unified analytics engine for large-scale data processing. It provides\n"
+            "high-level APIs in Scala, Java, Python, and R (Deprecated), and an optimized engine that\n"
+        )
+        pad = "\n\n" + README
+        self.assertEqual(run(gh(readme=spark + pad)).failures, [])
+        self.assertEqual(run(gh(readme=spark + pad), "rot").rot, "ok")
+        for head in (
+            "> **Deprecated:** use foo instead",
+            "This project is no longer maintained.",
+            "# DEPRECATED",
+            "DEPRECATED: moved",
+            "> [!WARNING] This project is no longer maintained",
+            "Hello. This library has been archived by its owner.",
+        ):
+            with self.subTest(head):
+                self.assertEqual(len(run(gh(readme=head + pad)).failures), 1)
+                self.assertEqual(run(gh(readme=head + pad), "rot").rot, "warn")
+
     def test_collects_all_failures(self):
         r = run(gh({"archived": True, "license": None, "description": ""}, readme=None))
         self.assertGreaterEqual(len(r.failures), 4)

@@ -148,11 +148,37 @@ class LicenseSearchTest(unittest.TestCase):
 
     def test_canonical_texts_are_detected(self):
         files = sorted(FIXTURES.glob("*.txt"))
-        self.assertEqual(len(files), 17)
+        self.assertEqual(len(files), 19)
         for f in files:
             with self.subTest(f.stem):
                 text = "Copyright (c) 2024 Example. All rights reserved.\n\n" + f.read_text()
                 self.assertEqual(run(lic_gh({"LICENSE": text})).failures, [])
+
+    def test_postgres_copyright_file(self):
+        self.passes(lic_gh({"COPYRIGHT": (FIXTURES / "PostgreSQL.txt").read_text()}))
+
+    def test_perl_artistic_plus_gpl1_copying(self):
+        gpl1 = (
+            "GNU GENERAL PUBLIC LICENSE\nVersion 1, February 1989\nThe licenses for most software are "
+            "designed to take away your freedom to share and change it."
+        )
+        self.passes(lic_gh({"Artistic": (FIXTURES / "Artistic-1.0.txt").read_text().replace("The Artistic License", 'The "Artistic License"', 1), "Copying": gpl1}))
+
+    def test_ruby_style_layout(self):
+        ruby = (
+            "Ruby is copyrighted free software by Yukihiro Matsumoto <matz@netlab.jp>.\n"
+            "You can redistribute it and/or modify it under either the terms of the\n"
+            "2-clause BSDL (see the file BSDL), or the conditions below:\n"
+        )
+        self.passes(lic_gh({
+            "COPYING": ruby,
+            "BSDL": (FIXTURES / "BSD-2-Clause.txt").read_text(),
+            "GPL": (FIXTURES / "GPL-2.0-only.txt").read_text(),
+        }))
+
+    def test_unknown_copyright_file_not_found(self):
+        r = run(lic_gh({"COPYRIGHT": "Copyright 2020 X. All rights reserved."}))
+        self.assertEqual(r.failures, [MSG_NOT_FOUND])
 
     def test_weak_markers_alone_are_not_found(self):
         for text in ("Copyright 2020 X. All rights reserved.", "This software is proprietary.", "For noncommercial use only."):

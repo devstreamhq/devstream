@@ -9,7 +9,7 @@ from pathlib import Path
 from scripts.devstream.gh import GitHubError
 
 OSI = frozenset(json.loads((Path(__file__).parents[2] / "data" / "osi-licenses.json").read_text()))
-FILE_RE = re.compile(r"^(licen[cs]e|copying|unlicense)([-._][\w.-]+)?(\.(md|txt|rst))?$", re.I)
+FILE_RE = re.compile(r"^(licen[cs]e|copying|unlicense|copyright|artistic|bsdl|gpl)([-._][\w.-]+)?(\.(md|txt|rst))?$", re.I)
 MAX_FILES = 5
 MAX_BYTES = 100_000
 
@@ -34,6 +34,8 @@ NON_OSI = [
 PHRASES = [
     ("curl", ["copyright and permission notice", "permission to use, copy, modify, and distribute this software for any purpose with or without fee", "the name of a copyright holder shall not be used in advertising"], []),
     ("PostgreSQL", ["permission to use, copy, modify, and distribute this software and its documentation for any purpose, without fee, and without a written agreement", "has no obligations to provide maintenance, support, updates, enhancements, or modifications"], []),
+    ("Artistic-2.0", ["the artistic license 2.0", "copyright holder"], []),
+    ("Artistic-1.0", ["artistic license", "package", "standard version"], ["artistic license 2.0"]),
     ("BSL-1.0", ["boost software license", "accompanying documentation covered by this license"], []),
     ("MIT", ["permission is hereby granted, free of charge", "the above copyright notice and this permission notice shall be included"], ["good, not evil"]),
     ("Apache-2.0", ["apache license", "version 2.0", "terms and conditions for use, reproduction, and distribution"], []),

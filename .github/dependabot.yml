@@ -2,9 +2,12 @@ version: 2
 
 # No pip entry: the bot is standard library only, so there is no manifest
 # for Dependabot to read.
+# Only our own label: ecosystem labels like `javascript` would sneak back into
+# the label set otherwise.
 updates:
   - package-ecosystem: github-actions
     directory: /
+    labels: [dependencies]
     schedule:
       interval: weekly
     # A release has to survive a week in the wild before we take it.
@@ -16,6 +19,7 @@ updates:
 
   - package-ecosystem: npm
     directory: /
+    labels: [dependencies]
     schedule:
       interval: weekly
     cooldown:
@@ -26,6 +30,7 @@ updates:
 
   - package-ecosystem: npm
     directory: /site
+    labels: [dependencies]
     schedule:
       interval: weekly
     # Wrangler is pinned in three places (site/package.json, its lockfile and
@@ -41,6 +46,7 @@ updates:
   # The ClusterFuzzLite base image is pinned by digest.
   - package-ecosystem: docker
     directory: /.clusterfuzzlite
+    labels: [dependencies]
     schedule:
       interval: weekly
     cooldown:

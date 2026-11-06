@@ -24,6 +24,11 @@ def read_json(gh, path):
     return json.loads(base64.b64decode(cur["content"])), cur["sha"]
 
 
+def list_dir(gh, path) -> list[str]:
+    """File names in a stats-branch directory; a missing directory is empty."""
+    return [f["name"] for f in gh.get(f"{API}/contents/{path}", {"ref": "stats"}) or []]
+
+
 def write_json(gh, path, data, sha, message) -> None:
     body = {
         "message": message,

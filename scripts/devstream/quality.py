@@ -37,6 +37,7 @@ MSG_NOT_FOUND = (
     "We couldn't find an open-source license. If this is your repo, add a standard LICENSE file "
     "(choosealicense.com has them) so GitHub can detect it, then submit again."
 )
+MSG_NOT_FOUND_CC = MSG_NOT_FOUND + " CC licenses are accepted for Learning & Resources only."
 MSG_NO_README = "Add a README so people know what this is."
 MSG_SHORT_README = "Your README needs a bit more detail (at least a short paragraph about what it does)."
 MSG_FORK = "Forks need their own commits to be listed."
@@ -69,19 +70,21 @@ def _readme_text_length(text: str) -> int:
     return len(re.sub(r"\s+", " ", text).strip())
 
 
-def _license(repo, gh, r, readme_text) -> str | None:
+def _license(repo, gh, r, readme_text, allowed=frozenset(), mode="submit") -> str | None:
     """None when fine, else the failure message."""
     spdx = (repo.get("license") or {}).get("spdx_id")
     if spdx == "NOASSERTION":
         spdx = ((gh.get(f"/repos/{r}/license") or {}).get("license") or {}).get("spdx_id")
     if spdx not in NO_LICENSE:
-        return None if spdx in OSI else MSG_LICENSE
+        return None if spdx in OSI or spdx in allowed else MSG_LICENSE
     if spdx == "NONE":
         return MSG_LICENSE
-    found, bad = find_license(gh, r, readme_text)
+    found, bad, cc_only = find_license(gh, r, readme_text, allowed)
     if found:
         return None
-    return MSG_NON_OSI.format(bad) if bad else MSG_NOT_FOUND
+    if bad:
+        return MSG_NON_OSI.format(bad)
+    return MSG_NOT_FOUND_CC if cc_only and mode == "submit" else MSG_NOT_FOUND
 
 
 def _readme(gh, r) -> tuple[str | None, int] | None:
@@ -149,7 +152,8 @@ def _old_enough(created_at, now) -> bool:
         return False
 
 
-def check_repo(full: str, gh, now: datetime, mode: Literal["submit", "rot"]) -> RepoResult:
+def check_repo(full: str, gh, now: datetime, mode: Literal["submit", "rot"],
+               allowed_extra: frozenset = frozenset()) -> RepoResult:
     repo = gh.get(f"/repos/{full}")
     if repo is None:
         return RepoResult(False, full, [MSG_GONE], "remove")
@@ -169,7 +173,7 @@ def check_repo(full: str, gh, now: datetime, mode: Literal["submit", "rot"]) -> 
         raise Undecided(0, f"{r} has no pushed_at")
     age = None if pushed is None else now - datetime.fromisoformat(pushed)
     readme = _readme(gh, r)
-    license_msg = _license(repo, gh, r, readme[0] if readme else None)
+    license_msg = _license(repo, gh, r, readme[0] if readme else None, allowed_extra, mode)
     license_ok = license_msg is None
     readme_ok = readme is not None and readme[1] >= README_MIN
     text = (readme[0] if readme else None) or ""

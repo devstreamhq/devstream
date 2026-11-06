@@ -156,6 +156,18 @@ class DecideTest(unittest.TestCase):
         self.assertEqual(d.reasons, ["Descriptions need to be between 10 and 140 characters."])
 
 
+class ContentLicenseTest(unittest.TestCase):
+    def test_learning_resources_accepts_cc(self):
+        d = run(issue(body(category="Learning & Resources")), gh(repo_kw={"license": {"spdx_id": "CC-BY-4.0"}}))
+        self.assertEqual(d.reasons, [])
+        self.assertTrue(d.ok)
+
+    def test_other_categories_still_need_osi(self):
+        d = run(issue(body(category="Developer Tools")), gh(repo_kw={"license": {"spdx_id": "CC-BY-4.0"}}))
+        self.assertFalse(d.ok)
+        self.assertEqual(len(d.reasons), 1)
+
+
 class CommentTest(unittest.TestCase):
     def test_accepted_text(self):
         d = run()
@@ -366,6 +378,20 @@ class SeedCliTest(unittest.TestCase):
 
     def rows(self):
         return {(r["repo"], r["status"]): r for r in self.report["rows"]}
+
+    def test_seed_accepts_cc0_awesome_list_in_learning_resources(self):
+        with open(self.csv, "w", newline="") as f:
+            f.write("repo,category,description,stars\n")
+            f.write("alice/tool,learning-resources,A tidy shelf of the best guides and handbooks,10\n")
+            f.write("bob/tool,developer-tools,A tidy shelf of the best guides and handbooks,10\n")
+        g = gh(repo_kw={"license": {"spdx_id": "CC0-1.0"}}, extra={
+            "GET /repos/bob/tool": repo(full_name="bob/tool", license={"spdx_id": "CC0-1.0"}),
+            "GET /repos/bob/tool/community/profile": {"files": {"contributing": {}, "code_of_conduct": {}}},
+            "GET /repos/bob/tool/readme": b64(README),
+        })
+        self.main(g)
+        self.assertEqual([(r["repo"], r["status"]) for r in self.report["rows"]],
+                         [("alice/tool", "ok"), ("bob/tool", "fail")])
 
     def test_pass_fail_duplicate_and_undecided(self):
         g = gh(extra={"GET /repos/flaky/api": self.flaky})

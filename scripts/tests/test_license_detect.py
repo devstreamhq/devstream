@@ -4,15 +4,11 @@ import unittest
 from pathlib import Path
 
 from scripts.devstream.gh import GitHubError
-from scripts.devstream.license_detect import FILE_RE
+from scripts.devstream.license_detect import CONTENT_LICENSES, FILE_RE, extra_licenses_for
 from scripts.tests.fake_gh import FakeGitHub
-from scripts.devstream.quality import Undecided
+from scripts.devstream.quality import MSG_LICENSE, MSG_NON_OSI, MSG_NOT_FOUND, MSG_NOT_FOUND_CC, Undecided, check_repo
 from scripts.tests.test_quality import NOW, README, R, gh, run
 
-MSG_NOT_FOUND = (
-    "We couldn't find an open-source license. If this is your repo, add a standard LICENSE file "
-    "(choosealicense.com has them) so GitHub can detect it, then submit again."
-)
 MIT = (
     "Permission is hereby granted, free of charge, to any person obtaining a copy. "
     "The above copyright notice and this permission notice shall be included in all copies."
@@ -148,7 +144,7 @@ class LicenseSearchTest(unittest.TestCase):
         self.assertEqual(run(lic_gh({"LICENSE": "Copyright (c) 2020 X. All rights reserved.\n" + MIT}), "rot").rot, "ok")
 
     def test_canonical_texts_are_detected(self):
-        files = sorted(FIXTURES.glob("*.txt"))
+        files = [f for f in sorted(FIXTURES.glob("*.txt")) if not f.stem.startswith("CC")]
         self.assertEqual(len(files), 19)
         for f in files:
             with self.subTest(f.stem):
@@ -284,11 +280,113 @@ class LicenseSearchTest(unittest.TestCase):
     def test_phrase_table_ids_are_osi(self):
         from scripts.devstream import license_detect as ld
 
-        for spdx, _, _ in ld.PHRASES:
-            self.assertIn(spdx, ld.OSI)
-        for spdx in ld.NAMES.values():
-            self.assertIn(spdx, ld.OSI)
+        for spdx in [p[0] for p in ld.PHRASES] + list(ld.NAMES.values()):
+            self.assertIn(spdx, ld.OSI | ld.CONTENT_LICENSES)
 
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def run_cc(g, mode="submit", allowed=CONTENT_LICENSES):
+    return check_repo("alice/tool", g, NOW, mode, allowed_extra=allowed)
+
+
+def cc_spdx(i):
+    return {"license": {"spdx_id": i}}
+
+
+class ContentLicenseTest(unittest.TestCase):
+    TEXTS = ["CC0-1.0", "CC-BY-4.0", "CC-BY-SA-4.0"]
+
+    def text(self, name):
+        return (FIXTURES / f"{name}.txt").read_text()
+
+    def test_helper(self):
+        self.assertEqual(CONTENT_LICENSES, {"CC0-1.0", "CC-BY-4.0", "CC-BY-SA-4.0"})
+        self.assertEqual(extra_licenses_for("learning-resources"), CONTENT_LICENSES)
+        self.assertEqual(extra_licenses_for("developer-tools"), frozenset())
+
+    def test_canonical_texts_detected_when_allowed(self):
+        for name in self.TEXTS:
+            with self.subTest(name):
+                self.assertEqual(run_cc(lic_gh({"LICENSE": self.text(name)})).failures, [])
+
+    def test_canonical_texts_not_detected_when_not_allowed(self):
+        for name in self.TEXTS:
+            with self.subTest(name):
+                got = run_cc(lic_gh({"LICENSE": self.text(name)}), allowed=frozenset()).failures
+                self.assertEqual(got, [MSG_NOT_FOUND_CC])
+
+    def test_hint_only_for_cc(self):
+        self.assertIn("Learning & Resources only", MSG_NOT_FOUND_CC)
+        self.assertNotIn("Learning & Resources", MSG_NOT_FOUND)
+        self.assertEqual(run_cc(lic_gh({"LICENSE": "all rights reserved"}), allowed=frozenset()).failures, [MSG_NOT_FOUND])
+
+    def test_noncommercial_text_never_accepted(self):
+        text = self.text("CC-BY-NC-4.0")
+        for allowed in (CONTENT_LICENSES, frozenset()):
+            with self.subTest(allowed=bool(allowed)):
+                self.assertEqual(run_cc(lic_gh({"LICENSE": text}), allowed=allowed).failures, [MSG_NOT_FOUND])
+
+    def test_spdx_id_from_github(self):
+        self.assertEqual(run_cc(gh(cc_spdx("CC-BY-4.0"))).failures, [])
+        self.assertEqual(run_cc(gh(cc_spdx("CC-BY-4.0")), allowed=frozenset()).failures, [MSG_LICENSE])
+        for bad in ("CC-BY-NC-4.0", "CC-BY-ND-4.0", "CC-BY-NC-SA-4.0"):
+            with self.subTest(bad):
+                self.assertEqual(run_cc(gh(cc_spdx(bad))).failures, [MSG_LICENSE])
+
+    def test_license_endpoint_fallback(self):
+        g = gh(cc_spdx("NOASSERTION"), extra={f"GET {R}/license": {"license": {"spdx_id": "CC0-1.0"}}})
+        self.assertEqual(run_cc(g).failures, [])
+        g = gh(cc_spdx("NOASSERTION"), extra={f"GET {R}/license": {"license": {"spdx_id": "CC0-1.0"}}})
+        self.assertEqual(run_cc(g, allowed=frozenset()).failures, [MSG_LICENSE])
+
+    def test_spdx_expressions(self):
+        ok = lic_gh({"LICENSE": "SPDX-License-Identifier: CC-BY-4.0 AND MIT"})
+        self.assertEqual(run_cc(ok).failures, [])
+        ok = lic_gh({"LICENSE": "SPDX-License-Identifier: CC-BY-4.0 AND MIT"})
+        self.assertEqual(run_cc(ok, allowed=frozenset()).failures, [MSG_NON_OSI.format("CC-BY-4.0")])
+        for bad in ("CC-BY-NC-4.0", "CC-BY-ND-4.0", "CC-BY-NC-SA-4.0", "CC-BY-4.0 AND CC-BY-NC-4.0"):
+            with self.subTest(bad):
+                g = lic_gh({"LICENSE": f"SPDX-License-Identifier: {bad}"})
+                self.assertEqual(run_cc(g).failures, [MSG_NON_OSI.format(bad.split()[-1])])
+
+    def readme(self, name):
+        return README + f"\n\n## License\n\n{name}\n"
+
+    def test_readme_names(self):
+        for name in ("CC0", "CC BY 4.0", "CC-BY-4.0", "Creative Commons Attribution 4.0", "CC BY-SA 4.0"):
+            with self.subTest(name):
+                self.assertEqual(run_cc(gh(cc_spdx("NONE"), readme=self.readme(name))).failures, [MSG_LICENSE])
+                g = lic_gh({}, readme=self.readme(name))
+                self.assertEqual(run_cc(g).failures, [])
+                g = lic_gh({}, readme=self.readme(name))
+                self.assertEqual(run_cc(g, allowed=frozenset()).failures, [MSG_NOT_FOUND_CC])
+
+    def test_readme_nc_nd_phrasings_not_found(self):
+        for name in ("CC BY 4.0 NC", "Creative Commons Attribution 4.0 NonCommercial",
+                     "CC BY 4.0 / CC BY-NC 4.0", "CC BY 4.0 ND", "CC BY 4.0 Non-Commercial"):
+            with self.subTest(name):
+                self.assertEqual(run_cc(lic_gh({}, readme=self.readme(name))).failures, [MSG_NOT_FOUND])
+
+    def test_readme_mit_and_cc0_still_pass(self):
+        self.assertEqual(run_cc(lic_gh({}, readme=self.readme("MIT"))).failures, [])
+        self.assertEqual(run_cc(lic_gh({}, readme=self.readme("CC0"))).failures, [])
+
+    def test_cc_hint_is_submit_only(self):
+        g = lic_gh({"LICENSE": self.text("CC0-1.0")})
+        r = run_cc(g, mode="rot", allowed=frozenset())
+        self.assertIn(MSG_NOT_FOUND, r.failures)
+        self.assertNotIn(MSG_NOT_FOUND_CC, r.failures)
+
+    def test_early_rejection_survives_a_later_oversized_file(self):
+        g = lic_gh({"LICENSE": SSPL.replace("Server Side Public License", "Business Source License"), "LICENSE.md": ""})
+        g.routes[f"GET {R}/contents/LICENSE.md"] = {"type": "file", "encoding": "none"}
+        self.assertEqual(run(g).failures, [MSG_NON_OSI.format("Business Source License")])
+        self.assertEqual(run(g, "rot").rot, "remove")
+
+    def test_readme_noncommercial_names_rejected(self):
+        for name in ("CC BY-NC 4.0", "CC BY-ND 4.0", "CC BY-NC-SA 4.0", "Creative Commons Attribution-NonCommercial 4.0"):
+            with self.subTest(name):
+                self.assertEqual(run_cc(lic_gh({}, readme=self.readme(name))).failures, [MSG_NOT_FOUND])

@@ -92,3 +92,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}
         run: python -m scripts.rot finish --plan "$RUNNER_TEMP/plan.json"
+      # Only after finish has moved a renamed entry's thread to its new key, or this would open a second one.
+      - if: steps.plan.outputs.changed == 'true'
+        env:
+          GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+        run: python -m scripts.on_merge

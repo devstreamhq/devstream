@@ -171,6 +171,22 @@ jobs:
           python -m scripts.submit comment --result "$RESULT" --kind accepted > "$RUNNER_TEMP/comment.md"
           gh issue comment "$ISSUE" --body-file "$RUNNER_TEMP/comment.md"
           gh issue edit "$ISSUE" --add-label accepted
+      # The new entry's Like thread, made while this run still holds list-writes so a burst of
+      # submissions can't starve it. A failure is left to the hourly on-merge run, not parked.
+      - id: discussions_token
+        if: steps.apply.outputs.branch != ''
+        continue-on-error: true
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-discussions: write
+      - if: steps.apply.outputs.branch != '' && steps.discussions_token.outputs.token != ''
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ steps.discussions_token.outputs.token }}
+        run: python -m scripts.on_merge
       - if: steps.apply.outputs.branch == ''
         env:
           GH_TOKEN: ${{ steps.issues_token.outputs.token }}

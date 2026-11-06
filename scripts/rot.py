@@ -35,6 +35,7 @@ GRACE = timedelta(days=30)
 CONFIRM = timedelta(days=6)
 # An older sighting is a different episode, so it starts the week of grace again.
 STALE = timedelta(days=14)
+RENAME_KEEP = timedelta(days=8)
 REMOVAL_REASONS = (MSG_GONE, MSG_LICENSE, MSG_NO_README, MSG_SHORT_README)
 REPO_INPUT = re.compile(r"[A-Za-z0-9-]{1,39}/[A-Za-z0-9._-]{1,100}")
 
@@ -245,7 +246,7 @@ def _move(data: dict, moves: dict[str, str]) -> dict:
     return out
 
 
-def finish(gh, plan: dict) -> None:
+def finish(gh, plan: dict, now: datetime | None = None) -> None:
     """Write stats, then comment and retitle. Run only once the entries PR has merged.
 
     A failed stats write doesn't hold back the comments; the run fails at the end instead.
@@ -261,6 +262,13 @@ def finish(gh, plan: dict) -> None:
             data.pop(k, None)
         return _move(data, moves)
 
+    now = now or datetime.now(timezone.utc)
+
+    def record(data):
+        # sync_likes replays these over snapshots taken before the rename; past its 7-day baseline they're unused.
+        kept = {k: v for k, v in data.items() if isinstance(v, dict) and now - _parse(v["at"]) < RENAME_KEEP}
+        return {**kept, **{old: {"to": new, "at": _iso(now)} for old, new in moves.items()}}
+
     numbers = dict(read_json(gh, "discussions.json")[0] or {})  # before the move, so dropped entries find their thread
     failed = 0
     moved = True
@@ -268,6 +276,10 @@ def finish(gh, plan: dict) -> None:
         ("rot.json", lambda _: plan["rot_state"], "chore(stats): record failing repos"),
         ("discussions.json", rekey, "chore(stats): follow renamed repos"),
         ("flags.json", rekey, "chore(stats): follow renamed repos"),
+        # The site build reads these two by key, so they move now rather than at the next hourly sync.
+        ("likes.json", rekey, "chore(stats): follow renamed repos"),
+        ("meta.json", rekey, "chore(stats): follow renamed repos"),
+        ("renames.json", record, "chore(stats): record renamed repos"),
     ):
         try:
             update_json(gh, path, mutate, message)

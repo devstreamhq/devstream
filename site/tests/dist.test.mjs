@@ -125,3 +125,24 @@ test("hostile stats are neutralised in the HTML and the SVG", () => {
     }
   }
 });
+
+test("the Trending tab marks exactly the rows trending() allows", async () => {
+  const { loadAll, trending } = await import("../src/lib/data.ts");
+  const want = trending(
+    loadAll({ dataDir: fixtures, statsDir: join(fixtures, "stats") }).entries,
+  ).map((e) => e.repo.toLowerCase());
+  for (const page of ["index.html", "category/cli-terminal/index.html"]) {
+    const rows = read(page).match(/<tr\b[^>]*data-q=[^>]*>/g) ?? [];
+    const marked = rows
+      .filter((r) => /\bdata-trend\b/.test(r))
+      .map((r) => r.match(/data-q="([^ "]+)/)[1]);
+    assert.ok(rows.length > 0, page);
+    // zz-tie/same-likes climbs by 3, under TRENDING_MIN_DELTA, so the hero would skip it.
+    assert.ok(!marked.includes("zz-tie/same-likes"), page);
+    assert.deepEqual(
+      marked.sort(),
+      want.filter((r) => rows.some((x) => x.includes(`data-q="${r} `))).sort(),
+      page,
+    );
+  }
+});

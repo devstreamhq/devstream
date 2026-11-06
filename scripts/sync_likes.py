@@ -120,8 +120,11 @@ def _snapshot_date(name: str):
         return None
 
 
-def _baseline(gh, now: datetime) -> dict | None:
-    """The snapshot from 7 days ago, else the oldest one between 1 and 7 days old, else None."""
+def _baseline(gh, now: datetime, renames: dict) -> dict | None:
+    """The snapshot from 7 days ago, else the oldest one between 1 and 7 days old, else None.
+
+    Keys are moved through renames.json, so a renamed entry is compared with its own past.
+    """
     week, day = (now - WEEK).date(), (now - DAY).date()
     dates = sorted(d for n in list_dir(gh, "snapshots") if (d := _snapshot_date(n)))
     old = [d for d in dates if week < d <= day]
@@ -132,6 +135,10 @@ def _baseline(gh, now: datetime) -> dict | None:
     if data is None:
         # Listed but unreadable: fail closed rather than read it as an empty baseline.
         raise GitHubError(404, f"snapshot {pick} is listed but could not be read")
+    # Oldest first, so a->b then b->c lands on c. A rename before the snapshot is already in it.
+    for old, r in sorted(renames.items(), key=lambda kv: kv[1]["at"]):
+        if _parse(r["at"]).date() >= pick and old in data:
+            data[r["to"]] = data.pop(old)
     return data
 
 
@@ -219,7 +226,7 @@ def run(gh, entries, now: datetime, excluded: set[str]) -> None:
     candidates.sort(key=lambda c: c[0] != "burst")
 
     ranks = rank_entries(likes, {k: m["stars"] for k, m in meta.items()})
-    old = _baseline(gh, now)
+    old = _baseline(gh, now, read_json(gh, "renames.json")[0] or {})
     out = {}
     for k in keys:
         o = (old or {}).get(k)

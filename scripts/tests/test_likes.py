@@ -649,6 +649,52 @@ class Snapshots(unittest.TestCase):
         self.assertEqual(w2.written("likes.json")["o/a"]["likes"], 2)
 
 
+class Renames(unittest.TestCase):
+    def snap(self, data):
+        return {f"snapshots/{WEEK_AGO}.json": data}
+
+    def test_baseline_follows_a_rename(self):
+        w = World([entry("o/new")], {"o/new": [node("x"), node("y"), node("z"), node("w")]},
+                  stats={**self.snap({"o/old": {"likes": 3, "rank": 2}}),
+                         "renames.json": {"o/old": {"to": "o/new", "at": iso(NOW - timedelta(days=2))}}})
+        w.run()
+        got = w.written("likes.json")["o/new"]
+        self.assertEqual((got["delta_7d"], got["rank_delta_7d"]), (1, 1))
+
+    def test_chained_renames_replay_in_order(self):
+        w = World([entry("o/c")], {"o/c": [node("x"), node("y")]},
+                  stats={**self.snap({"o/a": {"likes": 1, "rank": 1}}),
+                         "renames.json": {"o/b": {"to": "o/c", "at": iso(NOW - timedelta(days=1))},
+                                          "o/a": {"to": "o/b", "at": iso(NOW - timedelta(days=3))}}})
+        w.run()
+        self.assertEqual(w.written("likes.json")["o/c"]["delta_7d"], 1)
+
+    def test_rename_older_than_the_baseline_is_not_replayed(self):
+        # The snapshot already holds the new name, and the old one now belongs to someone else.
+        w = World([entry("o/a"), entry("o/new")], {"o/a": [node("x")], "o/new": [node("x"), node("y")]},
+                  stats={**self.snap({"o/a": {"likes": 0, "rank": 2}, "o/new": {"likes": 2, "rank": 1}}),
+                         "renames.json": {"o/a": {"to": "o/new", "at": iso(NOW - timedelta(days=9))}}})
+        w.run()
+        likes = w.written("likes.json")
+        self.assertEqual((likes["o/a"]["delta_7d"], likes["o/new"]["delta_7d"]), (1, 0))
+
+    def test_rename_then_sync_keeps_likes_and_trend(self):
+        from scripts.rot import Action, finish
+        from scripts.tests.test_rot import store, threads
+
+        row = {"likes": 3, "delta_7d": 0, "rank": 1, "rank_delta_7d": 0, "flagged": False}
+        r, state = store({"discussions.json": {"o/old": 1}, "likes.json": {"o/old": row}}, threads({1: "o/old"}))
+        plan = {"changed": True, "actions": [Action("rename", "o/new", "", "o/old").__dict__], "rot_state": {}}
+        finish(FakeGitHub(r), plan, now=NOW - timedelta(days=2))
+        self.assertEqual(state["likes.json"], {"o/new": row})
+
+        w = World([entry("o/new")], {"o/new": [node("x"), node("y"), node("z"), node("w")]},
+                  stats={**state, **self.snap({"o/old": {"likes": 3, "rank": 1}})})
+        w.run()
+        got = w.written("likes.json")["o/new"]
+        self.assertEqual((got["likes"], got["delta_7d"], got["rank_delta_7d"]), (4, 1, 0))
+
+
 class Writes(unittest.TestCase):
     def test_write_order_and_commit_shape(self):
         w = World([entry("o/a")], {"o/a": [node("x")]})

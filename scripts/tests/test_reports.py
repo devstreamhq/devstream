@@ -525,6 +525,15 @@ class CliTest(unittest.TestCase):
                 self.assertEqual(main(["apply", "--result", result, "--entries", path]), 0)
             self.assertEqual("".join(c.args[0] for c in out.write.call_args_list).strip(), "")
 
+            # Gone from fresh main while the job queued: fail without a branch or a write.
+            save([entry("zed/zed")], path)
+            before = open(path, encoding="utf-8").read()
+            with mock.patch("sys.stdout") as out, mock.patch("sys.stderr") as err:
+                self.assertEqual(main(["apply", "--result", result, "--entries", path]), 1)
+            self.assertEqual("".join(c.args[0] for c in out.write.call_args_list), "")
+            self.assertIn("alice/tool is no longer on the list", "".join(c.args[0] for c in err.write.call_args_list))
+            self.assertEqual(open(path, encoding="utf-8").read(), before)
+
         # The workflow commits entries.json and nothing else, so auto-approve accepts the PR.
         text = WORKFLOW.read_text()
         self.assertIn("git add data/entries.json\n", text)

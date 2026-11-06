@@ -1,11 +1,13 @@
 import json
+import os
 from pathlib import Path
-from typing import Literal, TypedDict
+from typing import Literal, TypedDict, get_args
 
 DATA = Path(__file__).resolve().parents[2] / "data"
 DEFAULT_PATH = str(DATA / "entries.json")
 
-STATUSES = ("live", "warned", "flagged", "hidden", "archived", "superseded")
+Status = Literal["live", "warned", "flagged", "hidden", "archived", "superseded"]
+STATUSES: tuple[str, ...] = get_args(Status)
 
 
 class Entry(TypedDict):
@@ -16,7 +18,7 @@ class Entry(TypedDict):
     submitted_by: str
     submitted_at: str
     issue: int
-    status: Literal["live", "warned", "flagged", "hidden", "archived", "superseded"]
+    status: Status
     warned_at: str | None
     superseded_by: str | None
     added_by_seed: bool
@@ -44,9 +46,13 @@ def load(path: str = DEFAULT_PATH) -> list[Entry]:
 
 def save(entries: list[Entry], path: str = DEFAULT_PATH) -> None:
     doc = {"version": 1, "entries": sorted(entries, key=sort_key)}
-    Path(path).write_text(
-        json.dumps(doc, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
-    )
+    # Written beside the target and renamed over it, so a crash mid-write never leaves half a file.
+    tmp = Path(f"{path}.tmp")
+    try:
+        tmp.write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        os.replace(tmp, path)
+    finally:
+        tmp.unlink(missing_ok=True)
 
 
 def find(entries: list[Entry], repo: str) -> Entry | None:

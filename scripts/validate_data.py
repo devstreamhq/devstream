@@ -103,7 +103,8 @@ def main(argv: list[str]) -> int:
         with open(path, encoding="utf-8") as f:
             doc = json.load(f)
         entries = doc["entries"]
-        if doc.get("version") != 1 or not isinstance(entries, list):
+        # type(), not ==: True == 1 and 1.0 == 1 in Python.
+        if type(doc.get("version")) is not int or doc["version"] != 1 or not isinstance(entries, list):
             raise ValueError("expected {version: 1, entries: [...]}")
     except (OSError, ValueError, KeyError, TypeError) as exc:
         print(f"{path}: {exc}", file=sys.stderr)

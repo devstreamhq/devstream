@@ -1,11 +1,14 @@
 import json
+import os
 import tempfile
 import zlib
 import unittest
 from pathlib import Path
 
+from unittest import mock
+
 from scripts.devstream import entries as E
-from scripts.validate_data import validate
+from scripts.validate_data import main, validate
 
 
 def make(repo="foo/bar", **kw):
@@ -55,14 +58,33 @@ class EntriesTest(unittest.TestCase):
 
     def test_validate_field_checks(self):
         self.assertEqual(validate([]), [])
-        self.assertTrue(validate([make(status="bogus")]))
-        self.assertTrue(validate([make("bad repo")]))
-        self.assertTrue(validate([make("alice/tool\n")]))
-        self.assertTrue(validate([make(submitted_at="2026-11-05")]))
-        self.assertTrue(validate([make(issue=True)]))
+        self.assertEqual(validate([make(status="bogus")]), ["entry 0 (foo/bar): unknown status 'bogus'"])
+        self.assertEqual(validate([make("bad repo")]), ["entry 0 (bad repo): bad repo format"])
+        self.assertEqual(validate([make("alice/tool\n")]), ["entry 0 (alice/tool\n): bad repo format"])
+        self.assertEqual(validate([make(submitted_at="2026-11-05")]),
+                         ["entry 0 (foo/bar): submitted_at must be ISO-8601 UTC (…Z)"])
+        self.assertEqual(validate([make(issue=True)]), ["entry 0 (foo/bar): issue must be int"])
+        self.assertEqual(validate([make(extra=1)]), ["entry 0 (foo/bar): unknown field extra"])
         e = make()
         del e["description"]
-        self.assertTrue(validate([e]))
+        self.assertEqual(validate([e]), ["entry 0 (foo/bar): missing description"])
+
+    def test_every_status_is_valid_and_matches_the_schema(self):
+        for s in E.STATUSES:
+            self.assertEqual(validate([make(status=s)]), [], s)
+        schema = json.loads((Path(E.DATA) / "schema.json").read_text(encoding="utf-8"))
+        self.assertEqual(tuple(schema["$defs"]["entry"]["properties"]["status"]["enum"]), E.STATUSES)
+
+    def test_save_leaves_the_old_file_when_the_write_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = str(Path(d) / "e.json")
+            E.save([make("a/x")], p)
+            before = Path(p).read_text(encoding="utf-8")
+            with mock.patch("scripts.devstream.entries.os.replace", side_effect=OSError("disk full")):
+                with self.assertRaises(OSError):
+                    E.save([make("b/y")], p)
+            self.assertEqual(Path(p).read_text(encoding="utf-8"), before)
+            self.assertEqual(os.listdir(d), ["e.json"])
 
     def test_validate_requires_a_positive_repo_id(self):
         e = make()
@@ -81,6 +103,26 @@ class EntriesTest(unittest.TestCase):
         for bad in ("<b>Bold</b> claims here.", "No closing period", "Visit spam.example today.", "x."):
             errors = validate([make(description=bad)])
             self.assertTrue(any("description" in e for e in errors), bad)
+
+    def test_cli_exit_codes_and_messages(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = str(Path(d) / "e.json")
+            cases = [
+                ({"version": 1, "entries": [make()]}, 0, ""),
+                ({"version": True, "entries": [make()]}, 1, "expected {version: 1, entries: [...]}"),
+                ({"version": 1.0, "entries": [make()]}, 1, "expected {version: 1, entries: [...]}"),
+                ({"version": 1, "entries": {}}, 1, "expected {version: 1, entries: [...]}"),
+                ({"version": 1}, 1, "'entries'"),
+                ({"version": 1, "entries": [make(status="bogus")]}, 1, "entry 0 (foo/bar): unknown status 'bogus'"),
+            ]
+            for doc, code, msg in cases:
+                Path(p).write_text(json.dumps(doc), encoding="utf-8")
+                with mock.patch("sys.stderr") as err:
+                    self.assertEqual(main(["validate_data", p]), code, doc)
+                self.assertIn(msg, "".join(c.args[0] for c in err.write.call_args_list))
+            Path(p).write_text("{not json", encoding="utf-8")
+            with mock.patch("sys.stderr"):
+                self.assertEqual(main(["validate_data", p]), 1)
 
     def test_shipped_data_passes(self):
         doc = json.loads((Path(E.DEFAULT_PATH)).read_text(encoding="utf-8"))

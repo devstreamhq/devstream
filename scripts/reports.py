@@ -48,8 +48,9 @@ UNTRUSTED = (
     "so it's waiting for a maintainer to read instead."
 )
 RATE_LIMIT = "You've hit the daily limit of 5 reports. Try again tomorrow."
-COUNTED = ("spam", "other")
-# A spam or other report counts toward a hide for this long.
+# Only spam counts toward an automatic hide; "Something else" goes to a maintainer like the rest.
+COUNTED = ("spam",)
+# A spam report counts toward a hide for this long.
 REPORT_MAX_AGE = timedelta(days=30)
 # hidden.json saying hidden while the entry is visible means "just un-hidden" only while on_merge is keeping it fresh.
 JUST_UNHIDDEN = timedelta(hours=2)
@@ -150,7 +151,7 @@ def _counts_since(repo: str, gh, now: datetime) -> datetime:
 
 
 def _reporters(repo: str, open_reports: list[dict], gh, since: datetime) -> set[str]:
-    """Distinct human logins with an open, unedited spam or other report on repo, filed after since."""
+    """Distinct human logins with an open, unedited spam report on repo, filed after since."""
     found = {}
     for r in open_reports:
         if _is_bot(r) or "pull_request" in r or _parse(r["created_at"]) < since:
@@ -214,7 +215,7 @@ def handle_report(issue: dict, gh, entries: list, open_reports: list[dict],
         if _established(login, gh, now):
             return [Action("hide", repo)] + _reply(hidden, "needs-review")
         return _reply(queued, "needs-review")
-    if reason in ("spam", "other"):
+    if reason in COUNTED:
         counted = 0
         others = [r for r in open_reports if r.get("number") != issue["number"]]
         for who in sorted(_reporters(repo, [issue, *others], gh, _counts_since(repo, gh, now))):

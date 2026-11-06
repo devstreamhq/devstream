@@ -1,0 +1,49 @@
+---
+import Base from "../layouts/Base.astro";
+import Leaderboard from "../components/Leaderboard.astro";
+import Explain from "../components/Explain.astro";
+import { loadAll, liveList, trending } from "../lib/data.ts";
+import { icon, num } from "../lib/format.ts";
+
+const { entries, categories } = loadAll();
+const live = liveList(entries);
+const climber = trending(entries)[0];
+const built = new Date();
+const stamp = built.toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
+---
+
+<Base
+  title="DevStream: top GitHub repos, ranked by developers"
+  description="A live leaderboard of open source repos, ordered by Likes from real developers rather than years of stars."
+>
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <p class="live">
+          <span class="pulse" aria-hidden="true"></span><strong>Updated live</strong> Last count <time datetime={built.toISOString()}>{stamp} UTC</time>
+        </p>
+        <h1>Top GitHub Repos, ranked by developers</h1>
+        <p>Stars pile up for years. A Like here is one developer saying they'd use it today, so the order moves every hour.</p>
+      </div>
+      {
+        climber && (
+          <a class="climber" href={`https://github.com/${climber.repo}`}>
+            <span class="cl-h">
+              <Fragment set:html={icon("flame")} />
+              Most new Likes this week
+            </span>
+            <span class="who">
+              {climber.avatar_url && <img class="av" src={climber.avatar_url} alt="" width="36" height="36" />}
+              <span class="name"><span class="o">{climber.repo.split("/")[0]}/</span><b>{climber.repo.split("/")[1]}</b></span>
+            </span>
+            <span class="cl-n">
+              <strong>+{num(climber.delta_7d)}</strong> Likes in 7 days{climber.rank && <span class="cl-r">Now #{climber.rank}</span>}
+            </span>
+          </a>
+        )
+      }
+    </div>
+  </section>
+  <Leaderboard entries={live} all={live} categories={categories} label="All repos" />
+  <Explain />
+</Base>

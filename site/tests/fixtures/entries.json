@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "repo": "acme/fast-cli",
+      "category": "cli-terminal",
+      "description": "A terminal helper that runs your scripts twice as fast.",
+      "submitted_by": "ana",
+      "submitted_at": "2026-10-01T10:00:00Z",
+      "issue": 1,
+      "status": "live",
+      "warned_at": null,
+      "superseded_by": null,
+      "added_by_seed": false
+    },
+    {
+      "repo": "Pixel-Forge/shader-kit",
+      "category": "design-ui",
+      "description": "Shaders you can drop into any canvas and tweak live.",
+      "submitted_by": "ben",
+      "submitted_at": "2026-10-03T10:00:00Z",
+      "issue": 2,
+      "status": "warned",
+      "warned_at": "2026-10-20T00:00:00Z",
+      "superseded_by": null,
+      "added_by_seed": false
+    },
+    {
+      "repo": "quiet-co/tiny-queue",
+      "category": "backend-apis",
+      "description": "A job queue small enough to read in one sitting.",
+      "submitted_by": "cy",
+      "submitted_at": "2026-10-05T10:00:00Z",
+      "issue": 3,
+      "status": "flagged",
+      "warned_at": null,
+      "superseded_by": null,
+      "added_by_seed": false
+    },
+    {
+      "repo": "burst/likes-spike",
+      "category": "testing",
+      "description": "Test runner that got a suspicious pile of Likes overnight.",
+      "submitted_by": "dee",
+      "submitted_at": "2026-10-06T10:00:00Z",
+      "issue": 4,
+      "status": "live",
+      "warned_at": null,
+      "superseded_by": null,
+      "added_by_seed": false
+    },
+    {
+      "repo": "zz-tie/same-likes",
+      "category": "testing",
+      "description": "Ties with acme on Likes and stars, so the name decides.",
+      "submitted_by": "eve",
+      "submitted_at": "2026-10-07T10:00:00Z",
+      "issue": 5,
+      "status": "live",
+      "warned_at": null,
+      "superseded_by": null,
+      "added_by_seed": false
+    },
+    {
+      "repo": "secret/hidden-thing",
+      "category": "security",
+      "description": "HIDDENMARKER should never reach a page.",
+      "submitted_by": "fox",
+      "submitted_at": "2026-10-08T10:00:00Z",
+      "issue": 6,
+      "status": "hidden",
+      "warned_at": null,
+      "superseded_by": null,
+      "added_by_seed": false
+    },
+    {
+      "repo": "old/archived-tool",
+      "category": "devops-infra",
+      "description": "ARCHIVEDMARKER lives only on the archive page.",
+      "submitted_by": "gus",
+      "submitted_at": "2026-09-01T10:00:00Z",
+      "issue": 7,
+      "status": "archived",
+      "warned_at": null,
+      "superseded_by": null,
+      "added_by_seed": false
+    },
+    {
+      "repo": "old/replaced-tool",
+      "category": "devops-infra",
+      "description": "SUPERSEDEDMARKER lives only on the archive page.",
+      "submitted_by": "hal",
+      "submitted_at": "2026-09-02T10:00:00Z",
+      "issue": 8,
+      "status": "superseded",
+      "warned_at": null,
+      "superseded_by": "acme/fast-cli",
+      "added_by_seed": false
+    },
+    {
+      "repo": "fresh/no-stats-yet",
+      "category": "mobile",
+      "description": "Listed a minute ago, so no stats have landed yet.",
+      "submitted_by": "ivy",
+      "submitted_at": "2026-11-05T10:00:00Z",
+      "issue": 9,
+      "status": "live",
+      "warned_at": null,
+      "superseded_by": null,
+      "added_by_seed": false
+    },
+    {
+      "repo": "evil/hostile-stats",
+      "category": "security",
+      "description": "Its stats file was tampered with, so every field is junk.",
+      "submitted_by": "mal",
+      "submitted_at": "2026-10-09T10:00:00Z",
+      "issue": 10,
+      "status": "live",
+      "warned_at": null,
+      "superseded_by": null,
+      "added_by_seed": false
+    }
+  ]
+}

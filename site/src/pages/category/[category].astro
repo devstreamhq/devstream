@@ -1,0 +1,28 @@
+---
+import Base from "../../layouts/Base.astro";
+import Leaderboard from "../../components/Leaderboard.astro";
+import { loadAll, liveList } from "../../lib/data.ts";
+
+export function getStaticPaths() {
+  const { entries, categories } = loadAll();
+  const live = liveList(entries);
+  return categories.map((c) => ({
+    params: { category: c.slug },
+    props: { cat: c, categories, live },
+  }));
+}
+const { cat, categories, live } = Astro.props;
+const list = live.filter((e) => e.category === cat.slug);
+---
+
+<Base title={`Top ${cat.name} repos on DevStream`} description={`The ${cat.name} repos developers like most right now, ranked by Likes.`}>
+  <section class="hero">
+    <div class="wrap">
+      <h1>{cat.name}</h1>
+      <p>
+        {list.length === 0 ? "Nothing here yet. The first repo you submit in this category goes straight to the top." : `${list.length} ${list.length === 1 ? "repo" : "repos"}, ranked by the developers who like them.`}
+      </p>
+    </div>
+  </section>
+  <Leaderboard entries={list} all={live} categories={categories} current={cat.slug} label={cat.name} />
+</Base>

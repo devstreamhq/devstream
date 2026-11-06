@@ -1,0 +1,21 @@
+{
+  "name": "devstream-site",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.6"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "test": "node --experimental-strip-types --no-warnings=ExperimentalWarning --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "@primer/octicons": "19.15.0",
+    "astro": "5.18.2"
+  },
+  "devDependencies": {
+    "wrangler": "4.157.0"
+  }
+}

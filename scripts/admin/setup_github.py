@@ -630,6 +630,8 @@ ORG_SETTINGS = {
 SECURITY_CONFIG = {
     "name": "DevStream defaults",
     "description": "Dependency alerts and updates, secret scanning and push protection for every new repo.",
+    # Free on public repos; GitHub refuses secret scanning in a configuration without it.
+    "advanced_security": "enabled",
     "dependency_graph": "enabled",
     "dependabot_alerts": "enabled",
     "dependabot_security_updates": "enabled",

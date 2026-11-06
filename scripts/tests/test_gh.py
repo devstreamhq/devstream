@@ -78,6 +78,9 @@ class H(BaseHTTPRequestHandler):
         elif p == "/xlink":
             nxt = f"<http://127.0.0.1:{OTHER.server_address[1]}/p2>; rel=\"next\""
             self._send(200, [{"n": 1}], [("Link", nxt)])
+        elif p == "/n1":
+            nxt = f"<http://127.0.0.1:{port}/repositories/123>; rel=\"next\""
+            self._send(200, [{"n": 1}], [("Link", nxt)])
         elif p == "/twice":
             self._send(429, {}, [("retry-after", "1")])
         elif p == "/q1":
@@ -188,6 +191,12 @@ class GitHubTest(unittest.TestCase):
 
     def test_paginate_follows_link_header(self):
         self.assertEqual([i["n"] for i in self.gh.paginate("/p1")], [1, 2, 3])
+
+    def test_paginate_non_list_page_raises(self):
+        # Iterating a dict would yield its keys as if they were items.
+        for path in ("/repositories/123", "/n1"):
+            with self.assertRaises(GitHubError):
+                list(self.gh.paginate(path))
 
     def test_paginate_search_items(self):
         self.assertEqual(list(self.gh.paginate("/search")), [{"n": 9}])

@@ -164,7 +164,11 @@ class GitHub:
                 raise GitHubError(404, f"page not found: {path}")
             first = False
             headers, page = r
-            yield from page["items"] if isinstance(page, dict) and "items" in page else page
+            items = page["items"] if isinstance(page, dict) and "items" in page else page
+            if not isinstance(items, list):
+                # A dict here would yield its keys as if they were items.
+                raise GitHubError(200, f"not a list page: {path}")
+            yield from items
             m = re.search(r'<([^>]+)>\s*;\s*rel="next"', headers.get("Link") or "")
             # Rebuilt against base so the token never leaves the API host.
             nxt = urllib.parse.urlsplit(m.group(1)) if m else None

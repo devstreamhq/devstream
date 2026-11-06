@@ -1,6 +1,6 @@
 import unittest
 
-from scripts.devstream.discussions import ensure_discussion, likes_category
+from scripts.devstream.discussions import ensure_discussion, likes_category, list_discussions
 from scripts.devstream.gh import GitHubError
 from scripts.tests.fake_gh import FakeGitHub
 
@@ -54,6 +54,35 @@ class Category(unittest.TestCase):
             likes_category(g)
         self.assertEqual(c.exception.status, 404)
         self.assertIn("Discussion category 'likes' is missing", c.exception.message)
+
+
+class Listing(unittest.TestCase):
+    def pages(self, cursors):
+        """One thread per page; cursors[i] is the endCursor page i hands back, None on the last."""
+        def page(v):
+            i = 0 if v["cursor"] is None else cursors.index(v["cursor"]) + 1
+            return {"repository": {"discussions": {
+                "nodes": [{"number": i + 1, "title": f"o/r{i}", "author": {"login": "devstreamhq-bot[bot]"}}],
+                "pageInfo": {"hasNextPage": cursors[i] is not None, "endCursor": cursors[i]}}}}
+        return FakeGitHub({"GRAPHQL LikesDiscussions": page})
+
+    def test_follows_every_page(self):
+        g = self.pages(["c1", "c2", None])
+        self.assertEqual(list_discussions(g, "C"), {"o/r0": 1, "o/r1": 2, "o/r2": 3})
+        self.assertEqual([v["cursor"] for _, _, v in g.calls], [None, "c1", "c2"])
+
+    def test_repeated_cursor_raises(self):
+        g = FakeGitHub({"GRAPHQL LikesDiscussions": {"repository": {"discussions": {
+            "nodes": [], "pageInfo": {"hasNextPage": True, "endCursor": "stuck"}}}}})
+        with self.assertRaises(GitHubError):
+            list_discussions(g, "C")
+        self.assertEqual(len(g.calls), 2)
+
+    def test_missing_cursor_raises(self):
+        g = FakeGitHub({"GRAPHQL LikesDiscussions": {"repository": {"discussions": {
+            "nodes": [], "pageInfo": {"hasNextPage": True, "endCursor": None}}}}})
+        with self.assertRaises(GitHubError):
+            list_discussions(g, "C")
 
 
 if __name__ == "__main__":

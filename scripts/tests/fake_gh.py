@@ -107,6 +107,8 @@ class FakeGitHub:
             raise GitHubError(404, f"page not found: {path}")
         if isinstance(page, dict) and "items" in page:
             page = page["items"]
+        if page is not None and not isinstance(page, list):
+            raise GitHubError(200, f"not a list page: {path}")
         yield from page or []
 
     def _write(self, method, path, body):

@@ -8,7 +8,9 @@ EMOJI = re.compile("[\U0001f000-\U0001faff\u2600-\u27bf]")
 VARIATION = re.compile("[\ufe00-\ufe0f]")
 ZWJ = "\u200d"
 # A zero-width joiner between two emoji builds one emoji (a family, say), so it survives the stripping.
-EMOJI_ZWJ = re.compile("(?<=[\U0001f000-\U0001faff\u2600-\u27bf\ufe00-\ufe0f])\u200d(?=[\U0001f000-\U0001faff\u2600-\u27bf])")
+# A variation selector counts only straight after an emoji: it's stripped, so the joiner must still sit by one.
+EMOJI_ZWJ = re.compile("(?:(?<=[\U0001f000-\U0001faff\u2600-\u27bf])|(?<=[\U0001f000-\U0001faff\u2600-\u27bf][\ufe00-\ufe0f]))"
+                       "\u200d(?=[\U0001f000-\U0001faff\u2600-\u27bf])")
 # Only names that are not real TLDs a spammer would use; Node.js and Vue.js rely on "js".
 NOT_TLDS = {"js", "ts", "py", "md", "rb"}
 DOMAIN = re.compile(r"(?<![\w.-])(?:[a-z0-9-]+\.)+([a-z]{2,24})(?![a-z0-9])", re.I)
@@ -96,9 +98,10 @@ def clean_description(text: str) -> tuple[str | None, str | None]:
     if _emoji_run_too_long(t):
         return None, "Descriptions can't have more than 2 emoji in a row."
     t = " ".join(VARIATION.sub("", t).split())
-    body = t.rstrip("!?,;: ")
+    # The whole trailing run in one go, dots included, so a second pass finds nothing left to strip.
+    body = t.rstrip("!?,;:. ")
     # A question keeps one question mark; anything else ends in a full stop.
-    final = body.rstrip(".") + ("?" if "?" in t[len(body):] else ".")
+    final = body + ("?" if "?" in t[len(body):] else ".")
     # Both limits cover the finished text: a 140-character input with no period
     # would be stored at 141, and "Toolkit!!!" shrinks to an 8-character "Toolkit.".
     if not MIN_LEN <= len(final) <= MAX_LEN:

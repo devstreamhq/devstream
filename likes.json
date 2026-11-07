@@ -507,8 +507,8 @@
     "delta_7d": 1,
     "flagged": false,
     "likes": 1,
-    "rank": 1,
-    "rank_delta_7d": 0
+    "rank": 2,
+    "rank_delta_7d": -1
   },
   "clickhouse/clickhouse": {
     "delta_7d": 0,
@@ -773,7 +773,7 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 2,
+    "rank": 3,
     "rank_delta_7d": 0
   },
   "electron/electron": {
@@ -1592,7 +1592,7 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 146,
+    "rank": 147,
     "rank_delta_7d": 0
   },
   "lysine-dev/retrofit": {
@@ -2380,10 +2380,10 @@
     "rank_delta_7d": 0
   },
   "react/react": {
-    "delta_7d": 0,
+    "delta_7d": 1,
     "flagged": false,
-    "likes": 0,
-    "rank": 3,
+    "likes": 1,
+    "rank": 1,
     "rank_delta_7d": 0
   },
   "react/react-native": {
@@ -2642,7 +2642,7 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 147,
+    "rank": 146,
     "rank_delta_7d": 0
   },
   "software-mansion/react-native-reanimated": {

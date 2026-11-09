@@ -1,0 +1,1822 @@
+{
+  "academic/awesome-datascience": {
+    "likes": 0,
+    "rank": 260
+  },
+  "acassen/keepalived": {
+    "likes": 0,
+    "rank": 441
+  },
+  "actions/runner": {
+    "likes": 0,
+    "rank": 437
+  },
+  "actix/actix-web": {
+    "likes": 0,
+    "rank": 294
+  },
+  "actualbudget/actual": {
+    "likes": 0,
+    "rank": 263
+  },
+  "adguardteam/adguardhome": {
+    "likes": 0,
+    "rank": 202
+  },
+  "adobe/react-spectrum": {
+    "likes": 0,
+    "rank": 360
+  },
+  "adrientorris/awesome-blazor": {
+    "likes": 0,
+    "rank": 411
+  },
+  "airbnb/lottie-ios": {
+    "likes": 0,
+    "rank": 283
+  },
+  "ajeetdsouza/zoxide": {
+    "likes": 0,
+    "rank": 188
+  },
+  "akullpp/awesome-java": {
+    "likes": 0,
+    "rank": 151
+  },
+  "alacritty/alacritty": {
+    "likes": 0,
+    "rank": 107
+  },
+  "alamofire/alamofire": {
+    "likes": 0,
+    "rank": 181
+  },
+  "allthingssmitty/css-protips": {
+    "likes": 0,
+    "rank": 261
+  },
+  "alpinejs/alpine": {
+    "likes": 0,
+    "rank": 245
+  },
+  "analysis-tools-dev/static-analysis": {
+    "likes": 0,
+    "rank": 370
+  },
+  "android/architecture-samples": {
+    "likes": 0,
+    "rank": 163
+  },
+  "android/compose-samples": {
+    "likes": 0,
+    "rank": 308
+  },
+  "android/nowinandroid": {
+    "likes": 0,
+    "rank": 319
+  },
+  "angular/angular": {
+    "likes": 0,
+    "rank": 61
+  },
+  "angular/angular-cli": {
+    "likes": 0,
+    "rank": 282
+  },
+  "aniftyco/awesome-tailwindcss": {
+    "likes": 0,
+    "rank": 367
+  },
+  "ant-design/ant-design": {
+    "likes": 0,
+    "rank": 62
+  },
+  "apache/airflow": {
+    "likes": 0,
+    "rank": 156
+  },
+  "apache/arrow": {
+    "likes": 0,
+    "rank": 348
+  },
+  "apache/cassandra": {
+    "likes": 0,
+    "rank": 402
+  },
+  "apache/couchdb": {
+    "likes": 0,
+    "rank": 430
+  },
+  "apache/doris": {
+    "likes": 0,
+    "rank": 358
+  },
+  "apache/echarts": {
+    "likes": 0,
+    "rank": 103
+  },
+  "apache/flink": {
+    "likes": 0,
+    "rank": 284
+  },
+  "apache/httpd": {
+    "likes": 0,
+    "rank": 444
+  },
+  "apache/jmeter": {
+    "likes": 0,
+    "rank": 407
+  },
+  "apache/kafka": {
+    "likes": 0,
+    "rank": 231
+  },
+  "apache/spark": {
+    "likes": 0,
+    "rank": 170
+  },
+  "apache/superset": {
+    "likes": 0,
+    "rank": 89
+  },
+  "appflowy-io/appflowy": {
+    "likes": 0,
+    "rank": 86
+  },
+  "appium/appium": {
+    "likes": 0,
+    "rank": 318
+  },
+  "aquasecurity/trivy": {
+    "likes": 0,
+    "rank": 454
+  },
+  "aristocratos/btop": {
+    "likes": 0,
+    "rank": 222
+  },
+  "ashishb/android-security-awesome": {
+    "likes": 0,
+    "rank": 406
+  },
+  "astral-sh/ruff": {
+    "likes": 0,
+    "rank": 142
+  },
+  "astral-sh/uv": {
+    "likes": 0,
+    "rank": 68
+  },
+  "atuinsh/atuin": {
+    "likes": 0,
+    "rank": 240
+  },
+  "avajs/ava": {
+    "likes": 0,
+    "rank": 327
+  },
+  "avelino/awesome-go": {
+    "likes": 0,
+    "rank": 35
+  },
+  "awesomedata/awesome-public-datasets": {
+    "likes": 0,
+    "rank": 82
+  },
+  "axios/axios": {
+    "likes": 0,
+    "rank": 57
+  },
+  "babel/babel": {
+    "likes": 0,
+    "rank": 174
+  },
+  "bazelbuild/bazel": {
+    "likes": 0,
+    "rank": 289
+  },
+  "berriai/litellm": {
+    "likes": 0,
+    "rank": 115
+  },
+  "binwiederhier/ntfy": {
+    "likes": 0,
+    "rank": 221
+  },
+  "biomejs/biome": {
+    "likes": 0,
+    "rank": 290
+  },
+  "blakeblackshear/frigate": {
+    "likes": 0,
+    "rank": 207
+  },
+  "bridgecrewio/checkov": {
+    "likes": 0,
+    "rank": 455
+  },
+  "burntsushi/ripgrep": {
+    "likes": 0,
+    "rank": 98
+  },
+  "caddyserver/caddy": {
+    "likes": 0,
+    "rank": 85
+  },
+  "calcom/cal.diy": {
+    "likes": 0,
+    "rank": 150
+  },
+  "calinou/awesome-godot": {
+    "likes": 0,
+    "rank": 398
+  },
+  "callstack/react-native-paper": {
+    "likes": 0,
+    "rank": 374
+  },
+  "catchorg/catch2": {
+    "likes": 0,
+    "rank": 323
+  },
+  "certbot/certbot": {
+    "likes": 1,
+    "rank": 24
+  },
+  "chaijs/chai": {
+    "likes": 0,
+    "rank": 422
+  },
+  "chakra-ui/chakra-ui": {
+    "likes": 0,
+    "rank": 187
+  },
+  "chalarangelo/30-seconds-of-code": {
+    "likes": 0,
+    "rank": 45
+  },
+  "charmbracelet/bubbletea": {
+    "likes": 0,
+    "rank": 164
+  },
+  "charmbracelet/glow": {
+    "likes": 0,
+    "rank": 275
+  },
+  "charmbracelet/gum": {
+    "likes": 0,
+    "rank": 298
+  },
+  "chartjs/chart.js": {
+    "likes": 0,
+    "rank": 102
+  },
+  "chef/chef": {
+    "likes": 0,
+    "rank": 423
+  },
+  "chentsulin/awesome-graphql": {
+    "likes": 0,
+    "rank": 368
+  },
+  "cisofy/lynis": {
+    "likes": 0,
+    "rank": 353
+  },
+  "clementtsang/bottom": {
+    "likes": 0,
+    "rank": 376
+  },
+  "cli/cli": {
+    "likes": 1,
+    "rank": 19
+  },
+  "clickhouse/clickhouse": {
+    "likes": 0,
+    "rank": 144
+  },
+  "cline/cline": {
+    "likes": 0,
+    "rank": 95
+  },
+  "cloudflare/cloudflared": {
+    "likes": 0,
+    "rank": 355
+  },
+  "cockpit-project/cockpit": {
+    "likes": 0,
+    "rank": 366
+  },
+  "coder/code-server": {
+    "likes": 0,
+    "rank": 83
+  },
+  "coil-kt/coil": {
+    "likes": 0,
+    "rank": 390
+  },
+  "colinhacks/zod": {
+    "likes": 0,
+    "rank": 172
+  },
+  "comfy-org/comfyui": {
+    "likes": 0,
+    "rank": 42
+  },
+  "containerd/containerd": {
+    "likes": 0,
+    "rank": 324
+  },
+  "continuedev/continue": {
+    "likes": 0,
+    "rank": 214
+  },
+  "conventional-changelog/commitlint": {
+    "likes": 0,
+    "rank": 334
+  },
+  "coollabsio/coolify": {
+    "likes": 0,
+    "rank": 109
+  },
+  "crewaiinc/crewai": {
+    "likes": 0,
+    "rank": 121
+  },
+  "crowdsecurity/crowdsec": {
+    "likes": 0,
+    "rank": 364
+  },
+  "cypress-io/cypress": {
+    "likes": 0,
+    "rank": 143
+  },
+  "d3/d3": {
+    "likes": 0,
+    "rank": 53
+  },
+  "dagster-io/dagster": {
+    "likes": 0,
+    "rank": 356
+  },
+  "dandavison/delta": {
+    "likes": 0,
+    "rank": 237
+  },
+  "dani-garcia/vaultwarden": {
+    "likes": 0,
+    "rank": 97
+  },
+  "dart-lang/sdk": {
+    "likes": 0,
+    "rank": 394
+  },
+  "data-privacy-stack/presidio": {
+    "likes": 1,
+    "rank": 30
+  },
+  "davidsonfellipe/awesome-wpo": {
+    "likes": 0,
+    "rank": 413
+  },
+  "dbeaver/dbeaver": {
+    "likes": 0,
+    "rank": 139
+  },
+  "deepspeedai/deepspeed": {
+    "likes": 0,
+    "rank": 177
+  },
+  "denoland/deno": {
+    "likes": 0,
+    "rank": 58
+  },
+  "derailed/k9s": {
+    "likes": 0,
+    "rank": 226
+  },
+  "devexpress/testcafe": {
+    "likes": 0,
+    "rank": 404
+  },
+  "dhamaniasad/awesome-postgres": {
+    "likes": 0,
+    "rank": 387
+  },
+  "direnv/direnv": {
+    "likes": 0,
+    "rank": 363
+  },
+  "django/django": {
+    "likes": 0,
+    "rank": 69
+  },
+  "dokku/dokku": {
+    "likes": 0,
+    "rank": 241
+  },
+  "dolthub/dolt": {
+    "likes": 0,
+    "rank": 295
+  },
+  "dotnet/aspnetcore": {
+    "likes": 0,
+    "rank": 200
+  },
+  "dotnet/maui": {
+    "likes": 0,
+    "rank": 309
+  },
+  "dotnet/runtime": {
+    "likes": 0,
+    "rank": 336
+  },
+  "drizzle-team/drizzle-orm": {
+    "likes": 0,
+    "rank": 216
+  },
+  "duckdb/duckdb": {
+    "likes": 0,
+    "rank": 179
+  },
+  "ebookfoundation/free-programming-books": {
+    "likes": 0,
+    "rank": 31
+  },
+  "electron/electron": {
+    "likes": 0,
+    "rank": 48
+  },
+  "element-hq/synapse": {
+    "likes": 0,
+    "rank": 440
+  },
+  "ellisonleao/magictools": {
+    "likes": 0,
+    "rank": 340
+  },
+  "emacs-tw/awesome-emacs": {
+    "likes": 0,
+    "rank": 410
+  },
+  "emberjs/ember.js": {
+    "likes": 0,
+    "rank": 316
+  },
+  "emilkowalski/sonner": {
+    "likes": 0,
+    "rank": 381
+  },
+  "ente/ente": {
+    "likes": 0,
+    "rank": 265
+  },
+  "eslint/eslint": {
+    "likes": 0,
+    "rank": 280
+  },
+  "etcd-io/etcd": {
+    "likes": 0,
+    "rank": 137
+  },
+  "evanw/esbuild": {
+    "likes": 0,
+    "rank": 193
+  },
+  "excalidraw/excalidraw": {
+    "likes": 0,
+    "rank": 43
+  },
+  "expo/expo": {
+    "likes": 0,
+    "rank": 134
+  },
+  "expressjs/express": {
+    "likes": 0,
+    "rank": 99
+  },
+  "fail2ban/fail2ban": {
+    "likes": 1,
+    "rank": 29
+  },
+  "falcosecurity/falco": {
+    "likes": 0,
+    "rank": 408
+  },
+  "fastapi/fastapi": {
+    "likes": 0,
+    "rank": 60
+  },
+  "fastify/fastify": {
+    "likes": 0,
+    "rank": 206
+  },
+  "fastlane/fastlane": {
+    "likes": 0,
+    "rank": 182
+  },
+  "felangel/bloc": {
+    "likes": 0,
+    "rank": 385
+  },
+  "fffaraz/awesome-cpp": {
+    "likes": 0,
+    "rank": 92
+  },
+  "filosottile/age": {
+    "likes": 0,
+    "rank": 302
+  },
+  "fleetdm/fleet": {
+    "likes": 0,
+    "rank": 428
+  },
+  "flutter/flutter": {
+    "likes": 0,
+    "rank": 37
+  },
+  "fluxcd/flux2": {
+    "likes": 0,
+    "rank": 419
+  },
+  "freeipa/freeipa": {
+    "likes": 0,
+    "rank": 448
+  },
+  "frenck/awesome-home-assistant": {
+    "likes": 0,
+    "rank": 417
+  },
+  "garris/backstopjs": {
+    "likes": 0,
+    "rank": 427
+  },
+  "gatling/gatling": {
+    "likes": 0,
+    "rank": 431
+  },
+  "gatsbyjs/gatsby": {
+    "likes": 0,
+    "rank": 128
+  },
+  "gethomepage/homepage": {
+    "likes": 0,
+    "rank": 232
+  },
+  "getredash/redash": {
+    "likes": 0,
+    "rank": 271
+  },
+  "getsops/sops": {
+    "likes": 0,
+    "rank": 307
+  },
+  "ggml-org/llama.cpp": {
+    "likes": 0,
+    "rank": 44
+  },
+  "ggml-org/whisper.cpp": {
+    "likes": 0,
+    "rank": 130
+  },
+  "ghostty-org/ghostty": {
+    "likes": 0,
+    "rank": 113
+  },
+  "gin-gonic/gin": {
+    "likes": 0,
+    "rank": 76
+  },
+  "git-tips/tips": {
+    "likes": 0,
+    "rank": 320
+  },
+  "gitlabhq/gitlabhq": {
+    "likes": 0,
+    "rank": 299
+  },
+  "gitleaks/gitleaks": {
+    "likes": 0,
+    "rank": 255
+  },
+  "glanceapp/glance": {
+    "likes": 0,
+    "rank": 203
+  },
+  "go-gitea/gitea": {
+    "likes": 1,
+    "rank": 17
+  },
+  "goauthentik/authentik": {
+    "likes": 0,
+    "rank": 286
+  },
+  "gofiber/fiber": {
+    "likes": 0,
+    "rank": 191
+  },
+  "gohugoio/hugo": {
+    "likes": 0,
+    "rank": 74
+  },
+  "golang/go": {
+    "likes": 1,
+    "rank": 4
+  },
+  "golangci/golangci-lint": {
+    "likes": 0,
+    "rank": 331
+  },
+  "google-gemini/gemini-cli": {
+    "likes": 0,
+    "rank": 59
+  },
+  "google/googletest": {
+    "likes": 0,
+    "rank": 195
+  },
+  "google/material-design-icons": {
+    "likes": 0,
+    "rank": 132
+  },
+  "googlechrome/lighthouse": {
+    "likes": 0,
+    "rank": 253
+  },
+  "grafana/grafana": {
+    "likes": 1,
+    "rank": 14
+  },
+  "grafana/k6": {
+    "likes": 1,
+    "rank": 25
+  },
+  "gravitational/teleport": {
+    "likes": 0,
+    "rank": 326
+  },
+  "grpc/grpc": {
+    "likes": 0,
+    "rank": 166
+  },
+  "hasura/graphql-engine": {
+    "likes": 0,
+    "rank": 242
+  },
+  "heapy/awesome-kotlin": {
+    "likes": 0,
+    "rank": 393
+  },
+  "helix-editor/helix": {
+    "likes": 0,
+    "rank": 160
+  },
+  "helm/helm": {
+    "likes": 0,
+    "rank": 257
+  },
+  "heroui-inc/heroui": {
+    "likes": 0,
+    "rank": 252
+  },
+  "heynickc/awesome-ddd": {
+    "likes": 0,
+    "rank": 386
+  },
+  "home-assistant/core": {
+    "likes": 0,
+    "rank": 67
+  },
+  "honojs/hono": {
+    "likes": 0,
+    "rank": 235
+  },
+  "huggingface/diffusers": {
+    "likes": 0,
+    "rank": 227
+  },
+  "huggingface/transformers": {
+    "likes": 0,
+    "rank": 39
+  },
+  "iconify/iconify": {
+    "likes": 0,
+    "rank": 436
+  },
+  "igorbarinov/awesome-data-engineering": {
+    "likes": 0,
+    "rank": 412
+  },
+  "immerjs/immer": {
+    "likes": 0,
+    "rank": 270
+  },
+  "immich-app/immich": {
+    "likes": 0,
+    "rank": 50
+  },
+  "infisical/infisical": {
+    "likes": 0,
+    "rank": 258
+  },
+  "influxdata/influxdb": {
+    "likes": 0,
+    "rank": 247
+  },
+  "intuitem/ciso-assistant-community": {
+    "likes": 0,
+    "rank": 442
+  },
+  "ionic-team/capacitor": {
+    "likes": 0,
+    "rank": 349
+  },
+  "ionic-team/ionic-framework": {
+    "likes": 0,
+    "rank": 136
+  },
+  "isc-projects/bind9": {
+    "likes": 0,
+    "rank": 451
+  },
+  "istio/istio": {
+    "likes": 0,
+    "rank": 201
+  },
+  "jakewharton/timber": {
+    "likes": 0,
+    "rank": 400
+  },
+  "jasmine/jasmine": {
+    "likes": 0,
+    "rank": 361
+  },
+  "jax-ml/jax": {
+    "likes": 0,
+    "rank": 213
+  },
+  "jaywcjlove/awesome-mac": {
+    "likes": 0,
+    "rank": 51
+  },
+  "jekyll/jekyll": {
+    "likes": 0,
+    "rank": 140
+  },
+  "jellyfin/jellyfin": {
+    "likes": 0,
+    "rank": 124
+  },
+  "jenkinsci/jenkins": {
+    "likes": 1,
+    "rank": 27
+  },
+  "jesseduffield/lazygit": {
+    "likes": 0,
+    "rank": 79
+  },
+  "jestjs/jest": {
+    "likes": 1,
+    "rank": 20
+  },
+  "jetbrains/compose-multiplatform": {
+    "likes": 0,
+    "rank": 333
+  },
+  "jgthms/bulma": {
+    "likes": 0,
+    "rank": 149
+  },
+  "jonataslaw/getx": {
+    "likes": 0,
+    "rank": 395
+  },
+  "jquery/jquery": {
+    "likes": 0,
+    "rank": 123
+  },
+  "juanfont/headscale": {
+    "likes": 0,
+    "rank": 165
+  },
+  "juliangarnier/anime": {
+    "likes": 0,
+    "rank": 91
+  },
+  "junegunn/fzf": {
+    "likes": 0,
+    "rank": 77
+  },
+  "junit-team/junit-framework": {
+    "likes": 0,
+    "rank": 429
+  },
+  "k3s-io/k3s": {
+    "likes": 1,
+    "rank": 23
+  },
+  "karakeep-app/karakeep": {
+    "likes": 0,
+    "rank": 256
+  },
+  "kdeldycke/awesome-falsehood": {
+    "likes": 0,
+    "rank": 276
+  },
+  "keras-team/keras": {
+    "likes": 0,
+    "rank": 111
+  },
+  "kestra-io/kestra": {
+    "likes": 0,
+    "rank": 262
+  },
+  "keycloak/keycloak": {
+    "likes": 1,
+    "rank": 22
+  },
+  "koajs/koa": {
+    "likes": 0,
+    "rank": 218
+  },
+  "koalaman/shellcheck": {
+    "likes": 0,
+    "rank": 189
+  },
+  "kong/insomnia": {
+    "likes": 0,
+    "rank": 192
+  },
+  "kong/kong": {
+    "likes": 0,
+    "rank": 171
+  },
+  "kovidgoyal/kitty": {
+    "likes": 0,
+    "rank": 219
+  },
+  "ktorio/ktor": {
+    "likes": 0,
+    "rank": 373
+  },
+  "kubernetes/kubernetes": {
+    "likes": 1,
+    "rank": 6
+  },
+  "labstack/echo": {
+    "likes": 0,
+    "rank": 236
+  },
+  "langchain-ai/langchain": {
+    "likes": 0,
+    "rank": 41
+  },
+  "langchain-ai/langgraph": {
+    "likes": 0,
+    "rank": 169
+  },
+  "langfuse/langfuse": {
+    "likes": 0,
+    "rank": 209
+  },
+  "laravel/framework": {
+    "likes": 0,
+    "rank": 225
+  },
+  "linux-audit/audit-userspace": {
+    "likes": 0,
+    "rank": 452
+  },
+  "lldap/lldap": {
+    "likes": 0,
+    "rank": 433
+  },
+  "locustio/locust": {
+    "likes": 0,
+    "rank": 273
+  },
+  "louislam/dockge": {
+    "likes": 0,
+    "rank": 296
+  },
+  "louislam/uptime-kuma": {
+    "likes": 0,
+    "rank": 65
+  },
+  "lukasz-madon/awesome-remote-job": {
+    "likes": 0,
+    "rank": 147
+  },
+  "lysine-dev/okhttp": {
+    "likes": 0,
+    "rank": 158
+  },
+  "lysine-dev/retrofit": {
+    "likes": 0,
+    "rank": 176
+  },
+  "mantinedev/mantine": {
+    "likes": 0,
+    "rank": 246
+  },
+  "mariadb/server": {
+    "likes": 0,
+    "rank": 418
+  },
+  "material-components/material-web": {
+    "likes": 0,
+    "rank": 392
+  },
+  "matiassingers/awesome-readme": {
+    "likes": 0,
+    "rank": 321
+  },
+  "matteocrippa/awesome-swift": {
+    "likes": 0,
+    "rank": 285
+  },
+  "meirwah/awesome-incident-response": {
+    "likes": 0,
+    "rank": 409
+  },
+  "mem0ai/mem0": {
+    "likes": 0,
+    "rank": 100
+  },
+  "mermaid-js/mermaid": {
+    "likes": 0,
+    "rank": 73
+  },
+  "meta/docusaurus": {
+    "likes": 0,
+    "rank": 106
+  },
+  "mfornos/awesome-microservices": {
+    "likes": 0,
+    "rank": 372
+  },
+  "microsoft/markitdown": {
+    "likes": 0,
+    "rank": 34
+  },
+  "microsoft/monaco-editor": {
+    "likes": 0,
+    "rank": 159
+  },
+  "microsoft/playwright": {
+    "likes": 1,
+    "rank": 10
+  },
+  "microsoft/typescript": {
+    "likes": 0,
+    "rank": 56
+  },
+  "microsoft/vscode": {
+    "likes": 0,
+    "rank": 33
+  },
+  "mikefarah/yq": {
+    "likes": 0,
+    "rank": 357
+  },
+  "milvus-io/milvus": {
+    "likes": 0,
+    "rank": 162
+  },
+  "mitmproxy/mitmproxy": {
+    "likes": 0,
+    "rank": 161
+  },
+  "mjhea0/awesome-fastapi": {
+    "likes": 0,
+    "rank": 391
+  },
+  "mmccaff/placestopostyourstartup": {
+    "likes": 0,
+    "rank": 421
+  },
+  "mobxjs/mobx": {
+    "likes": 0,
+    "rank": 274
+  },
+  "moby/moby": {
+    "likes": 0,
+    "rank": 94
+  },
+  "mochajs/mocha": {
+    "likes": 0,
+    "rank": 313
+  },
+  "mockito/mockito": {
+    "likes": 0,
+    "rank": 365
+  },
+  "mockk/mockk": {
+    "likes": 0,
+    "rank": 439
+  },
+  "mockoon/mockoon": {
+    "likes": 0,
+    "rank": 420
+  },
+  "motiondivision/motion": {
+    "likes": 0,
+    "rank": 224
+  },
+  "mrdoob/three.js": {
+    "likes": 0,
+    "rank": 52
+  },
+  "mswjs/msw": {
+    "likes": 0,
+    "rank": 337
+  },
+  "mui/material-ui": {
+    "likes": 0,
+    "rank": 63
+  },
+  "mungell/awesome-for-beginners": {
+    "likes": 0,
+    "rank": 72
+  },
+  "mysql/mysql-server": {
+    "likes": 0,
+    "rank": 384
+  },
+  "nagiosenterprises/nagioscore": {
+    "likes": 0,
+    "rank": 446
+  },
+  "nativescript/nativescript": {
+    "likes": 0,
+    "rank": 292
+  },
+  "neo4j/neo4j": {
+    "likes": 0,
+    "rank": 345
+  },
+  "nestjs/nest": {
+    "likes": 0,
+    "rank": 88
+  },
+  "netbirdio/netbird": {
+    "likes": 0,
+    "rank": 254
+  },
+  "netdata/netdata": {
+    "likes": 0,
+    "rank": 81
+  },
+  "nextcloud/server": {
+    "likes": 0,
+    "rank": 205
+  },
+  "nginx/nginx": {
+    "likes": 0,
+    "rank": 244
+  },
+  "nginxproxymanager/nginx-proxy-manager": {
+    "likes": 0,
+    "rank": 228
+  },
+  "nock/nock": {
+    "likes": 0,
+    "rank": 382
+  },
+  "nodejs/node": {
+    "likes": 1,
+    "rank": 8
+  },
+  "nrwl/nx": {
+    "likes": 0,
+    "rank": 267
+  },
+  "nushell/nushell": {
+    "likes": 0,
+    "rank": 184
+  },
+  "nuxt/nuxt": {
+    "likes": 0,
+    "rank": 120
+  },
+  "oai/openapi-specification": {
+    "likes": 0,
+    "rank": 251
+  },
+  "ohmyzsh/ohmyzsh": {
+    "likes": 0,
+    "rank": 36
+  },
+  "oisf/suricata": {
+    "likes": 0,
+    "rank": 432
+  },
+  "ollama/ollama": {
+    "likes": 2,
+    "rank": 2
+  },
+  "onevcat/kingfisher": {
+    "likes": 0,
+    "rank": 300
+  },
+  "open-telemetry/opentelemetry-collector": {
+    "likes": 0,
+    "rank": 425
+  },
+  "open-webui/open-webui": {
+    "likes": 0,
+    "rank": 40
+  },
+  "openai/codex": {
+    "likes": 1,
+    "rank": 5
+  },
+  "openai/openai-python": {
+    "likes": 0,
+    "rank": 243
+  },
+  "openai/whisper": {
+    "likes": 0,
+    "rank": 55
+  },
+  "openbao/openbao": {
+    "likes": 0,
+    "rank": 414
+  },
+  "opencv/opencv": {
+    "likes": 0,
+    "rank": 71
+  },
+  "openhands/openhands": {
+    "likes": 0,
+    "rank": 66
+  },
+  "openscap/openscap": {
+    "likes": 0,
+    "rank": 447
+  },
+  "opensearch-project/opensearch": {
+    "likes": 0,
+    "rank": 378
+  },
+  "openshift/microshift": {
+    "likes": 0,
+    "rank": 450
+  },
+  "openssl/openssl": {
+    "likes": 0,
+    "rank": 249
+  },
+  "openvoxproject/openvox": {
+    "likes": 0,
+    "rank": 453
+  },
+  "osquery/osquery": {
+    "likes": 0,
+    "rank": 306
+  },
+  "owainlewis/awesome-artificial-intelligence": {
+    "likes": 0,
+    "rank": 351
+  },
+  "pallets/flask": {
+    "likes": 0,
+    "rank": 90
+  },
+  "pandas-dev/pandas": {
+    "likes": 0,
+    "rank": 145
+  },
+  "paperless-ngx/paperless-ngx": {
+    "likes": 0,
+    "rank": 154
+  },
+  "parcel-bundler/parcel": {
+    "likes": 0,
+    "rank": 175
+  },
+  "passbolt/passbolt_api": {
+    "likes": 0,
+    "rank": 438
+  },
+  "patrickjs/awesome-angular": {
+    "likes": 0,
+    "rank": 403
+  },
+  "penpot/penpot": {
+    "likes": 0,
+    "rank": 116
+  },
+  "perl/perl5": {
+    "likes": 0,
+    "rank": 445
+  },
+  "phoenixframework/phoenix": {
+    "likes": 0,
+    "rank": 310
+  },
+  "phosphor-icons/homepage": {
+    "likes": 0,
+    "rank": 424
+  },
+  "php/php-src": {
+    "likes": 0,
+    "rank": 183
+  },
+  "pingcap/tidb": {
+    "likes": 0,
+    "rank": 186
+  },
+  "pixijs/pixijs": {
+    "likes": 0,
+    "rank": 152
+  },
+  "plausible/analytics": {
+    "likes": 0,
+    "rank": 266
+  },
+  "pmndrs/zustand": {
+    "likes": 0,
+    "rank": 126
+  },
+  "pnpm/pnpm": {
+    "likes": 0,
+    "rank": 211
+  },
+  "podman-container-tools/podman": {
+    "likes": 0,
+    "rank": 234
+  },
+  "pointfreeco/swift-composable-architecture": {
+    "likes": 0,
+    "rank": 369
+  },
+  "pola-rs/polars": {
+    "likes": 0,
+    "rank": 190
+  },
+  "portainer/portainer": {
+    "likes": 0,
+    "rank": 199
+  },
+  "postgres/postgres": {
+    "likes": 1,
+    "rank": 28
+  },
+  "preactjs/preact": {
+    "likes": 0,
+    "rank": 197
+  },
+  "prefecthq/prefect": {
+    "likes": 0,
+    "rank": 304
+  },
+  "prestodb/presto": {
+    "likes": 0,
+    "rank": 352
+  },
+  "prettier/prettier": {
+    "likes": 0,
+    "rank": 138
+  },
+  "primer/octicons": {
+    "likes": 0,
+    "rank": 415
+  },
+  "prisma/orm": {
+    "likes": 0,
+    "rank": 155
+  },
+  "projectdiscovery/nuclei": {
+    "likes": 0,
+    "rank": 238
+  },
+  "prometheus/node_exporter": {
+    "likes": 0,
+    "rank": 379
+  },
+  "prometheus/prometheus": {
+    "likes": 1,
+    "rank": 15
+  },
+  "psf/requests": {
+    "likes": 0,
+    "rank": 131
+  },
+  "puppeteer/puppeteer": {
+    "likes": 1,
+    "rank": 12
+  },
+  "pytest-dev/pytest": {
+    "likes": 0,
+    "rank": 371
+  },
+  "python-poetry/poetry": {
+    "likes": 0,
+    "rank": 230
+  },
+  "python/cpython": {
+    "likes": 0,
+    "rank": 87
+  },
+  "qazbnm456/awesome-web-security": {
+    "likes": 0,
+    "rank": 377
+  },
+  "qdrant/qdrant": {
+    "likes": 0,
+    "rank": 220
+  },
+  "questdb/questdb": {
+    "likes": 0,
+    "rank": 343
+  },
+  "radix-ui/primitives": {
+    "likes": 0,
+    "rank": 332
+  },
+  "rails/rails": {
+    "likes": 0,
+    "rank": 125
+  },
+  "rancher/rancher": {
+    "likes": 0,
+    "rank": 291
+  },
+  "ranger/ranger": {
+    "likes": 0,
+    "rank": 344
+  },
+  "ray-project/ray": {
+    "likes": 0,
+    "rank": 173
+  },
+  "react-bootstrap/react-bootstrap": {
+    "likes": 0,
+    "rank": 314
+  },
+  "react-hook-form/react-hook-form": {
+    "likes": 0,
+    "rank": 168
+  },
+  "react/react": {
+    "likes": 2,
+    "rank": 1
+  },
+  "react/react-native": {
+    "likes": 1,
+    "rank": 7
+  },
+  "reactivex/rxandroid": {
+    "likes": 0,
+    "rank": 328
+  },
+  "reactivex/rxswift": {
+    "likes": 0,
+    "rank": 297
+  },
+  "realm/realm-swift": {
+    "likes": 0,
+    "rank": 354
+  },
+  "realm/swiftlint": {
+    "likes": 0,
+    "rank": 329
+  },
+  "recharts/recharts": {
+    "likes": 0,
+    "rank": 278
+  },
+  "reduxjs/redux": {
+    "likes": 0,
+    "rank": 118
+  },
+  "remix-run/react-router": {
+    "likes": 0,
+    "rank": 127
+  },
+  "remix-run/remix": {
+    "likes": 0,
+    "rank": 233
+  },
+  "renovatebot/renovate": {
+    "likes": 0,
+    "rank": 312
+  },
+  "restic/restic": {
+    "likes": 0,
+    "rank": 210
+  },
+  "robotframework/robotframework": {
+    "likes": 0,
+    "rank": 389
+  },
+  "rockerboo/awesome-neovim": {
+    "likes": 0,
+    "rank": 322
+  },
+  "rossant/awesome-math": {
+    "likes": 0,
+    "rank": 350
+  },
+  "rqlite/rqlite": {
+    "likes": 0,
+    "rank": 339
+  },
+  "ruby/ruby": {
+    "likes": 0,
+    "rank": 305
+  },
+  "run-llama/llama_index": {
+    "likes": 0,
+    "rank": 135
+  },
+  "rust-lang/rust": {
+    "likes": 0,
+    "rank": 49
+  },
+  "rust-unofficial/awesome-rust": {
+    "likes": 0,
+    "rank": 122
+  },
+  "rustdesk/rustdesk": {
+    "likes": 0,
+    "rank": 46
+  },
+  "saadeghi/daisyui": {
+    "likes": 0,
+    "rank": 180
+  },
+  "samba-team/samba": {
+    "likes": 0,
+    "rank": 449
+  },
+  "scikit-learn/scikit-learn": {
+    "likes": 0,
+    "rank": 101
+  },
+  "searxng/searxng": {
+    "likes": 0,
+    "rank": 196
+  },
+  "seleniumhq/selenium": {
+    "likes": 0,
+    "rank": 229
+  },
+  "semantic-release/semantic-release": {
+    "likes": 0,
+    "rank": 303
+  },
+  "semaphoreui/semaphore": {
+    "likes": 0,
+    "rank": 375
+  },
+  "semgrep/semgrep": {
+    "likes": 0,
+    "rank": 342
+  },
+  "sequelize/sequelize": {
+    "likes": 0,
+    "rank": 259
+  },
+  "serhii-londar/open-source-mac-os-apps": {
+    "likes": 0,
+    "rank": 141
+  },
+  "shadcn-ui/ui": {
+    "likes": 0,
+    "rank": 47
+  },
+  "sharkdp/bat": {
+    "likes": 0,
+    "rank": 119
+  },
+  "sharkdp/fd": {
+    "likes": 0,
+    "rank": 167
+  },
+  "sharkdp/hyperfine": {
+    "likes": 0,
+    "rank": 268
+  },
+  "sigstore/cosign": {
+    "likes": 0,
+    "rank": 435
+  },
+  "sindresorhus/awesome-nodejs": {
+    "likes": 0,
+    "rank": 104
+  },
+  "siyuan-note/siyuan": {
+    "likes": 0,
+    "rank": 157
+  },
+  "software-mansion/react-native-reanimated": {
+    "likes": 0,
+    "rank": 397
+  },
+  "solidjs/solid": {
+    "likes": 0,
+    "rank": 215
+  },
+  "solido/awesome-flutter": {
+    "likes": 0,
+    "rank": 117
+  },
+  "sorrycc/awesome-javascript": {
+    "likes": 0,
+    "rank": 223
+  },
+  "spring-projects/spring-boot": {
+    "likes": 0,
+    "rank": 80
+  },
+  "sqlc-dev/sqlc": {
+    "likes": 0,
+    "rank": 335
+  },
+  "square/leakcanary": {
+    "likes": 0,
+    "rank": 264
+  },
+  "square/moshi": {
+    "likes": 0,
+    "rank": 401
+  },
+  "starship/starship": {
+    "likes": 1,
+    "rank": 16
+  },
+  "steven2358/awesome-generative-ai": {
+    "likes": 0,
+    "rank": 383
+  },
+  "storybookjs/storybook": {
+    "likes": 0,
+    "rank": 70
+  },
+  "stretchr/testify": {
+    "likes": 0,
+    "rank": 287
+  },
+  "supabase/supabase": {
+    "likes": 1,
+    "rank": 9
+  },
+  "sveltejs/svelte": {
+    "likes": 1,
+    "rank": 13
+  },
+  "swagger-api/swagger-ui": {
+    "likes": 0,
+    "rank": 269
+  },
+  "swiftlang/swift": {
+    "likes": 0,
+    "rank": 96
+  },
+  "sxyazi/yazi": {
+    "likes": 0,
+    "rank": 178
+  },
+  "symfony/symfony": {
+    "likes": 0,
+    "rank": 248
+  },
+  "syncthing/syncthing": {
+    "likes": 0,
+    "rank": 75
+  },
+  "tabler/tabler-icons": {
+    "likes": 0,
+    "rank": 315
+  },
+  "tailscale/tailscale": {
+    "likes": 1,
+    "rank": 21
+  },
+  "tailwindlabs/tailwindcss": {
+    "likes": 1,
+    "rank": 11
+  },
+  "tanstack/query": {
+    "likes": 0,
+    "rank": 146
+  },
+  "tanstack/table": {
+    "likes": 0,
+    "rank": 272
+  },
+  "tauri-apps/tauri": {
+    "likes": 0,
+    "rank": 54
+  },
+  "temporalio/temporal": {
+    "likes": 0,
+    "rank": 301
+  },
+  "tensorflow/tensorflow": {
+    "likes": 0,
+    "rank": 32
+  },
+  "testcontainers/testcontainers-java": {
+    "likes": 0,
+    "rank": 416
+  },
+  "testing-library/react-testing-library": {
+    "likes": 0,
+    "rank": 330
+  },
+  "textualize/textual": {
+    "likes": 0,
+    "rank": 204
+  },
+  "tmux/tmux": {
+    "likes": 0,
+    "rank": 148
+  },
+  "tokio-rs/axum": {
+    "likes": 0,
+    "rank": 277
+  },
+  "traefik/traefik": {
+    "likes": 0,
+    "rank": 110
+  },
+  "trpc/trpc": {
+    "likes": 0,
+    "rank": 185
+  },
+  "trufflesecurity/trufflehog": {
+    "likes": 1,
+    "rank": 26
+  },
+  "tryghost/ghost": {
+    "likes": 0,
+    "rank": 129
+  },
+  "tsenart/vegeta": {
+    "likes": 0,
+    "rank": 293
+  },
+  "tursodatabase/libsql": {
+    "likes": 0,
+    "rank": 347
+  },
+  "twbs/bootstrap": {
+    "likes": 0,
+    "rank": 38
+  },
+  "typeorm/typeorm": {
+    "likes": 0,
+    "rank": 212
+  },
+  "typesense/typesense": {
+    "likes": 0,
+    "rank": 281
+  },
+  "ueberdosis/tiptap": {
+    "likes": 0,
+    "rank": 198
+  },
+  "ultralytics/ultralytics": {
+    "likes": 0,
+    "rank": 114
+  },
+  "umami-software/umami": {
+    "likes": 0,
+    "rank": 194
+  },
+  "unicodeveloper/awesome-nextjs": {
+    "likes": 0,
+    "rank": 396
+  },
+  "unixorn/awesome-zsh-plugins": {
+    "likes": 0,
+    "rank": 338
+  },
+  "unslothai/unsloth": {
+    "likes": 0,
+    "rank": 84
+  },
+  "usebruno/bruno": {
+    "likes": 0,
+    "rank": 153
+  },
+  "usememos/memos": {
+    "likes": 0,
+    "rank": 112
+  },
+  "valkey-io/valkey": {
+    "likes": 0,
+    "rank": 279
+  },
+  "vapor/vapor": {
+    "likes": 0,
+    "rank": 288
+  },
+  "veggiemonk/awesome-docker": {
+    "likes": 0,
+    "rank": 208
+  },
+  "velocidex/velociraptor": {
+    "likes": 0,
+    "rank": 443
+  },
+  "vercel/next.js": {
+    "likes": 1,
+    "rank": 3
+  },
+  "vercel/swr": {
+    "likes": 0,
+    "rank": 239
+  },
+  "vercel/turborepo": {
+    "likes": 0,
+    "rank": 250
+  },
+  "vitejs/vite": {
+    "likes": 0,
+    "rank": 78
+  },
+  "vitessio/vitess": {
+    "likes": 0,
+    "rank": 325
+  },
+  "vitest-dev/vitest": {
+    "likes": 0,
+    "rank": 346
+  },
+  "vllm-project/vllm": {
+    "likes": 0,
+    "rank": 64
+  },
+  "vsouza/awesome-ios": {
+    "likes": 0,
+    "rank": 133
+  },
+  "vuejs/awesome-vue": {
+    "likes": 0,
+    "rank": 93
+  },
+  "vuejs/core": {
+    "likes": 1,
+    "rank": 18
+  },
+  "vueuse/vueuse": {
+    "likes": 0,
+    "rank": 317
+  },
+  "wazuh/wazuh": {
+    "likes": 0,
+    "rank": 341
+  },
+  "webdriverio/webdriverio": {
+    "likes": 0,
+    "rank": 405
+  },
+  "webpack/webpack": {
+    "likes": 0,
+    "rank": 108
+  },
+  "webpro/awesome-dotfiles": {
+    "likes": 0,
+    "rank": 399
+  },
+  "wiremock/wiremock": {
+    "likes": 0,
+    "rank": 426
+  },
+  "wix/detox": {
+    "likes": 0,
+    "rank": 388
+  },
+  "wix/react-native-navigation": {
+    "likes": 0,
+    "rank": 380
+  },
+  "xtekky/gpt4free": {
+    "likes": 0,
+    "rank": 105
+  },
+  "zabbix/zabbix": {
+    "likes": 0,
+    "rank": 434
+  },
+  "zaproxy/zaproxy": {
+    "likes": 0,
+    "rank": 359
+  },
+  "zellij-org/zellij": {
+    "likes": 0,
+    "rank": 217
+  },
+  "zitadel/zitadel": {
+    "likes": 0,
+    "rank": 362
+  },
+  "zsh-users/zsh-syntax-highlighting": {
+    "likes": 0,
+    "rank": 311
+  }
+}

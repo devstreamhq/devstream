@@ -45,7 +45,7 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/476009?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
-    "pushed_at": "2026-11-11T03:11:06Z",
+    "pushed_at": "2026-11-11T17:48:22Z",
     "stars": 16026
   },
   "adrientorris/awesome-blazor": {
@@ -67,7 +67,7 @@
     "language": "Rust",
     "language_color": "#dea584",
     "pushed_at": "2026-11-08T02:51:28Z",
-    "stars": 40563
+    "stars": 40564
   },
   "akullpp/awesome-java": {
     "avatar_url": "https://avatars.githubusercontent.com/u/4538351?u=e505b161676889a6042aac7381b3b9b2cc247820&v=4",
@@ -102,7 +102,7 @@
     "language": "HTML",
     "language_color": "#e34c26",
     "pushed_at": "2026-11-04T00:45:57Z",
-    "stars": 32016
+    "stars": 32017
   },
   "analysis-tools-dev/static-analysis": {
     "avatar_url": "https://avatars.githubusercontent.com/u/62759712?v=4",
@@ -136,8 +136,8 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/139426?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
-    "pushed_at": "2026-11-11T17:10:57Z",
-    "stars": 101427
+    "pushed_at": "2026-11-11T17:47:35Z",
+    "stars": 101428
   },
   "angular/angular-cli": {
     "avatar_url": "https://avatars.githubusercontent.com/u/139426?v=4",
@@ -165,7 +165,7 @@
     "language": "Python",
     "language_color": "#3572A5",
     "pushed_at": "2026-11-11T17:05:15Z",
-    "stars": 47450
+    "stars": 47452
   },
   "apache/arrow": {
     "avatar_url": "https://avatars.githubusercontent.com/u/47359?v=4",
@@ -228,13 +228,13 @@
     "language": "Java",
     "language_color": "#b07219",
     "pushed_at": "2026-11-11T16:56:00Z",
-    "stars": 34208
+    "stars": 34209
   },
   "apache/spark": {
     "avatar_url": "https://avatars.githubusercontent.com/u/47359?v=4",
     "language": "Scala",
     "language_color": "#c22d40",
-    "pushed_at": "2026-11-11T16:32:09Z",
+    "pushed_at": "2026-11-11T17:29:07Z",
     "stars": 44466
   },
   "apache/superset": {
@@ -249,7 +249,7 @@
     "language": "Dart",
     "language_color": "#00B4AB",
     "pushed_at": "2026-11-02T23:40:52Z",
-    "stars": 78724
+    "stars": 78728
   },
   "appium/appium": {
     "avatar_url": "https://avatars.githubusercontent.com/u/3221291?v=4",
@@ -276,22 +276,22 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/115962839?v=4",
     "language": "Rust",
     "language_color": "#dea584",
-    "pushed_at": "2026-11-11T17:00:00Z",
-    "stars": 51131
+    "pushed_at": "2026-11-11T18:12:05Z",
+    "stars": 51133
   },
   "astral-sh/uv": {
     "avatar_url": "https://avatars.githubusercontent.com/u/115962839?v=4",
     "language": "Rust",
     "language_color": "#dea584",
     "pushed_at": "2026-11-11T15:49:58Z",
-    "stars": 91855
+    "stars": 91858
   },
   "atuinsh/atuin": {
     "avatar_url": "https://avatars.githubusercontent.com/u/122059230?v=4",
     "language": "Rust",
     "language_color": "#dea584",
     "pushed_at": "2026-11-11T02:41:53Z",
-    "stars": 32285
+    "stars": 32288
   },
   "avajs/ava": {
     "avatar_url": "https://avatars.githubusercontent.com/u/8527916?v=4",
@@ -305,84 +305,84 @@
     "language": "Go",
     "language_color": "#00ADD8",
     "pushed_at": "2026-11-11T11:04:45Z",
-    "stars": 193299
+    "stars": 193311
   },
   "awesomedata/awesome-public-datasets": {
     "avatar_url": "https://avatars.githubusercontent.com/u/35111974?v=4",
     "language": null,
     "language_color": null,
     "pushed_at": "2026-11-11T17:15:09Z",
-    "stars": 80031
+    "stars": 80032
   },
   "axios/axios": {
     "avatar_url": "https://avatars.githubusercontent.com/u/32372333?v=4",
     "language": "JavaScript",
     "language_color": "#f1e05a",
     "pushed_at": "2026-11-11T12:36:21Z",
-    "stars": 109345
+    "stars": 109344
   },
   "babel/babel": {
     "avatar_url": "https://avatars.githubusercontent.com/u/9637642?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
-    "pushed_at": "2026-11-11T17:15:05Z",
+    "pushed_at": "2026-11-11T18:08:52Z",
     "stars": 44057
   },
   "bazelbuild/bazel": {
     "avatar_url": "https://avatars.githubusercontent.com/u/11684617?v=4",
     "language": "Java",
     "language_color": "#b07219",
-    "pushed_at": "2026-11-11T16:55:23Z",
+    "pushed_at": "2026-11-11T18:05:59Z",
     "stars": 26080
   },
   "berriai/litellm": {
     "avatar_url": "https://avatars.githubusercontent.com/u/121462774?v=4",
     "language": "Python",
     "language_color": "#3572A5",
-    "pushed_at": "2026-11-11T17:12:34Z",
-    "stars": 63113
+    "pushed_at": "2026-11-11T18:15:45Z",
+    "stars": 63115
   },
   "binwiederhier/ntfy": {
     "avatar_url": "https://avatars.githubusercontent.com/u/664597?u=d20c51ed3d20cab19d2deffc58d028136229ab01&v=4",
     "language": "Go",
     "language_color": "#00ADD8",
     "pushed_at": "2026-11-11T06:58:21Z",
-    "stars": 35483
+    "stars": 35485
   },
   "biomejs/biome": {
     "avatar_url": "https://avatars.githubusercontent.com/u/140182603?v=4",
     "language": "Rust",
     "language_color": "#dea584",
     "pushed_at": "2026-11-11T16:25:51Z",
-    "stars": 26092
+    "stars": 26093
   },
   "blakeblackshear/frigate": {
     "avatar_url": "https://avatars.githubusercontent.com/u/569905?u=a454086144f531389a73fbea93a7835eea06f2a1&v=4",
     "language": "Python",
     "language_color": "#3572A5",
     "pushed_at": "2026-11-11T16:52:48Z",
-    "stars": 37399
+    "stars": 37400
   },
   "burntsushi/ripgrep": {
     "avatar_url": "https://avatars.githubusercontent.com/u/456674?u=6b60f689b8054473ea9d8bddc42211e12ffacda2&v=4",
     "language": "Rust",
     "language_color": "#dea584",
     "pushed_at": "2026-11-09T20:53:12Z",
-    "stars": 69892
+    "stars": 69895
   },
   "caddyserver/caddy": {
     "avatar_url": "https://avatars.githubusercontent.com/u/12955528?v=4",
     "language": "Go",
     "language_color": "#00ADD8",
     "pushed_at": "2026-11-10T14:57:59Z",
-    "stars": 78975
+    "stars": 78978
   },
   "calcom/cal.diy": {
     "avatar_url": "https://avatars.githubusercontent.com/u/79145102?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
-    "pushed_at": "2026-11-11T00:43:43Z",
-    "stars": 49935
+    "pushed_at": "2026-11-11T18:05:45Z",
+    "stars": 49937
   },
   "calinou/awesome-godot": {
     "avatar_url": "https://avatars.githubusercontent.com/u/180032?u=68d23e7ee9cdf810da125e8510b72f845b9dccc8&v=4",
@@ -396,14 +396,14 @@
     "language": "TypeScript",
     "language_color": "#3178c6",
     "pushed_at": "2026-11-10T21:38:25Z",
-    "stars": 14502
+    "stars": 14503
   },
   "catchorg/catch2": {
     "avatar_url": "https://avatars.githubusercontent.com/u/33321405?v=4",
     "language": "C++",
     "language_color": "#f34b7d",
     "pushed_at": "2026-10-30T09:26:37Z",
-    "stars": 21562
+    "stars": 21564
   },
   "certbot/certbot": {
     "avatar_url": "https://avatars.githubusercontent.com/u/17889013?v=4",
@@ -431,14 +431,14 @@
     "language": "JavaScript",
     "language_color": "#f1e05a",
     "pushed_at": "2026-11-11T00:51:45Z",
-    "stars": 129483
+    "stars": 129485
   },
   "charmbracelet/bubbletea": {
     "avatar_url": "https://avatars.githubusercontent.com/u/57376114?v=4",
     "language": "Go",
     "language_color": "#00ADD8",
     "pushed_at": "2026-11-09T10:55:23Z",
-    "stars": 45694
+    "stars": 45695
   },
   "charmbracelet/glow": {
     "avatar_url": "https://avatars.githubusercontent.com/u/57376114?v=4",
@@ -452,7 +452,7 @@
     "language": "Go",
     "language_color": "#00ADD8",
     "pushed_at": "2026-11-01T04:13:41Z",
-    "stars": 24595
+    "stars": 24597
   },
   "chartjs/chart.js": {
     "avatar_url": "https://avatars.githubusercontent.com/u/10342521?v=4",
@@ -494,20 +494,20 @@
     "language": "Go",
     "language_color": "#00ADD8",
     "pushed_at": "2026-11-11T14:26:42Z",
-    "stars": 46961
+    "stars": 46964
   },
   "clickhouse/clickhouse": {
     "avatar_url": "https://avatars.githubusercontent.com/u/54801242?v=4",
     "language": "C++",
     "language_color": "#f34b7d",
-    "pushed_at": "2026-11-11T17:15:47Z",
+    "pushed_at": "2026-11-11T18:14:57Z",
     "stars": 50883
   },
   "cline/cline": {
     "avatar_url": "https://avatars.githubusercontent.com/u/184127137?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
-    "pushed_at": "2026-11-11T13:48:56Z",
+    "pushed_at": "2026-11-11T17:54:31Z",
     "stars": 71523
   },
   "cloudflare/cloudflared": {
@@ -515,7 +515,7 @@
     "language": "Go",
     "language_color": "#00ADD8",
     "pushed_at": "2026-11-09T19:03:53Z",
-    "stars": 16526
+    "stars": 16527
   },
   "cockpit-project/cockpit": {
     "avatar_url": "https://avatars.githubusercontent.com/u/5765104?v=4",
@@ -543,20 +543,20 @@
     "language": "TypeScript",
     "language_color": "#3178c6",
     "pushed_at": "2026-11-06T15:57:41Z",
-    "stars": 44325
+    "stars": 44323
   },
   "comfy-org/comfyui": {
     "avatar_url": "https://avatars.githubusercontent.com/u/166579949?v=4",
     "language": "Python",
     "language_color": "#3572A5",
-    "pushed_at": "2026-11-11T17:08:18Z",
-    "stars": 146339
+    "pushed_at": "2026-11-11T17:34:05Z",
+    "stars": 146345
   },
   "containerd/containerd": {
     "avatar_url": "https://avatars.githubusercontent.com/u/14037953?v=4",
     "language": "Go",
     "language_color": "#00ADD8",
-    "pushed_at": "2026-11-11T16:48:44Z",
+    "pushed_at": "2026-11-11T17:51:53Z",
     "stars": 21475
   },
   "continuedev/continue": {
@@ -578,27 +578,27 @@
     "language": "PHP",
     "language_color": "#4F5D95",
     "pushed_at": "2026-11-11T11:15:10Z",
-    "stars": 65943
+    "stars": 65948
   },
   "crewaiinc/crewai": {
     "avatar_url": "https://avatars.githubusercontent.com/u/170677839?v=4",
     "language": "Python",
     "language_color": "#3572A5",
-    "pushed_at": "2026-11-11T17:10:12Z",
-    "stars": 60776
+    "pushed_at": "2026-11-11T18:15:35Z",
+    "stars": 60777
   },
   "crowdsecurity/crowdsec": {
     "avatar_url": "https://avatars.githubusercontent.com/u/63284097?v=4",
     "language": "Go",
     "language_color": "#00ADD8",
     "pushed_at": "2026-11-10T16:16:23Z",
-    "stars": 15539
+    "stars": 15541
   },
   "cypress-io/cypress": {
     "avatar_url": "https://avatars.githubusercontent.com/u/8908513?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
-    "pushed_at": "2026-11-11T16:58:35Z",
+    "pushed_at": "2026-11-11T17:28:27Z",
     "stars": 51024
   },
   "d3/d3": {
@@ -620,7 +620,7 @@
     "language": "Rust",
     "language_color": "#dea584",
     "pushed_at": "2026-11-11T15:38:41Z",
-    "stars": 32722
+    "stars": 32723
   },
   "dani-garcia/vaultwarden": {
     "avatar_url": "https://avatars.githubusercontent.com/u/725423?v=4",
@@ -633,7 +633,7 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/1609975?v=4",
     "language": "Dart",
     "language_color": "#00B4AB",
-    "pushed_at": "2026-11-11T17:08:29Z",
+    "pushed_at": "2026-11-11T18:06:43Z",
     "stars": 11346
   },
   "data-privacy-stack/presidio": {
@@ -641,7 +641,7 @@
     "language": "Python",
     "language_color": "#3572A5",
     "pushed_at": "2026-11-11T16:06:18Z",
-    "stars": 11837
+    "stars": 11838
   },
   "davidsonfellipe/awesome-wpo": {
     "avatar_url": "https://avatars.githubusercontent.com/u/381179?u=21f528167cae25bbc1d8be300272ebb335211a05&v=4",
@@ -654,7 +654,7 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/34743864?v=4",
     "language": "Java",
     "language_color": "#b07219",
-    "pushed_at": "2026-11-11T17:11:08Z",
+    "pushed_at": "2026-11-11T17:16:42Z",
     "stars": 52399
   },
   "deepspeedai/deepspeed": {
@@ -669,14 +669,14 @@
     "language": "Rust",
     "language_color": "#dea584",
     "pushed_at": "2026-10-29T08:03:10Z",
-    "stars": 108860
+    "stars": 108861
   },
   "derailed/k9s": {
     "avatar_url": "https://avatars.githubusercontent.com/u/4060?u=da7d94a90451eff23ec09dc1764d9104800448c9&v=4",
     "language": "Go",
     "language_color": "#00ADD8",
     "pushed_at": "2026-11-10T17:45:16Z",
-    "stars": 34967
+    "stars": 34972
   },
   "devexpress/testcafe": {
     "avatar_url": "https://avatars.githubusercontent.com/u/4243232?v=4",
@@ -703,7 +703,7 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/27804?v=4",
     "language": "Python",
     "language_color": "#3572A5",
-    "pushed_at": "2026-11-11T07:21:16Z",
+    "pushed_at": "2026-11-11T17:52:42Z",
     "stars": 91661
   },
   "dokku/dokku": {
@@ -717,14 +717,14 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/42156961?v=4",
     "language": "Go",
     "language_color": "#00ADD8",
-    "pushed_at": "2026-11-11T09:18:23Z",
+    "pushed_at": "2026-11-11T17:48:32Z",
     "stars": 24869
   },
   "dotnet/aspnetcore": {
     "avatar_url": "https://avatars.githubusercontent.com/u/9141961?v=4",
     "language": "C#",
     "language_color": "#7355dd",
-    "pushed_at": "2026-11-11T17:14:45Z",
+    "pushed_at": "2026-11-11T18:14:23Z",
     "stars": 38511
   },
   "dotnet/maui": {
@@ -738,7 +738,7 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/9141961?v=4",
     "language": "C#",
     "language_color": "#7355dd",
-    "pushed_at": "2026-11-11T17:15:43Z",
+    "pushed_at": "2026-11-11T18:14:59Z",
     "stars": 18426
   },
   "drizzle-team/drizzle-orm": {
@@ -752,21 +752,21 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/82039556?v=4",
     "language": "C++",
     "language_color": "#f34b7d",
-    "pushed_at": "2026-11-11T16:18:20Z",
-    "stars": 42998
+    "pushed_at": "2026-11-11T18:03:23Z",
+    "stars": 43001
   },
   "ebookfoundation/free-programming-books": {
     "avatar_url": "https://avatars.githubusercontent.com/u/14127308?v=4",
     "language": "Python",
     "language_color": "#3572A5",
     "pushed_at": "2026-11-07T19:10:09Z",
-    "stars": 401408
+    "stars": 401413
   },
   "electron/electron": {
     "avatar_url": "https://avatars.githubusercontent.com/u/13409222?v=4",
     "language": "C++",
     "language_color": "#f34b7d",
-    "pushed_at": "2026-11-11T15:49:59Z",
+    "pushed_at": "2026-11-11T18:10:56Z",
     "stars": 123857
   },
   "element-hq/synapse": {
@@ -780,8 +780,8 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/178641?u=c0542e6a04ad854825120dc83974f2ee58edaf97&v=4",
     "language": "Markdown",
     "language_color": "#083fa1",
-    "pushed_at": "2026-11-10T14:11:36Z",
-    "stars": 17751
+    "pushed_at": "2026-11-11T18:11:26Z",
+    "stars": 17752
   },
   "emacs-tw/awesome-emacs": {
     "avatar_url": "https://avatars.githubusercontent.com/u/7908858?v=4",
@@ -802,21 +802,21 @@
     "language": "TypeScript",
     "language_color": "#3178c6",
     "pushed_at": "2026-08-10T11:13:03Z",
-    "stars": 13193
+    "stars": 13194
   },
   "ente/ente": {
     "avatar_url": "https://avatars.githubusercontent.com/u/64603161?v=4",
     "language": "Dart",
     "language_color": "#00B4AB",
     "pushed_at": "2026-11-11T15:43:39Z",
-    "stars": 30054
+    "stars": 30056
   },
   "eslint/eslint": {
     "avatar_url": "https://avatars.githubusercontent.com/u/6019716?v=4",
     "language": "JavaScript",
     "language_color": "#f1e05a",
-    "pushed_at": "2026-11-11T13:04:37Z",
-    "stars": 27613
+    "pushed_at": "2026-11-11T18:08:44Z",
+    "stars": 27614
   },
   "etcd-io/etcd": {
     "avatar_url": "https://avatars.githubusercontent.com/u/41972792?v=4",
@@ -837,21 +837,21 @@
     "language": "TypeScript",
     "language_color": "#3178c6",
     "pushed_at": "2026-11-11T12:53:18Z",
-    "stars": 135504
+    "stars": 135507
   },
   "expo/expo": {
     "avatar_url": "https://avatars.githubusercontent.com/u/12504344?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
-    "pushed_at": "2026-11-11T16:53:33Z",
-    "stars": 53469
+    "pushed_at": "2026-11-11T18:06:09Z",
+    "stars": 53471
   },
   "expressjs/express": {
     "avatar_url": "https://avatars.githubusercontent.com/u/5658226?v=4",
     "language": "JavaScript",
     "language_color": "#f1e05a",
     "pushed_at": "2026-11-02T20:15:26Z",
-    "stars": 69628
+    "stars": 69629
   },
   "fail2ban/fail2ban": {
     "avatar_url": "https://avatars.githubusercontent.com/u/1087378?v=4",
@@ -872,7 +872,7 @@
     "language": "Python",
     "language_color": "#3572A5",
     "pushed_at": "2026-11-11T11:08:08Z",
-    "stars": 104594
+    "stars": 104596
   },
   "fastify/fastify": {
     "avatar_url": "https://avatars.githubusercontent.com/u/24939410?v=4",
@@ -900,28 +900,28 @@
     "language": null,
     "language_color": null,
     "pushed_at": "2026-11-11T06:27:28Z",
-    "stars": 74360
+    "stars": 74361
   },
   "filosottile/age": {
     "avatar_url": "https://avatars.githubusercontent.com/u/1225294?u=f9186107b90a6f746f8e7192ee7b1d5a68f4ab07&v=4",
     "language": "Go",
     "language_color": "#00ADD8",
     "pushed_at": "2026-08-29T17:55:36Z",
-    "stars": 24294
+    "stars": 24297
   },
   "fleetdm/fleet": {
     "avatar_url": "https://avatars.githubusercontent.com/u/70264713?v=4",
     "language": "Go",
     "language_color": "#00ADD8",
-    "pushed_at": "2026-11-11T17:08:56Z",
+    "pushed_at": "2026-11-11T18:12:20Z",
     "stars": 7178
   },
   "flutter/flutter": {
     "avatar_url": "https://avatars.githubusercontent.com/u/14101776?v=4",
     "language": "Dart",
     "language_color": "#00B4AB",
-    "pushed_at": "2026-11-11T17:15:09Z",
-    "stars": 181180
+    "pushed_at": "2026-11-11T18:03:26Z",
+    "stars": 181181
   },
   "fluxcd/flux2": {
     "avatar_url": "https://avatars.githubusercontent.com/u/52158677?v=4",
@@ -969,7 +969,7 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/122929872?v=4",
     "language": "JavaScript",
     "language_color": "#f1e05a",
-    "pushed_at": "2026-11-11T16:21:46Z",
+    "pushed_at": "2026-11-11T18:05:39Z",
     "stars": 33613
   },
   "getredash/redash": {
@@ -990,21 +990,21 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/134263123?v=4",
     "language": "C++",
     "language_color": "#f34b7d",
-    "pushed_at": "2026-11-11T17:09:21Z",
-    "stars": 134080
+    "pushed_at": "2026-11-11T18:06:33Z",
+    "stars": 134089
   },
   "ggml-org/whisper.cpp": {
     "avatar_url": "https://avatars.githubusercontent.com/u/134263123?v=4",
     "language": "C++",
     "language_color": "#f34b7d",
     "pushed_at": "2026-11-10T12:09:38Z",
-    "stars": 55098
+    "stars": 55099
   },
   "ghostty-org/ghostty": {
     "avatar_url": "https://avatars.githubusercontent.com/u/169223740?v=4",
     "language": "Zig",
     "language_color": "#ec915c",
-    "pushed_at": "2026-11-11T15:56:34Z",
+    "pushed_at": "2026-11-11T18:01:54Z",
     "stars": 64005
   },
   "gin-gonic/gin": {
@@ -1012,7 +1012,7 @@
     "language": "Go",
     "language_color": "#00ADD8",
     "pushed_at": "2026-10-10T04:20:35Z",
-    "stars": 89526
+    "stars": 89529
   },
   "git-tips/tips": {
     "avatar_url": "https://avatars.githubusercontent.com/u/13345927?v=4",
@@ -1033,7 +1033,7 @@
     "language": "Go",
     "language_color": "#00ADD8",
     "pushed_at": "2026-10-28T04:14:29Z",
-    "stars": 30914
+    "stars": 30916
   },
   "glanceapp/glance": {
     "avatar_url": "https://avatars.githubusercontent.com/u/159397742?v=4",
@@ -1046,22 +1046,22 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/12724356?v=4",
     "language": "Go",
     "language_color": "#00ADD8",
-    "pushed_at": "2026-11-11T17:11:28Z",
-    "stars": 59027
+    "pushed_at": "2026-11-11T18:09:18Z",
+    "stars": 59028
   },
   "goauthentik/authentik": {
     "avatar_url": "https://avatars.githubusercontent.com/u/82976448?v=4",
     "language": "Python",
     "language_color": "#3572A5",
-    "pushed_at": "2026-11-11T17:03:16Z",
+    "pushed_at": "2026-11-11T17:46:19Z",
     "stars": 26310
   },
   "gofiber/fiber": {
     "avatar_url": "https://avatars.githubusercontent.com/u/59947262?v=4",
     "language": "Go",
     "language_color": "#00ADD8",
-    "pushed_at": "2026-11-11T15:35:29Z",
-    "stars": 40273
+    "pushed_at": "2026-11-11T17:16:35Z",
+    "stars": 40275
   },
   "gohugoio/hugo": {
     "avatar_url": "https://avatars.githubusercontent.com/u/29385237?v=4",
@@ -1074,8 +1074,8 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/4314092?v=4",
     "language": "Go",
     "language_color": "#00ADD8",
-    "pushed_at": "2026-11-11T17:10:01Z",
-    "stars": 139795
+    "pushed_at": "2026-11-11T17:47:55Z",
+    "stars": 139796
   },
   "golangci/golangci-lint": {
     "avatar_url": "https://avatars.githubusercontent.com/u/35628013?v=4",
@@ -1088,7 +1088,7 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/161781182?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
-    "pushed_at": "2026-11-11T17:10:42Z",
+    "pushed_at": "2026-11-11T17:36:42Z",
     "stars": 108774
   },
   "google/googletest": {
@@ -1109,22 +1109,22 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/1778935?v=4",
     "language": "JavaScript",
     "language_color": "#f1e05a",
-    "pushed_at": "2026-11-11T16:30:14Z",
+    "pushed_at": "2026-11-11T17:33:49Z",
     "stars": 31047
   },
   "grafana/grafana": {
     "avatar_url": "https://avatars.githubusercontent.com/u/7195757?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
-    "pushed_at": "2026-11-11T17:15:34Z",
-    "stars": 77835
+    "pushed_at": "2026-11-11T18:13:19Z",
+    "stars": 77839
   },
   "grafana/k6": {
     "avatar_url": "https://avatars.githubusercontent.com/u/7195757?v=4",
     "language": "Go",
     "language_color": "#00ADD8",
     "pushed_at": "2026-11-11T15:03:59Z",
-    "stars": 32260
+    "stars": 32261
   },
   "gravitational/teleport": {
     "avatar_url": "https://avatars.githubusercontent.com/u/10781132?v=4",
@@ -1138,14 +1138,14 @@
     "language": "C++",
     "language_color": "#f34b7d",
     "pushed_at": "2026-11-11T16:09:59Z",
-    "stars": 45440
+    "stars": 45441
   },
   "hasura/graphql-engine": {
     "avatar_url": "https://avatars.githubusercontent.com/u/13966722?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
     "pushed_at": "2026-11-11T01:28:13Z",
-    "stars": 32128
+    "stars": 32129
   },
   "heapy/awesome-kotlin": {
     "avatar_url": "https://avatars.githubusercontent.com/u/15851227?v=4",
@@ -1159,7 +1159,7 @@
     "language": "Rust",
     "language_color": "#dea584",
     "pushed_at": "2026-11-10T15:30:39Z",
-    "stars": 46870
+    "stars": 46871
   },
   "helm/helm": {
     "avatar_url": "https://avatars.githubusercontent.com/u/15859888?v=4",
@@ -1186,15 +1186,15 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/13844975?v=4",
     "language": "Python",
     "language_color": "#3572A5",
-    "pushed_at": "2026-11-11T17:01:55Z",
-    "stars": 92199
+    "pushed_at": "2026-11-11T18:13:29Z",
+    "stars": 92200
   },
   "honojs/hono": {
     "avatar_url": "https://avatars.githubusercontent.com/u/98495527?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
     "pushed_at": "2026-11-11T08:50:10Z",
-    "stars": 32921
+    "stars": 32922
   },
   "huggingface/diffusers": {
     "avatar_url": "https://avatars.githubusercontent.com/u/25720743?v=4",
@@ -1207,7 +1207,7 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/25720743?v=4",
     "language": "Python",
     "language_color": "#3572A5",
-    "pushed_at": "2026-11-11T17:08:53Z",
+    "pushed_at": "2026-11-11T18:12:49Z",
     "stars": 168815
   },
   "iconify/iconify": {
@@ -1222,7 +1222,7 @@
     "language": null,
     "language_color": null,
     "pushed_at": "2026-11-10T12:08:49Z",
-    "stars": 9247
+    "stars": 9249
   },
   "immerjs/immer": {
     "avatar_url": "https://avatars.githubusercontent.com/u/45853199?v=4",
@@ -1235,15 +1235,15 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/109746326?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
-    "pushed_at": "2026-11-11T16:54:04Z",
-    "stars": 118850
+    "pushed_at": "2026-11-11T18:15:58Z",
+    "stars": 118856
   },
   "infisical/infisical": {
     "avatar_url": "https://avatars.githubusercontent.com/u/107880645?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
-    "pushed_at": "2026-11-11T17:12:59Z",
-    "stars": 30430
+    "pushed_at": "2026-11-11T18:15:36Z",
+    "stars": 30431
   },
   "influxdata/influxdb": {
     "avatar_url": "https://avatars.githubusercontent.com/u/5713248?v=4",
@@ -1263,14 +1263,14 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/3171503?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
-    "pushed_at": "2026-11-11T15:18:55Z",
-    "stars": 17067
+    "pushed_at": "2026-11-11T17:36:45Z",
+    "stars": 17068
   },
   "ionic-team/ionic-framework": {
     "avatar_url": "https://avatars.githubusercontent.com/u/3171503?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
-    "pushed_at": "2026-11-11T17:15:03Z",
+    "pushed_at": "2026-11-11T18:05:09Z",
     "stars": 52752
   },
   "isc-projects/bind9": {
@@ -1305,7 +1305,7 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/58486408?v=4",
     "language": "Python",
     "language_color": "#3572A5",
-    "pushed_at": "2026-11-11T16:56:17Z",
+    "pushed_at": "2026-11-11T18:11:56Z",
     "stars": 36610
   },
   "jaywcjlove/awesome-mac": {
@@ -1313,7 +1313,7 @@
     "language": "Swift",
     "language_color": "#F05138",
     "pushed_at": "2026-11-11T16:27:07Z",
-    "stars": 118280
+    "stars": 118288
   },
   "jekyll/jekyll": {
     "avatar_url": "https://avatars.githubusercontent.com/u/3083652?v=4",
@@ -1327,7 +1327,7 @@
     "language": "C#",
     "language_color": "#7355dd",
     "pushed_at": "2026-11-11T16:49:47Z",
-    "stars": 59217
+    "stars": 59219
   },
   "jenkinsci/jenkins": {
     "avatar_url": "https://avatars.githubusercontent.com/u/107424?v=4",
@@ -1340,8 +1340,8 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/8456633?u=1183e9d1442669992861877a4f313b51e3bbd119&v=4",
     "language": "Go",
     "language_color": "#00ADD8",
-    "pushed_at": "2026-11-11T00:06:06Z",
-    "stars": 83838
+    "pushed_at": "2026-11-11T17:51:30Z",
+    "stars": 83839
   },
   "jestjs/jest": {
     "avatar_url": "https://avatars.githubusercontent.com/u/103283236?v=4",
@@ -1390,35 +1390,35 @@
     "language": "JavaScript",
     "language_color": "#f1e05a",
     "pushed_at": "2026-11-02T22:25:55Z",
-    "stars": 74517
+    "stars": 74519
   },
   "junegunn/fzf": {
     "avatar_url": "https://avatars.githubusercontent.com/u/700826?u=87fd13567f3f42579881c1c8c74760d0a3c276a5&v=4",
     "language": "Go",
     "language_color": "#00ADD8",
     "pushed_at": "2026-11-11T10:27:32Z",
-    "stars": 84158
+    "stars": 84159
   },
   "junit-team/junit-framework": {
     "avatar_url": "https://avatars.githubusercontent.com/u/874086?v=4",
     "language": "Java",
     "language_color": "#b07219",
-    "pushed_at": "2026-11-11T17:10:06Z",
+    "pushed_at": "2026-11-11T17:17:44Z",
     "stars": 7061
   },
   "k3s-io/k3s": {
     "avatar_url": "https://avatars.githubusercontent.com/u/49319725?v=4",
     "language": "Go",
     "language_color": "#00ADD8",
-    "pushed_at": "2026-11-10T04:18:15Z",
-    "stars": 34393
+    "pushed_at": "2026-11-11T18:15:58Z",
+    "stars": 34391
   },
   "karakeep-app/karakeep": {
     "avatar_url": "https://avatars.githubusercontent.com/u/202258986?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
     "pushed_at": "2026-11-10T07:07:50Z",
-    "stars": 30461
+    "stars": 30463
   },
   "kdeldycke/awesome-falsehood": {
     "avatar_url": "https://avatars.githubusercontent.com/u/159718?u=380aeb7f080829a640b73b3b78e3c18e3945dce4&v=4",
@@ -1431,21 +1431,21 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/34455048?v=4",
     "language": "Python",
     "language_color": "#3572A5",
-    "pushed_at": "2026-11-11T02:10:55Z",
+    "pushed_at": "2026-11-11T17:56:30Z",
     "stars": 64422
   },
   "kestra-io/kestra": {
     "avatar_url": "https://avatars.githubusercontent.com/u/59033362?v=4",
     "language": "Java",
     "language_color": "#b07219",
-    "pushed_at": "2026-11-11T14:56:27Z",
+    "pushed_at": "2026-11-11T17:33:31Z",
     "stars": 30205
   },
   "keycloak/keycloak": {
     "avatar_url": "https://avatars.githubusercontent.com/u/4921466?v=4",
     "language": "Java",
     "language_color": "#b07219",
-    "pushed_at": "2026-11-11T17:04:48Z",
+    "pushed_at": "2026-11-11T18:00:58Z",
     "stars": 37821
   },
   "koajs/koa": {
@@ -1467,7 +1467,7 @@
     "language": "TypeScript",
     "language_color": "#3178c6",
     "pushed_at": "2026-11-11T10:29:25Z",
-    "stars": 40141
+    "stars": 40142
   },
   "kong/kong": {
     "avatar_url": "https://avatars.githubusercontent.com/u/962416?v=4",
@@ -1481,7 +1481,7 @@
     "language": "Python",
     "language_color": "#3572A5",
     "pushed_at": "2026-11-11T15:58:35Z",
-    "stars": 35647
+    "stars": 35650
   },
   "ktorio/ktor": {
     "avatar_url": "https://avatars.githubusercontent.com/u/28214161?v=4",
@@ -1495,7 +1495,7 @@
     "language": "Go",
     "language_color": "#00ADD8",
     "pushed_at": "2026-11-11T16:10:17Z",
-    "stars": 128949
+    "stars": 128950
   },
   "labstack/echo": {
     "avatar_url": "https://avatars.githubusercontent.com/u/2624634?v=4",
@@ -1509,28 +1509,28 @@
     "language": "Python",
     "language_color": "#3572A5",
     "pushed_at": "2026-11-11T16:14:23Z",
-    "stars": 149361
+    "stars": 149362
   },
   "langchain-ai/langgraph": {
     "avatar_url": "https://avatars.githubusercontent.com/u/126733545?v=4",
     "language": "Python",
     "language_color": "#3572A5",
     "pushed_at": "2026-11-11T08:35:54Z",
-    "stars": 44802
+    "stars": 44804
   },
   "langfuse/langfuse": {
     "avatar_url": "https://avatars.githubusercontent.com/u/134601687?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
-    "pushed_at": "2026-11-11T16:59:29Z",
-    "stars": 37309
+    "pushed_at": "2026-11-11T18:05:02Z",
+    "stars": 37311
   },
   "laravel/framework": {
     "avatar_url": "https://avatars.githubusercontent.com/u/958072?v=4",
     "language": "PHP",
     "language_color": "#4F5D95",
     "pushed_at": "2026-11-11T14:35:09Z",
-    "stars": 34998
+    "stars": 34997
   },
   "linux-audit/audit-userspace": {
     "avatar_url": "https://avatars.githubusercontent.com/u/13963637?v=4",
@@ -1551,28 +1551,28 @@
     "language": "Python",
     "language_color": "#3572A5",
     "pushed_at": "2026-11-10T15:45:00Z",
-    "stars": 28276
+    "stars": 28275
   },
   "louislam/dockge": {
     "avatar_url": "https://avatars.githubusercontent.com/u/1336778?u=5f96cafa12ed95d786d4b84bcf284e8fb2bedd89&v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
     "pushed_at": "2026-10-23T06:35:35Z",
-    "stars": 24801
+    "stars": 24802
   },
   "louislam/uptime-kuma": {
     "avatar_url": "https://avatars.githubusercontent.com/u/1336778?u=5f96cafa12ed95d786d4b84bcf284e8fb2bedd89&v=4",
     "language": "JavaScript",
     "language_color": "#f1e05a",
     "pushed_at": "2026-11-11T10:51:12Z",
-    "stars": 93513
+    "stars": 93516
   },
   "lukasz-madon/awesome-remote-job": {
     "avatar_url": "https://avatars.githubusercontent.com/u/1547923?u=6878f1e526ccb98090bc9a07065918bbfc5cbb3b&v=4",
     "language": null,
     "language_color": null,
     "pushed_at": "2026-09-21T15:00:51Z",
-    "stars": 50537
+    "stars": 50538
   },
   "lysine-dev/okhttp": {
     "avatar_url": "https://avatars.githubusercontent.com/u/265085928?v=4",
@@ -1599,8 +1599,8 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/4739304?v=4",
     "language": "C++",
     "language_color": "#f34b7d",
-    "pushed_at": "2026-11-11T17:11:29Z",
-    "stars": 8569
+    "pushed_at": "2026-11-11T17:32:35Z",
+    "stars": 8571
   },
   "material-components/material-web": {
     "avatar_url": "https://avatars.githubusercontent.com/u/19478152?v=4",
@@ -1635,7 +1635,7 @@
     "language": "Python",
     "language_color": "#3572A5",
     "pushed_at": "2026-11-06T16:53:07Z",
-    "stars": 68815
+    "stars": 68818
   },
   "mermaid-js/mermaid": {
     "avatar_url": "https://avatars.githubusercontent.com/u/57169982?v=4",
@@ -1663,7 +1663,7 @@
     "language": "Python",
     "language_color": "#3572A5",
     "pushed_at": "2026-11-07T00:14:01Z",
-    "stars": 194923
+    "stars": 194930
   },
   "microsoft/monaco-editor": {
     "avatar_url": "https://avatars.githubusercontent.com/u/6154722?v=4",
@@ -1677,28 +1677,28 @@
     "language": "TypeScript",
     "language_color": "#3178c6",
     "pushed_at": "2026-11-11T16:31:39Z",
-    "stars": 99869
+    "stars": 99874
   },
   "microsoft/typescript": {
     "avatar_url": "https://avatars.githubusercontent.com/u/6154722?v=4",
     "language": "Go",
     "language_color": "#00ADD8",
-    "pushed_at": "2026-11-11T16:57:25Z",
-    "stars": 111776
+    "pushed_at": "2026-11-11T17:27:13Z",
+    "stars": 111777
   },
   "microsoft/vscode": {
     "avatar_url": "https://avatars.githubusercontent.com/u/6154722?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
-    "pushed_at": "2026-11-11T17:09:13Z",
-    "stars": 195242
+    "pushed_at": "2026-11-11T18:13:45Z",
+    "stars": 195244
   },
   "mikefarah/yq": {
     "avatar_url": "https://avatars.githubusercontent.com/u/1151925?v=4",
     "language": "Go",
     "language_color": "#00ADD8",
     "pushed_at": "2026-11-09T04:15:37Z",
-    "stars": 16273
+    "stars": 16275
   },
   "milvus-io/milvus": {
     "avatar_url": "https://avatars.githubusercontent.com/u/51735404?v=4",
@@ -1712,7 +1712,7 @@
     "language": "Python",
     "language_color": "#3572A5",
     "pushed_at": "2026-11-10T19:32:13Z",
-    "stars": 46828
+    "stars": 46829
   },
   "mjhea0/awesome-fastapi": {
     "avatar_url": "https://avatars.githubusercontent.com/u/2018167?v=4",
@@ -1726,7 +1726,7 @@
     "language": null,
     "language_color": null,
     "pushed_at": "2026-08-29T14:08:02Z",
-    "stars": 8406
+    "stars": 8407
   },
   "mobxjs/mobx": {
     "avatar_url": "https://avatars.githubusercontent.com/u/17475736?v=4",
@@ -1782,7 +1782,7 @@
     "language": "JavaScript",
     "language_color": "#f1e05a",
     "pushed_at": "2026-11-11T14:03:50Z",
-    "stars": 118157
+    "stars": 118165
   },
   "mswjs/msw": {
     "avatar_url": "https://avatars.githubusercontent.com/u/64637271?v=4",
@@ -1803,7 +1803,7 @@
     "language": null,
     "language_color": null,
     "pushed_at": "2026-10-01T14:58:51Z",
-    "stars": 91298
+    "stars": 91300
   },
   "mysql/mysql-server": {
     "avatar_url": "https://avatars.githubusercontent.com/u/2452804?v=4",
@@ -1844,22 +1844,22 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/100464677?v=4",
     "language": "Go",
     "language_color": "#00ADD8",
-    "pushed_at": "2026-11-11T16:42:12Z",
+    "pushed_at": "2026-11-11T18:03:54Z",
     "stars": 30891
   },
   "netdata/netdata": {
     "avatar_url": "https://avatars.githubusercontent.com/u/43390781?v=4",
     "language": "Go",
     "language_color": "#00ADD8",
-    "pushed_at": "2026-11-11T14:35:13Z",
+    "pushed_at": "2026-11-11T18:01:26Z",
     "stars": 81369
   },
   "nextcloud/server": {
     "avatar_url": "https://avatars.githubusercontent.com/u/19211038?v=4",
     "language": "PHP",
     "language_color": "#4F5D95",
-    "pushed_at": "2026-11-11T17:14:57Z",
-    "stars": 37479
+    "pushed_at": "2026-11-11T17:19:20Z",
+    "stars": 37480
   },
   "nginx/nginx": {
     "avatar_url": "https://avatars.githubusercontent.com/u/1412239?v=4",
@@ -1873,7 +1873,7 @@
     "language": "JavaScript",
     "language_color": "#f1e05a",
     "pushed_at": "2026-11-09T22:26:34Z",
-    "stars": 34676
+    "stars": 34678
   },
   "nock/nock": {
     "avatar_url": "https://avatars.githubusercontent.com/u/17545810?v=4",
@@ -1886,14 +1886,14 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/9950313?v=4",
     "language": "JavaScript",
     "language_color": "#f1e05a",
-    "pushed_at": "2026-11-11T17:12:11Z",
-    "stars": 123440
+    "pushed_at": "2026-11-11T17:21:30Z",
+    "stars": 123442
   },
   "nrwl/nx": {
     "avatar_url": "https://avatars.githubusercontent.com/u/23692104?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
-    "pushed_at": "2026-11-11T17:08:52Z",
+    "pushed_at": "2026-11-11T18:06:28Z",
     "stars": 29465
   },
   "nushell/nushell": {
@@ -1901,13 +1901,13 @@
     "language": "Rust",
     "language_color": "#dea584",
     "pushed_at": "2026-11-11T00:25:29Z",
-    "stars": 40991
+    "stars": 40992
   },
   "nuxt/nuxt": {
     "avatar_url": "https://avatars.githubusercontent.com/u/23360933?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
-    "pushed_at": "2026-11-11T17:12:54Z",
+    "pushed_at": "2026-11-11T17:29:29Z",
     "stars": 61063
   },
   "oai/openapi-specification": {
@@ -1922,7 +1922,7 @@
     "language": "Shell",
     "language_color": "#89e051",
     "pushed_at": "2026-11-09T12:36:12Z",
-    "stars": 190513
+    "stars": 190517
   },
   "oisf/suricata": {
     "avatar_url": "https://avatars.githubusercontent.com/u/2188963?v=4",
@@ -1935,8 +1935,8 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/151674099?v=4",
     "language": "Go",
     "language_color": "#00ADD8",
-    "pushed_at": "2026-11-11T16:32:47Z",
-    "stars": 186663
+    "pushed_at": "2026-11-11T18:15:25Z",
+    "stars": 186666
   },
   "onevcat/kingfisher": {
     "avatar_url": "https://avatars.githubusercontent.com/u/1019875?u=34477b070af505986e26066dfa6a5d2d64f319b6&v=4",
@@ -1964,7 +1964,7 @@
     "language": "Rust",
     "language_color": "#dea584",
     "pushed_at": "2026-11-11T16:21:34Z",
-    "stars": 134902
+    "stars": 134906
   },
   "openai/openai-python": {
     "avatar_url": "https://avatars.githubusercontent.com/u/14957082?v=4",
@@ -1978,7 +1978,7 @@
     "language": "Python",
     "language_color": "#3572A5",
     "pushed_at": "2026-08-31T17:19:19Z",
-    "stars": 112457
+    "stars": 112459
   },
   "openbao/openbao": {
     "avatar_url": "https://avatars.githubusercontent.com/u/152585220?v=4",
@@ -1992,14 +1992,14 @@
     "language": "C++",
     "language_color": "#f34b7d",
     "pushed_at": "2026-11-11T13:55:53Z",
-    "stars": 91531
+    "stars": 91532
   },
   "openhands/openhands": {
     "avatar_url": "https://avatars.githubusercontent.com/u/225919603?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
-    "pushed_at": "2026-11-11T17:15:31Z",
-    "stars": 93234
+    "pushed_at": "2026-11-11T17:50:42Z",
+    "stars": 93241
   },
   "openscap/openscap": {
     "avatar_url": "https://avatars.githubusercontent.com/u/7439934?v=4",
@@ -2013,7 +2013,7 @@
     "language": "Java",
     "language_color": "#b07219",
     "pushed_at": "2026-11-11T15:12:27Z",
-    "stars": 13993
+    "stars": 13994
   },
   "openshift/microshift": {
     "avatar_url": "https://avatars.githubusercontent.com/u/792337?v=4",
@@ -2026,8 +2026,8 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/3279138?v=4",
     "language": "C",
     "language_color": "#555555",
-    "pushed_at": "2026-11-11T15:21:17Z",
-    "stars": 31408
+    "pushed_at": "2026-11-11T18:14:20Z",
+    "stars": 31409
   },
   "openvoxproject/openvox": {
     "avatar_url": "https://avatars.githubusercontent.com/u/188505547?v=4",
@@ -2068,8 +2068,8 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/99562962?v=4",
     "language": "Python",
     "language_color": "#3572A5",
-    "pushed_at": "2026-11-11T16:24:39Z",
-    "stars": 48014
+    "pushed_at": "2026-11-11T18:12:50Z",
+    "stars": 48017
   },
   "parcel-bundler/parcel": {
     "avatar_url": "https://avatars.githubusercontent.com/u/32607881?v=4",
@@ -2096,7 +2096,7 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/30179644?v=4",
     "language": "Clojure",
     "language_color": "#db5855",
-    "pushed_at": "2026-11-11T16:13:06Z",
+    "pushed_at": "2026-11-11T17:38:57Z",
     "stars": 62278
   },
   "perl/perl5": {
@@ -2110,7 +2110,7 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/6510388?v=4",
     "language": "Elixir",
     "language_color": "#6e4a7e",
-    "pushed_at": "2026-11-10T19:22:06Z",
+    "pushed_at": "2026-11-11T18:15:31Z",
     "stars": 23216
   },
   "phosphor-icons/homepage": {
@@ -2124,14 +2124,14 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/25158?v=4",
     "language": "C",
     "language_color": "#555555",
-    "pushed_at": "2026-11-11T17:02:09Z",
+    "pushed_at": "2026-11-11T17:49:19Z",
     "stars": 41775
   },
   "pingcap/tidb": {
     "avatar_url": "https://avatars.githubusercontent.com/u/11855343?v=4",
     "language": "Go",
     "language_color": "#00ADD8",
-    "pushed_at": "2026-11-11T16:52:59Z",
+    "pushed_at": "2026-11-11T18:05:50Z",
     "stars": 40732
   },
   "pixijs/pixijs": {
@@ -2145,7 +2145,7 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/54802774?v=4",
     "language": "Elixir",
     "language_color": "#6e4a7e",
-    "pushed_at": "2026-11-11T15:47:44Z",
+    "pushed_at": "2026-11-11T18:01:58Z",
     "stars": 29823
   },
   "pmndrs/zustand": {
@@ -2159,14 +2159,14 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/21320719?v=4",
     "language": "Rust",
     "language_color": "#dea584",
-    "pushed_at": "2026-11-11T17:15:41Z",
+    "pushed_at": "2026-11-11T18:13:18Z",
     "stars": 37063
   },
   "podman-container-tools/podman": {
     "avatar_url": "https://avatars.githubusercontent.com/u/277799342?v=4",
     "language": "Go",
     "language_color": "#00ADD8",
-    "pushed_at": "2026-11-11T16:12:07Z",
+    "pushed_at": "2026-11-11T18:05:28Z",
     "stars": 33242
   },
   "pointfreeco/swift-composable-architecture": {
@@ -2181,7 +2181,7 @@
     "language": "Rust",
     "language_color": "#dea584",
     "pushed_at": "2026-11-11T17:02:04Z",
-    "stars": 40324
+    "stars": 40326
   },
   "portainer/portainer": {
     "avatar_url": "https://avatars.githubusercontent.com/u/22225832?v=4",
@@ -2194,8 +2194,8 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/177543?v=4",
     "language": "C",
     "language_color": "#555555",
-    "pushed_at": "2026-11-11T16:19:43Z",
-    "stars": 22786
+    "pushed_at": "2026-11-11T17:49:19Z",
+    "stars": 22789
   },
   "preactjs/preact": {
     "avatar_url": "https://avatars.githubusercontent.com/u/26872990?v=4",
@@ -2236,7 +2236,7 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/17219288?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
-    "pushed_at": "2026-11-11T14:03:47Z",
+    "pushed_at": "2026-11-11T17:18:13Z",
     "stars": 47666
   },
   "projectdiscovery/nuclei": {
@@ -2244,7 +2244,7 @@
     "language": "Go",
     "language_color": "#00ADD8",
     "pushed_at": "2026-11-11T04:27:36Z",
-    "stars": 32798
+    "stars": 32801
   },
   "prometheus/node_exporter": {
     "avatar_url": "https://avatars.githubusercontent.com/u/3380462?v=4",
@@ -2258,7 +2258,7 @@
     "language": "Go",
     "language_color": "#00ADD8",
     "pushed_at": "2026-11-11T13:41:24Z",
-    "stars": 67540
+    "stars": 67543
   },
   "psf/requests": {
     "avatar_url": "https://avatars.githubusercontent.com/u/50630501?v=4",
@@ -2271,15 +2271,15 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/6906516?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
-    "pushed_at": "2026-11-11T17:00:24Z",
-    "stars": 95820
+    "pushed_at": "2026-11-11T17:18:33Z",
+    "stars": 95821
   },
   "pytest-dev/pytest": {
     "avatar_url": "https://avatars.githubusercontent.com/u/8897583?v=4",
     "language": "Python",
     "language_color": "#3572A5",
     "pushed_at": "2026-11-11T12:20:51Z",
-    "stars": 14684
+    "stars": 14685
   },
   "python-poetry/poetry": {
     "avatar_url": "https://avatars.githubusercontent.com/u/48722593?v=4",
@@ -2292,7 +2292,7 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/1525981?v=4",
     "language": "Python",
     "language_color": "#3572A5",
-    "pushed_at": "2026-11-11T16:46:13Z",
+    "pushed_at": "2026-11-11T17:42:08Z",
     "stars": 78122
   },
   "qazbnm456/awesome-web-security": {
@@ -2313,7 +2313,7 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/52297642?v=4",
     "language": "Java",
     "language_color": "#b07219",
-    "pushed_at": "2026-11-11T17:15:20Z",
+    "pushed_at": "2026-11-11T18:12:58Z",
     "stars": 17522
   },
   "radix-ui/primitives": {
@@ -2328,13 +2328,13 @@
     "language": "Ruby",
     "language_color": "#701516",
     "pushed_at": "2026-11-11T14:43:32Z",
-    "stars": 59035
+    "stars": 59037
   },
   "rancher/rancher": {
     "avatar_url": "https://avatars.githubusercontent.com/u/9343010?v=4",
     "language": "Go",
     "language_color": "#00ADD8",
-    "pushed_at": "2026-11-11T16:57:13Z",
+    "pushed_at": "2026-11-11T17:54:16Z",
     "stars": 26054
   },
   "ranger/ranger": {
@@ -2348,7 +2348,7 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/22125274?v=4",
     "language": "Python",
     "language_color": "#3572A5",
-    "pushed_at": "2026-11-11T16:42:00Z",
+    "pushed_at": "2026-11-11T17:36:41Z",
     "stars": 44261
   },
   "react-bootstrap/react-bootstrap": {
@@ -2369,14 +2369,14 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/102812?v=4",
     "language": "JavaScript",
     "language_color": "#f1e05a",
-    "pushed_at": "2026-11-11T16:02:27Z",
-    "stars": 252470
+    "pushed_at": "2026-11-11T17:31:16Z",
+    "stars": 252472
   },
   "react/react-native": {
     "avatar_url": "https://avatars.githubusercontent.com/u/102812?v=4",
     "language": "C++",
     "language_color": "#f34b7d",
-    "pushed_at": "2026-11-11T16:59:26Z",
+    "pushed_at": "2026-11-11T17:45:00Z",
     "stars": 126898
   },
   "reactivex/rxandroid": {
@@ -2432,14 +2432,14 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/64235328?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
-    "pushed_at": "2026-11-11T16:55:07Z",
+    "pushed_at": "2026-11-11T18:13:39Z",
     "stars": 33455
   },
   "renovatebot/renovate": {
     "avatar_url": "https://avatars.githubusercontent.com/u/38656520?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
-    "pushed_at": "2026-11-11T16:46:12Z",
+    "pushed_at": "2026-11-11T17:44:54Z",
     "stars": 23084
   },
   "restic/restic": {
@@ -2447,7 +2447,7 @@
     "language": "Go",
     "language_color": "#00ADD8",
     "pushed_at": "2026-11-06T20:42:11Z",
-    "stars": 37159
+    "stars": 37162
   },
   "robotframework/robotframework": {
     "avatar_url": "https://avatars.githubusercontent.com/u/574284?v=4",
@@ -2468,7 +2468,7 @@
     "language": "Python",
     "language_color": "#3572A5",
     "pushed_at": "2026-10-31T13:36:57Z",
-    "stars": 16870
+    "stars": 16869
   },
   "rqlite/rqlite": {
     "avatar_url": "https://avatars.githubusercontent.com/u/18683023?v=4",
@@ -2481,21 +2481,21 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/210414?v=4",
     "language": "Ruby",
     "language_color": "#701516",
-    "pushed_at": "2026-11-11T11:39:36Z",
+    "pushed_at": "2026-11-11T17:39:49Z",
     "stars": 23808
   },
   "run-llama/llama_index": {
     "avatar_url": "https://avatars.githubusercontent.com/u/130722866?v=4",
     "language": "Python",
     "language_color": "#3572A5",
-    "pushed_at": "2026-11-11T14:37:15Z",
+    "pushed_at": "2026-11-11T17:48:26Z",
     "stars": 52874
   },
   "rust-lang/rust": {
     "avatar_url": "https://avatars.githubusercontent.com/u/5430905?v=4",
     "language": "Rust",
     "language_color": "#dea584",
-    "pushed_at": "2026-11-11T16:18:24Z",
+    "pushed_at": "2026-11-11T17:59:25Z",
     "stars": 121725
   },
   "rust-unofficial/awesome-rust": {
@@ -2503,14 +2503,14 @@
     "language": "Rust",
     "language_color": "#dea584",
     "pushed_at": "2026-11-11T11:56:14Z",
-    "stars": 60458
+    "stars": 60460
   },
   "rustdesk/rustdesk": {
     "avatar_url": "https://avatars.githubusercontent.com/u/71636191?u=fcdfa5bbe724bd4ec02f6c3b2419ff25b7f5eb07&v=4",
     "language": "Rust",
     "language_color": "#dea584",
     "pushed_at": "2026-11-11T15:40:40Z",
-    "stars": 129036
+    "stars": 129042
   },
   "saadeghi/daisyui": {
     "avatar_url": "https://avatars.githubusercontent.com/u/7342023?u=454745ff170098ad983aa3193d727d132a425747&v=4",
@@ -2531,7 +2531,7 @@
     "language": "Python",
     "language_color": "#3572A5",
     "pushed_at": "2026-11-11T16:35:54Z",
-    "stars": 68142
+    "stars": 68143
   },
   "searxng/searxng": {
     "avatar_url": "https://avatars.githubusercontent.com/u/80454229?v=4",
@@ -2558,15 +2558,15 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/98574287?v=4",
     "language": "Go",
     "language_color": "#00ADD8",
-    "pushed_at": "2026-11-11T16:58:36Z",
-    "stars": 14397
+    "pushed_at": "2026-11-11T17:27:51Z",
+    "stars": 14398
   },
   "semgrep/semgrep": {
     "avatar_url": "https://avatars.githubusercontent.com/u/29760937?v=4",
     "language": "C",
     "language_color": "#555555",
     "pushed_at": "2026-11-11T00:02:14Z",
-    "stars": 17606
+    "stars": 17608
   },
   "sequelize/sequelize": {
     "avatar_url": "https://avatars.githubusercontent.com/u/3591786?v=4",
@@ -2580,28 +2580,28 @@
     "language": null,
     "language_color": null,
     "pushed_at": "2026-10-31T07:24:05Z",
-    "stars": 51325
+    "stars": 51326
   },
   "shadcn-ui/ui": {
     "avatar_url": "https://avatars.githubusercontent.com/u/139895814?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
     "pushed_at": "2026-11-11T09:04:16Z",
-    "stars": 127911
+    "stars": 127916
   },
   "sharkdp/bat": {
     "avatar_url": "https://avatars.githubusercontent.com/u/4209276?u=e6c4022c315b6cbecd5968ec256f4b02885eba41&v=4",
     "language": "Rust",
     "language_color": "#dea584",
     "pushed_at": "2026-11-10T05:54:40Z",
-    "stars": 61215
+    "stars": 61216
   },
   "sharkdp/fd": {
     "avatar_url": "https://avatars.githubusercontent.com/u/4209276?u=e6c4022c315b6cbecd5968ec256f4b02885eba41&v=4",
     "language": "Rust",
     "language_color": "#dea584",
     "pushed_at": "2026-11-09T06:43:32Z",
-    "stars": 45051
+    "stars": 45053
   },
   "sharkdp/hyperfine": {
     "avatar_url": "https://avatars.githubusercontent.com/u/4209276?u=e6c4022c315b6cbecd5968ec256f4b02885eba41&v=4",
@@ -2622,27 +2622,27 @@
     "language": null,
     "language_color": null,
     "pushed_at": "2026-09-02T02:11:34Z",
-    "stars": 67449
+    "stars": 67452
   },
   "siyuan-note/siyuan": {
     "avatar_url": "https://avatars.githubusercontent.com/u/70468694?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
-    "pushed_at": "2026-11-11T15:47:47Z",
-    "stars": 47180
+    "pushed_at": "2026-11-11T17:46:28Z",
+    "stars": 47183
   },
   "software-mansion/react-native-reanimated": {
     "avatar_url": "https://avatars.githubusercontent.com/u/56880679?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
     "pushed_at": "2026-11-11T15:35:00Z",
-    "stars": 11066
+    "stars": 11067
   },
   "solidjs/solid": {
     "avatar_url": "https://avatars.githubusercontent.com/u/79226042?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
-    "pushed_at": "2026-11-11T15:58:35Z",
+    "pushed_at": "2026-11-11T17:41:04Z",
     "stars": 36259
   },
   "solido/awesome-flutter": {
@@ -2671,7 +2671,7 @@
     "language": "Go",
     "language_color": "#00ADD8",
     "pushed_at": "2026-11-03T10:08:12Z",
-    "stars": 18454
+    "stars": 18453
   },
   "square/leakcanary": {
     "avatar_url": "https://avatars.githubusercontent.com/u/82592?v=4",
@@ -2692,7 +2692,7 @@
     "language": "Rust",
     "language_color": "#dea584",
     "pushed_at": "2026-11-10T23:40:50Z",
-    "stars": 60700
+    "stars": 60701
   },
   "steven2358/awesome-generative-ai": {
     "avatar_url": "https://avatars.githubusercontent.com/u/164072?u=0bd355062715afa056a786a1d5ad279dbd9da45f&v=4",
@@ -2705,8 +2705,8 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/22632046?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
-    "pushed_at": "2026-11-11T17:01:11Z",
-    "stars": 91530
+    "pushed_at": "2026-11-11T17:40:29Z",
+    "stars": 91533
   },
   "stretchr/testify": {
     "avatar_url": "https://avatars.githubusercontent.com/u/1841476?v=4",
@@ -2720,27 +2720,27 @@
     "language": "TypeScript",
     "language_color": "#3178c6",
     "pushed_at": "2026-11-11T17:07:42Z",
-    "stars": 114831
+    "stars": 114833
   },
   "sveltejs/svelte": {
     "avatar_url": "https://avatars.githubusercontent.com/u/23617963?v=4",
     "language": "JavaScript",
     "language_color": "#f1e05a",
-    "pushed_at": "2026-11-11T15:39:49Z",
-    "stars": 88657
+    "pushed_at": "2026-11-11T17:56:07Z",
+    "stars": 88660
   },
   "swagger-api/swagger-ui": {
     "avatar_url": "https://avatars.githubusercontent.com/u/7658037?v=4",
     "language": "JavaScript",
     "language_color": "#f1e05a",
     "pushed_at": "2026-11-10T09:15:34Z",
-    "stars": 29081
+    "stars": 29082
   },
   "swiftlang/swift": {
     "avatar_url": "https://avatars.githubusercontent.com/u/42816656?v=4",
     "language": "Swift",
     "language_color": "#F05138",
-    "pushed_at": "2026-11-11T16:58:17Z",
+    "pushed_at": "2026-11-11T18:14:39Z",
     "stars": 70554
   },
   "sxyazi/yazi": {
@@ -2748,49 +2748,49 @@
     "language": "Rust",
     "language_color": "#dea584",
     "pushed_at": "2026-11-10T07:28:49Z",
-    "stars": 43362
+    "stars": 43364
   },
   "symfony/symfony": {
     "avatar_url": "https://avatars.githubusercontent.com/u/143937?v=4",
     "language": "PHP",
     "language_color": "#4F5D95",
     "pushed_at": "2026-11-10T17:36:16Z",
-    "stars": 31435
+    "stars": 31436
   },
   "syncthing/syncthing": {
     "avatar_url": "https://avatars.githubusercontent.com/u/7628018?v=4",
     "language": "Go",
     "language_color": "#00ADD8",
     "pushed_at": "2026-11-10T01:03:04Z",
-    "stars": 90360
+    "stars": 90363
   },
   "tabler/tabler-icons": {
     "avatar_url": "https://avatars.githubusercontent.com/u/35471246?v=4",
     "language": "JavaScript",
     "language_color": "#f1e05a",
     "pushed_at": "2026-11-11T00:24:19Z",
-    "stars": 22601
+    "stars": 22602
   },
   "tailscale/tailscale": {
     "avatar_url": "https://avatars.githubusercontent.com/u/48932923?v=4",
     "language": "Go",
     "language_color": "#00ADD8",
     "pushed_at": "2026-11-11T16:59:16Z",
-    "stars": 38934
+    "stars": 38937
   },
   "tailwindlabs/tailwindcss": {
     "avatar_url": "https://avatars.githubusercontent.com/u/67109815?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
     "pushed_at": "2026-11-11T00:08:59Z",
-    "stars": 98580
+    "stars": 98581
   },
   "tanstack/query": {
     "avatar_url": "https://avatars.githubusercontent.com/u/72518640?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
     "pushed_at": "2026-11-09T01:34:18Z",
-    "stars": 50564
+    "stars": 50565
   },
   "tanstack/table": {
     "avatar_url": "https://avatars.githubusercontent.com/u/72518640?v=4",
@@ -2810,15 +2810,15 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/56493103?v=4",
     "language": "Go",
     "language_color": "#00ADD8",
-    "pushed_at": "2026-11-11T13:02:43Z",
-    "stars": 24337
+    "pushed_at": "2026-11-11T17:52:47Z",
+    "stars": 24338
   },
   "tensorflow/tensorflow": {
     "avatar_url": "https://avatars.githubusercontent.com/u/15658638?v=4",
     "language": "C++",
     "language_color": "#f34b7d",
-    "pushed_at": "2026-11-11T16:59:00Z",
-    "stars": 201503
+    "pushed_at": "2026-11-11T18:12:10Z",
+    "stars": 201505
   },
   "testcontainers/testcontainers-java": {
     "avatar_url": "https://avatars.githubusercontent.com/u/13393021?v=4",
@@ -2839,27 +2839,27 @@
     "language": "Python",
     "language_color": "#3572A5",
     "pushed_at": "2026-11-09T13:42:07Z",
-    "stars": 37631
+    "stars": 37632
   },
   "tmux/tmux": {
     "avatar_url": "https://avatars.githubusercontent.com/u/12054114?v=4",
     "language": "C",
     "language_color": "#555555",
     "pushed_at": "2026-11-11T14:33:29Z",
-    "stars": 50258
+    "stars": 50260
   },
   "tokio-rs/axum": {
     "avatar_url": "https://avatars.githubusercontent.com/u/20248544?v=4",
     "language": "Rust",
     "language_color": "#dea584",
     "pushed_at": "2026-11-10T15:40:58Z",
-    "stars": 27804
+    "stars": 27806
   },
   "traefik/traefik": {
     "avatar_url": "https://avatars.githubusercontent.com/u/14280338?v=4",
     "language": "Go",
     "language_color": "#00ADD8",
-    "pushed_at": "2026-11-11T12:46:03Z",
+    "pushed_at": "2026-11-11T17:32:08Z",
     "stars": 65527
   },
   "trpc/trpc": {
@@ -2874,14 +2874,14 @@
     "language": "Go",
     "language_color": "#00ADD8",
     "pushed_at": "2026-11-10T16:54:08Z",
-    "stars": 29206
+    "stars": 29211
   },
   "tryghost/ghost": {
     "avatar_url": "https://avatars.githubusercontent.com/u/2178663?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
-    "pushed_at": "2026-11-11T16:53:40Z",
-    "stars": 55776
+    "pushed_at": "2026-11-11T18:14:23Z",
+    "stars": 55778
   },
   "tsenart/vegeta": {
     "avatar_url": "https://avatars.githubusercontent.com/u/67471?u=6524a1de32b0e2bd55af5cc1af1a154e0ea71743&v=4",
@@ -2895,14 +2895,14 @@
     "language": "C",
     "language_color": "#555555",
     "pushed_at": "2026-11-07T09:15:44Z",
-    "stars": 17328
+    "stars": 17329
   },
   "twbs/bootstrap": {
     "avatar_url": "https://avatars.githubusercontent.com/u/2918581?v=4",
     "language": "MDX",
     "language_color": "#fcb32c",
-    "pushed_at": "2026-11-11T09:58:48Z",
-    "stars": 175038
+    "pushed_at": "2026-11-11T17:53:54Z",
+    "stars": 175036
   },
   "typeorm/typeorm": {
     "avatar_url": "https://avatars.githubusercontent.com/u/20165699?v=4",
@@ -2929,7 +2929,7 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/26833451?v=4",
     "language": "Python",
     "language_color": "#3572A5",
-    "pushed_at": "2026-11-11T17:07:27Z",
+    "pushed_at": "2026-11-11T17:28:38Z",
     "stars": 63300
   },
   "umami-software/umami": {
@@ -2937,7 +2937,7 @@
     "language": "TypeScript",
     "language_color": "#3178c6",
     "pushed_at": "2026-11-11T17:05:00Z",
-    "stars": 40065
+    "stars": 40066
   },
   "unicodeveloper/awesome-nextjs": {
     "avatar_url": "https://avatars.githubusercontent.com/u/2946769?u=92f03012e7777ace3997039d1a424208f0037d94&v=4",
@@ -2957,15 +2957,15 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/150920049?v=4",
     "language": "Python",
     "language_color": "#3572A5",
-    "pushed_at": "2026-11-11T17:10:33Z",
-    "stars": 79326
+    "pushed_at": "2026-11-11T18:10:43Z",
+    "stars": 79329
   },
   "usebruno/bruno": {
     "avatar_url": "https://avatars.githubusercontent.com/u/114530840?v=4",
     "language": "JavaScript",
     "language_color": "#f1e05a",
     "pushed_at": "2026-11-11T12:25:10Z",
-    "stars": 48347
+    "stars": 48348
   },
   "usememos/memos": {
     "avatar_url": "https://avatars.githubusercontent.com/u/95764151?v=4",
@@ -2978,8 +2978,8 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/164458127?v=4",
     "language": "C",
     "language_color": "#555555",
-    "pushed_at": "2026-11-11T17:13:54Z",
-    "stars": 27687
+    "pushed_at": "2026-11-11T17:28:37Z",
+    "stars": 27688
   },
   "vapor/vapor": {
     "avatar_url": "https://avatars.githubusercontent.com/u/17364220?v=4",
@@ -2993,7 +2993,7 @@
     "language": null,
     "language_color": null,
     "pushed_at": "2026-11-11T15:33:35Z",
-    "stars": 37217
+    "stars": 37218
   },
   "velocidex/velociraptor": {
     "avatar_url": "https://avatars.githubusercontent.com/u/36671444?v=4",
@@ -3006,7 +3006,7 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/14985020?v=4",
     "language": "JavaScript",
     "language_color": "#f1e05a",
-    "pushed_at": "2026-11-11T17:02:51Z",
+    "pushed_at": "2026-11-11T18:14:05Z",
     "stars": 143471
   },
   "vercel/swr": {
@@ -3020,22 +3020,22 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/14985020?v=4",
     "language": "Rust",
     "language_color": "#dea584",
-    "pushed_at": "2026-11-11T16:21:39Z",
-    "stars": 31328
+    "pushed_at": "2026-11-11T18:00:21Z",
+    "stars": 31329
   },
   "vitejs/vite": {
     "avatar_url": "https://avatars.githubusercontent.com/u/65625612?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
     "pushed_at": "2026-11-11T16:32:43Z",
-    "stars": 83858
+    "stars": 83860
   },
   "vitessio/vitess": {
     "avatar_url": "https://avatars.githubusercontent.com/u/33043890?v=4",
     "language": "Go",
     "language_color": "#00ADD8",
-    "pushed_at": "2026-11-11T15:19:55Z",
-    "stars": 21418
+    "pushed_at": "2026-11-11T17:44:32Z",
+    "stars": 21417
   },
   "vitest-dev/vitest": {
     "avatar_url": "https://avatars.githubusercontent.com/u/95747107?v=4",
@@ -3048,29 +3048,29 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/136984999?v=4",
     "language": "Python",
     "language_color": "#3572A5",
-    "pushed_at": "2026-11-11T17:15:21Z",
-    "stars": 96751
+    "pushed_at": "2026-11-11T18:00:04Z",
+    "stars": 96755
   },
   "vsouza/awesome-ios": {
     "avatar_url": "https://avatars.githubusercontent.com/u/484656?u=9f71c7757f341dd0ba129f2d159857578b0aac52&v=4",
     "language": "Swift",
     "language_color": "#F05138",
     "pushed_at": "2026-08-27T19:34:29Z",
-    "stars": 53951
+    "stars": 53952
   },
   "vuejs/awesome-vue": {
     "avatar_url": "https://avatars.githubusercontent.com/u/6128107?v=4",
     "language": null,
     "language_color": null,
     "pushed_at": "2026-11-03T16:02:10Z",
-    "stars": 73480
+    "stars": 73479
   },
   "vuejs/core": {
     "avatar_url": "https://avatars.githubusercontent.com/u/6128107?v=4",
     "language": "TypeScript",
     "language_color": "#3178c6",
     "pushed_at": "2026-11-11T08:27:15Z",
-    "stars": 54957
+    "stars": 54959
   },
   "vueuse/vueuse": {
     "avatar_url": "https://avatars.githubusercontent.com/u/77578415?v=4",
@@ -3083,8 +3083,8 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/13752566?v=4",
     "language": "C++",
     "language_color": "#f34b7d",
-    "pushed_at": "2026-11-11T17:09:24Z",
-    "stars": 17676
+    "pushed_at": "2026-11-11T18:10:45Z",
+    "stars": 17677
   },
   "webdriverio/webdriverio": {
     "avatar_url": "https://avatars.githubusercontent.com/u/6512473?v=4",
@@ -3105,13 +3105,13 @@
     "language": null,
     "language_color": null,
     "pushed_at": "2026-10-11T07:59:17Z",
-    "stars": 10934
+    "stars": 10935
   },
   "wiremock/wiremock": {
     "avatar_url": "https://avatars.githubusercontent.com/u/21368587?v=4",
     "language": "Java",
     "language_color": "#b07219",
-    "pushed_at": "2026-11-11T15:42:25Z",
+    "pushed_at": "2026-11-11T18:09:09Z",
     "stars": 7426
   },
   "wix/detox": {
@@ -3119,14 +3119,14 @@
     "language": "JavaScript",
     "language_color": "#f1e05a",
     "pushed_at": "2026-11-02T09:49:52Z",
-    "stars": 12055
+    "stars": 12057
   },
   "wix/react-native-navigation": {
     "avatar_url": "https://avatars.githubusercontent.com/u/686511?v=4",
     "language": "MDX",
     "language_color": "#fcb32c",
     "pushed_at": "2026-11-03T10:20:34Z",
-    "stars": 13169
+    "stars": 13170
   },
   "xtekky/gpt4free": {
     "avatar_url": "https://avatars.githubusercontent.com/u/98614666?u=73ffc35c4da01924e4c0636186fa1328b717fbb1&v=4",
@@ -3153,15 +3153,15 @@
     "avatar_url": "https://avatars.githubusercontent.com/u/73778475?v=4",
     "language": "Rust",
     "language_color": "#dea584",
-    "pushed_at": "2026-11-11T12:06:01Z",
-    "stars": 36007
+    "pushed_at": "2026-11-11T18:15:00Z",
+    "stars": 36008
   },
   "zitadel/zitadel": {
     "avatar_url": "https://avatars.githubusercontent.com/u/70011121?v=4",
     "language": "Go",
     "language_color": "#00ADD8",
     "pushed_at": "2026-11-11T14:44:10Z",
-    "stars": 15559
+    "stars": 15560
   },
   "zsh-users/zsh-syntax-highlighting": {
     "avatar_url": "https://avatars.githubusercontent.com/u/567410?v=4",

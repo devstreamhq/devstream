@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@primer/octicons": "19.42.0",
-    "astro": "7.4.4"
+    "astro": "7.4.7"
   },
   "devDependencies": {
     "wrangler": "4.157.0"

@@ -38,8 +38,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 201,
-    "rank_delta_7d": 1
+    "rank": 200,
+    "rank_delta_7d": 2
   },
   "adobe/react-spectrum": {
     "delta_7d": 0,
@@ -738,8 +738,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 200,
-    "rank_delta_7d": 0
+    "rank": 201,
+    "rank_delta_7d": -1
   },
   "dotnet/maui": {
     "delta_7d": 0,
@@ -1354,8 +1354,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 79,
-    "rank_delta_7d": 0
+    "rank": 78,
+    "rank_delta_7d": 1
   },
   "jestjs/jest": {
     "delta_7d": 0,
@@ -3041,8 +3041,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 78,
-    "rank_delta_7d": 0
+    "rank": 79,
+    "rank_delta_7d": -1
   },
   "vitessio/vitess": {
     "delta_7d": 0,

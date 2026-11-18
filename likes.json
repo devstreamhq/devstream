@@ -1739,8 +1739,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 421,
-    "rank_delta_7d": 0
+    "rank": 420,
+    "rank_delta_7d": 1
   },
   "mobxjs/mobx": {
     "delta_7d": 0,
@@ -1781,8 +1781,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 420,
-    "rank_delta_7d": 0
+    "rank": 421,
+    "rank_delta_7d": -1
   },
   "motiondivision/motion": {
     "delta_7d": 0,
@@ -2005,8 +2005,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 70,
-    "rank_delta_7d": 0
+    "rank": 71,
+    "rank_delta_7d": -1
   },
   "openhands/openhands": {
     "delta_7d": 0,
@@ -2075,8 +2075,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 146,
-    "rank_delta_7d": -1
+    "rank": 147,
+    "rank_delta_7d": -2
   },
   "paperless-ngx/paperless-ngx": {
     "delta_7d": 0,
@@ -2719,8 +2719,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 71,
-    "rank_delta_7d": 0
+    "rank": 70,
+    "rank_delta_7d": 1
   },
   "stretchr/testify": {
     "delta_7d": 0,
@@ -2803,8 +2803,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 147,
-    "rank_delta_7d": -1
+    "rank": 146,
+    "rank_delta_7d": 0
   },
   "tanstack/table": {
     "delta_7d": 0,

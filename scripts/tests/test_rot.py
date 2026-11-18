@@ -3,6 +3,7 @@ import json
 import os
 import re
 import tempfile
+import time
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -297,6 +298,29 @@ class PrepareTest(unittest.TestCase):
             self.run_prepare(g, check)
         self.assertEqual(Path(self.path).read_text(), before)
         self.assertEqual(writes(g), [])
+
+    def test_rate_limit_is_waited_out_then_the_entry_retried(self):
+        hits = []
+
+        def check(full, gh, now, mode, **kw):
+            if full == "bob/other" and not hits:
+                hits.append(full)
+                raise RateLimited(0)
+            return warn(full)
+
+        g = FakeGitHub(routes())
+        plan = self.run_prepare(g, check)
+        self.assertEqual(g.slept, [0])
+        self.assertEqual(kinds([Action(**a) for a in plan["actions"]]), [("warn", "alice/tool"), ("warn", "bob/other")])
+
+    def test_rate_limit_over_an_hour_away_aborts_without_waiting(self):
+        def check(full, gh, now, mode, **kw):
+            raise RateLimited(int(time.time()) + 2 * 3600)
+
+        g = FakeGitHub(routes())
+        with self.assertRaises(RateLimited):
+            self.run_prepare(g, check)
+        self.assertEqual(g.slept, [])
 
     def test_undecided_repo_is_skipped_not_failed(self):
         def check(full, gh, now, mode, **kw):

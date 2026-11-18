@@ -12,13 +12,14 @@ import logging
 import os
 import re
 import sys
+import time
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from scripts.devstream.discussions import REMOVED_PREFIX
 from scripts.devstream.entries import DEFAULT_PATH, find, load, normalize_repo, save, sort_key
-from scripts.devstream.gh import GitHub, GitHubError
+from scripts.devstream.gh import GitHub, GitHubError, RateLimited
 from scripts.devstream.license_detect import extra_licenses_for
 from scripts.devstream.quality import (
     MSG_GONE,
@@ -34,6 +35,8 @@ from scripts.devstream.stats import ensure_branch, read_json, update_json
 from scripts.validate_data import validate
 
 CHECKED = {"live", "warned", "archived"}
+# GitHub's primary limit resets hourly; a longer wait than that is something else.
+MAX_WAIT = 3600
 GRACE = timedelta(days=30)
 # A second sighting this much later confirms a removal, so a blip never deletes an entry.
 CONFIRM = timedelta(days=6)
@@ -234,26 +237,34 @@ def prepare(gh, now, path=DEFAULT_PATH, repo=None, check=check_repo) -> dict:
     undecided = {}
     replaced = []
     for e in targets:
-        try:
-            r = check(e["repo"], gh, now, "rot", allowed_extra=extra_licenses_for(e["category"]))
-            if e.get("repo_id") is None:
-                logging.warning("%s has no repo_id, so a replaced repo can't be caught", e["repo"])
-            elif r.exists and r.repo_id is not None and r.repo_id != e["repo_id"]:
-                got = r.repo_id
-                # The owner may have moved (an account rename) and someone took the old name: follow the ID.
-                moved = get_repo(gh, f"/repositories/{e['repo_id']}")
-                r = moved and check(moved["full_name"], gh, now, "rot", allowed_extra=extra_licenses_for(e["category"]))
-                if not (r and r.exists and r.repo_id == e["repo_id"]):
-                    # Someone else's repo at the listed name inherits nothing: it reads as gone, and a person decides.
-                    replaced.append({"repo": e["repo"], "kind": "replaced", "want": e["repo_id"], "got": got})
-                    r = RepoResult(False, e["repo"], [MSG_REPLACED], "remove")
-            results[e["repo"]] = r
-        except GitHubError as exc:
-            # An owner's IP allow list hides the repo from our token; that says nothing about the repo.
-            if not isinstance(exc, Undecided) and not (exc.status == 403 and "IP allow list" in exc.message):
-                raise
-            logging.warning("skipping %s: %s", e["repo"], exc)
-            undecided[normalize_repo(e["repo"])] = str(exc)
+        for waited in (False, True):
+            try:
+                r = check(e["repo"], gh, now, "rot", allowed_extra=extra_licenses_for(e["category"]))
+                if e.get("repo_id") is None:
+                    logging.warning("%s has no repo_id, so a replaced repo can't be caught", e["repo"])
+                elif r.exists and r.repo_id is not None and r.repo_id != e["repo_id"]:
+                    got = r.repo_id
+                    # The owner may have moved (an account rename) and someone took the old name: follow the ID.
+                    moved = get_repo(gh, f"/repositories/{e['repo_id']}")
+                    r = moved and check(moved["full_name"], gh, now, "rot", allowed_extra=extra_licenses_for(e["category"]))
+                    if not (r and r.exists and r.repo_id == e["repo_id"]):
+                        # Someone else's repo at the listed name inherits nothing: it reads as gone, and a person decides.
+                        replaced.append({"repo": e["repo"], "kind": "replaced", "want": e["repo_id"], "got": got})
+                        r = RepoResult(False, e["repo"], [MSG_REPLACED], "remove")
+                results[e["repo"]] = r
+            except GitHubError as exc:
+                # An owner's IP allow list hides the repo from our token; that says nothing about the repo.
+                if not isinstance(exc, Undecided) and not (exc.status == 403 and "IP allow list" in exc.message):
+                    raise
+                logging.warning("skipping %s: %s", e["repo"], exc)
+                undecided[normalize_repo(e["repo"])] = str(exc)
+            except RateLimited as exc:
+                # Past ~700 entries the check outruns the hourly budget: wait for the reset, then retry this entry once.
+                if waited or exc.reset_at - time.time() > MAX_WAIT:
+                    raise
+                gh.sleep(max(0, exc.reset_at - time.time()))
+                continue
+            break
     review = []
     if repo is None:
         try:

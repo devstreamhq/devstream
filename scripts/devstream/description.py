@@ -3,7 +3,9 @@ import unicodedata
 from pathlib import Path
 
 MIN_LEN, MAX_LEN = 10, 140
-FORBIDDEN = set("<>[]()`*_#")
+FORBIDDEN = set("<>[]()`*_")
+# Only "#" straight after a letter is a name like C# or F#; anywhere else it is a heading or an issue link.
+HASH = re.compile(r"(?<![^\W\d_])#")
 EMOJI = re.compile("[\U0001f000-\U0001faff\u2600-\u27bf]")
 VARIATION = re.compile("[\ufe00-\ufe0f]")
 ZWJ = "\u200d"
@@ -114,8 +116,8 @@ def clean_description(text: str) -> tuple[str | None, str | None]:
         return None, "Descriptions can't include links."
     if "@" in t:
         return None, "Descriptions can't mention people or teams."
-    if FORBIDDEN & set(t):
-        return None, "Descriptions can't include these characters: < > [ ] ( ) ` * _ #"
+    if FORBIDDEN & set(t) or HASH.search(t):
+        return None, "Descriptions can't include < > [ ] ( ) ` * or _, and # only in a name like C#."
     if any(w.isupper() and len(w) > 5 for w in re.findall(r"[^\W\d_]+", t)):
         return None, "Descriptions can't have long words in ALL CAPS."
     if BLOCKED.search(t.casefold()):

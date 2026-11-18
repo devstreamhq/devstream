@@ -82,6 +82,11 @@ class DescriptionTest(unittest.TestCase):
         for c in "<>[]()`*_#":
             bad(f"A tool with a {c} in the text here")
 
+    def test_hash_only_after_a_letter(self):
+        ok("A fast JSON parser for C# and F# projects")
+        for t in ("Fixes #123 and more in the tool", "A tool ## for headings here", "Ranked 1# among all the tools", "A tool for C_# and the rest"):
+            bad(t)
+
     def test_emoji_runs(self):
         ok("A neat tool \U0001F600\U0001F600 for people")
         bad("A neat tool \U0001F600\U0001F600\U0001F600 for people")

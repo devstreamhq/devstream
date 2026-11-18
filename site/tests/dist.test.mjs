@@ -154,3 +154,25 @@ test("the Trending tab marks exactly the rows trending() allows", async () => {
     );
   }
 });
+
+test("robots.txt, sitemap.xml and 404.html are real files", () => {
+  assert.match(
+    read("robots.txt"),
+    /Sitemap: https:\/\/devstream\.jamesconway\.dev\/sitemap\.xml/,
+  );
+  const sitemap = read("sitemap.xml");
+  const cats = JSON.parse(
+    readFileSync(join(fixtures, "categories.json"), "utf8"),
+  );
+  for (const p of [
+    "/",
+    "/how-it-works/",
+    "/archived/",
+    ...cats.map((c) => `/category/${c.slug}/`),
+  ])
+    assert.ok(
+      sitemap.includes(`<loc>https://devstream.jamesconway.dev${p}</loc>`),
+      p,
+    );
+  assert.ok(read("404.html").includes("Page not found"));
+});

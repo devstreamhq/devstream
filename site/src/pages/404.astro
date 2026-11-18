@@ -1,0 +1,13 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<!-- Without a 404.html, Cloudflare Pages serves the home page with a 200 for every unknown path. -->
+<Base title="Page not found · DevStream" description="There is no page at this address.">
+  <section class="hero">
+    <div class="wrap">
+      <h1>Page not found</h1>
+      <p>There's nothing at this address. <a href="/">Back to the leaderboard</a>.</p>
+    </div>
+  </section>
+</Base>

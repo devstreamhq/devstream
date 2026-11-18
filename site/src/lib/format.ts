@@ -3,6 +3,15 @@ import octicons from "@primer/octicons";
 export const icon = (name: keyof typeof octicons, cls = "") =>
   octicons[name].toSVG({ "aria-hidden": "true", class: `oc ${cls}`.trim() });
 
+// A per-row icon is defined once with iconDef and drawn with iconUse, so 455 rows don't carry 455 copies of its path.
+export const iconDef = (name: keyof typeof octicons) =>
+  `<svg hidden><symbol id="i-${name}" viewBox="0 0 ${octicons[name].heights[16].width} 16">${octicons[name].heights[16].path}</symbol></svg>`;
+
+export const iconUse = (name: keyof typeof octicons, cls = "") => {
+  const w = octicons[name].heights[16].width;
+  return `<svg width="${w}" height="16" viewBox="0 0 ${w} 16" class="octicon octicon-${name} ${`oc ${cls}`.trim()}" aria-hidden="true"><use href="#i-${name}"></use></svg>`;
+};
+
 export const num = (n: number) => n.toLocaleString("en-US");
 
 export const compact = (n: number) =>

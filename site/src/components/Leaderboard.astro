@@ -1,7 +1,7 @@
 ---
 import type { Category, SiteEntry } from "../lib/data.ts";
 import { isFlagged, languages, trending } from "../lib/data.ts";
-import { ago, compact, icon, num, pct } from "../lib/format.ts";
+import { ago, compact, icon, iconDef, iconUse, num, pct } from "../lib/format.ts";
 
 interface Props {
   entries: SiteEntry[];
@@ -71,6 +71,7 @@ const split = (repo: string) => {
       <p class="count" id="count" aria-live="polite">{entries.length} {entries.length === 1 ? "repo" : "repos"}</p>
     </div>
 
+    <Fragment set:html={iconDef("thumbsup")} />
     <div class="table" id="panel" role="tabpanel" aria-labelledby="tab-top">
       {
         entries.length === 0 ? (
@@ -182,12 +183,12 @@ const split = (repo: string) => {
                     <td class="act">
                       {e.discussion_url ? (
                         <a class="like" href={e.discussion_url} aria-label={`Like ${e.repo} on GitHub`}>
-                          <Fragment set:html={icon("thumbsup")} />
+                          <Fragment set:html={iconUse("thumbsup")} />
                           <span class="t">Like</span>
                         </a>
                       ) : (
                         <span class="like" aria-disabled="true">
-                          <Fragment set:html={icon("thumbsup")} />
+                          <Fragment set:html={iconUse("thumbsup")} />
                           <span class="t">Likes open soon</span>
                         </span>
                       )}

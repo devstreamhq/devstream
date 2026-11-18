@@ -80,15 +80,15 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 107,
-    "rank_delta_7d": 0
+    "rank": 108,
+    "rank_delta_7d": -1
   },
   "alamofire/alamofire": {
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 181,
-    "rank_delta_7d": 0
+    "rank": 182,
+    "rank_delta_7d": -1
   },
   "allthingssmitty/css-protips": {
     "delta_7d": 0,
@@ -591,8 +591,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 108,
-    "rank_delta_7d": 1
+    "rank": 107,
+    "rank_delta_7d": 2
   },
   "crewaiinc/crewai": {
     "delta_7d": 0,
@@ -899,8 +899,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 182,
-    "rank_delta_7d": 0
+    "rank": 181,
+    "rank_delta_7d": 1
   },
   "felangel/bloc": {
     "delta_7d": 0,
@@ -2005,8 +2005,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 70,
-    "rank_delta_7d": 0
+    "rank": 71,
+    "rank_delta_7d": -1
   },
   "openhands/openhands": {
     "delta_7d": 0,
@@ -2719,8 +2719,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 71,
-    "rank_delta_7d": 0
+    "rank": 70,
+    "rank_delta_7d": 1
   },
   "stretchr/testify": {
     "delta_7d": 0,

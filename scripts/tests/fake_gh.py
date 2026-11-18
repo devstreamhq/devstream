@@ -55,13 +55,15 @@ class FakeGitHub:
 
     .last_redirect is reset at the start of every call.
 
-    .calls records (method, path, body) for every request.
+    .calls records (method, path, body) for every request; .slept, every sleep.
     """
 
     def __init__(self, routes: dict[str, object]):
         self.routes = routes
         self.calls: list[tuple[str, str, object]] = []
         self.last_redirect: str | None = None
+        self.slept: list[float] = []
+        self.sleep = self.slept.append
 
     def _find(self, method, path, params, body, write=False, hops=0):
         full = path

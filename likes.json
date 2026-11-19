@@ -1057,11 +1057,11 @@
     "rank_delta_7d": 0
   },
   "go-gitea/gitea": {
-    "delta_7d": 0,
+    "delta_7d": 1,
     "flagged": false,
-    "likes": 1,
-    "rank": 17,
-    "rank_delta_7d": 0
+    "likes": 2,
+    "rank": 6,
+    "rank_delta_7d": 11
   },
   "goauthentik/authentik": {
     "delta_7d": 0,
@@ -1088,8 +1088,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 1,
-    "rank": 4,
-    "rank_delta_7d": 0
+    "rank": 8,
+    "rank_delta_7d": -4
   },
   "golangci/golangci-lint": {
     "delta_7d": 0,
@@ -1130,8 +1130,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 1,
-    "rank": 14,
-    "rank_delta_7d": 0
+    "rank": 16,
+    "rank_delta_7d": -2
   },
   "grafana/k6": {
     "delta_7d": 0,
@@ -1505,11 +1505,11 @@
     "rank_delta_7d": 0
   },
   "kubernetes/kubernetes": {
-    "delta_7d": 0,
+    "delta_7d": 1,
     "flagged": false,
-    "likes": 1,
-    "rank": 6,
-    "rank_delta_7d": 0
+    "likes": 2,
+    "rank": 3,
+    "rank_delta_7d": 3
   },
   "labstack/echo": {
     "delta_7d": 0,
@@ -1687,11 +1687,11 @@
     "rank_delta_7d": -1
   },
   "microsoft/playwright": {
-    "delta_7d": 0,
+    "delta_7d": 1,
     "flagged": false,
-    "likes": 1,
-    "rank": 10,
-    "rank_delta_7d": 0
+    "likes": 2,
+    "rank": 4,
+    "rank_delta_7d": 6
   },
   "microsoft/typescript": {
     "delta_7d": 0,
@@ -1900,8 +1900,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 1,
-    "rank": 8,
-    "rank_delta_7d": 0
+    "rank": 11,
+    "rank_delta_7d": -3
   },
   "nrwl/nx": {
     "delta_7d": 0,
@@ -1977,8 +1977,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 1,
-    "rank": 5,
-    "rank_delta_7d": 0
+    "rank": 9,
+    "rank_delta_7d": -4
   },
   "openai/openai-python": {
     "delta_7d": 0,
@@ -2268,11 +2268,11 @@
     "rank_delta_7d": 0
   },
   "prometheus/prometheus": {
-    "delta_7d": 0,
+    "delta_7d": 1,
     "flagged": false,
-    "likes": 1,
-    "rank": 15,
-    "rank_delta_7d": 0
+    "likes": 2,
+    "rank": 5,
+    "rank_delta_7d": 10
   },
   "psf/requests": {
     "delta_7d": 0,
@@ -2285,8 +2285,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 1,
-    "rank": 12,
-    "rank_delta_7d": 0
+    "rank": 14,
+    "rank_delta_7d": -2
   },
   "pytest-dev/pytest": {
     "delta_7d": 0,
@@ -2380,9 +2380,9 @@
     "rank_delta_7d": -1
   },
   "react/react": {
-    "delta_7d": 0,
+    "delta_7d": 1,
     "flagged": false,
-    "likes": 3,
+    "likes": 4,
     "rank": 1,
     "rank_delta_7d": 0
   },
@@ -2390,8 +2390,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 1,
-    "rank": 7,
-    "rank_delta_7d": 0
+    "rank": 10,
+    "rank_delta_7d": -3
   },
   "reactivex/rxandroid": {
     "delta_7d": 0,
@@ -2705,8 +2705,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 1,
-    "rank": 16,
-    "rank_delta_7d": 0
+    "rank": 17,
+    "rank_delta_7d": -1
   },
   "steven2358/awesome-generative-ai": {
     "delta_7d": 0,
@@ -2733,15 +2733,15 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 1,
-    "rank": 9,
-    "rank_delta_7d": 0
+    "rank": 12,
+    "rank_delta_7d": -3
   },
   "sveltejs/svelte": {
     "delta_7d": 0,
     "flagged": false,
     "likes": 1,
-    "rank": 13,
-    "rank_delta_7d": 0
+    "rank": 15,
+    "rank_delta_7d": -2
   },
   "swagger-api/swagger-ui": {
     "delta_7d": 0,
@@ -2796,8 +2796,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 1,
-    "rank": 11,
-    "rank_delta_7d": 0
+    "rank": 13,
+    "rank_delta_7d": -2
   },
   "tanstack/query": {
     "delta_7d": 0,
@@ -3020,8 +3020,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 1,
-    "rank": 3,
-    "rank_delta_7d": 0
+    "rank": 7,
+    "rank_delta_7d": -4
   },
   "vercel/swr": {
     "delta_7d": 0,

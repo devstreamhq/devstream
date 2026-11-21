@@ -920,8 +920,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 302,
-    "rank_delta_7d": 0
+    "rank": 301,
+    "rank_delta_7d": 1
   },
   "fleetdm/fleet": {
     "delta_7d": 0,
@@ -1109,8 +1109,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 195,
-    "rank_delta_7d": 0
+    "rank": 196,
+    "rank_delta_7d": -1
   },
   "google/material-design-icons": {
     "delta_7d": 0,
@@ -1956,8 +1956,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 301,
-    "rank_delta_7d": -1
+    "rank": 302,
+    "rank_delta_7d": -2
   },
   "open-telemetry/opentelemetry-collector": {
     "delta_7d": 0,
@@ -2551,8 +2551,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 196,
-    "rank_delta_7d": 0
+    "rank": 195,
+    "rank_delta_7d": 1
   },
   "seleniumhq/selenium": {
     "delta_7d": 0,

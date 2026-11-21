@@ -32,7 +32,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 259,
-    "rank_delta_7d": 4
+    "rank_delta_7d": 3
   },
   "adguardteam/adguardhome": {
     "delta_7d": 0,
@@ -417,7 +417,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 323,
-    "rank_delta_7d": -1
+    "rank_delta_7d": 0
   },
   "certbot/certbot": {
     "delta_7d": 0,
@@ -1173,7 +1173,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 161,
-    "rank_delta_7d": -1
+    "rank_delta_7d": 0
   },
   "helm/helm": {
     "delta_7d": 0,
@@ -1453,7 +1453,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 264,
-    "rank_delta_7d": -2
+    "rank_delta_7d": -1
   },
   "keycloak/keycloak": {
     "delta_7d": 0,
@@ -1474,7 +1474,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 190,
-    "rank_delta_7d": 0
+    "rank_delta_7d": -1
   },
   "kong/insomnia": {
     "delta_7d": 0,
@@ -1530,7 +1530,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 167,
-    "rank_delta_7d": 2
+    "rank_delta_7d": 1
   },
   "langfuse/langfuse": {
     "delta_7d": 0,
@@ -1586,7 +1586,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 145,
-    "rank_delta_7d": 1
+    "rank_delta_7d": 0
   },
   "lysine-dev/okhttp": {
     "delta_7d": 0,
@@ -1726,7 +1726,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 159,
-    "rank_delta_7d": 2
+    "rank_delta_7d": 1
   },
   "mjhea0/awesome-fastapi": {
     "delta_7d": 0,
@@ -2006,7 +2006,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 71,
-    "rank_delta_7d": -1
+    "rank_delta_7d": 0
   },
   "openhands/openhands": {
     "delta_7d": 0,
@@ -2041,7 +2041,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 248,
-    "rank_delta_7d": 1
+    "rank_delta_7d": 0
   },
   "openvoxproject/openvox": {
     "delta_7d": 0,
@@ -2195,7 +2195,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 189,
-    "rank_delta_7d": 0
+    "rank_delta_7d": 1
   },
   "portainer/portainer": {
     "delta_7d": 0,
@@ -2377,7 +2377,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 169,
-    "rank_delta_7d": -1
+    "rank_delta_7d": 0
   },
   "react/react": {
     "delta_7d": 1,
@@ -2426,7 +2426,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 279,
-    "rank_delta_7d": 0
+    "rank_delta_7d": -1
   },
   "reduxjs/redux": {
     "delta_7d": 0,
@@ -2475,7 +2475,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 322,
-    "rank_delta_7d": 1
+    "rank_delta_7d": 0
   },
   "rossant/awesome-math": {
     "delta_7d": 0,
@@ -2720,7 +2720,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 70,
-    "rank_delta_7d": 1
+    "rank_delta_7d": 0
   },
   "stretchr/testify": {
     "delta_7d": 0,
@@ -2769,7 +2769,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 249,
-    "rank_delta_7d": -1
+    "rank_delta_7d": 0
   },
   "syncthing/syncthing": {
     "delta_7d": 0,
@@ -2804,7 +2804,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 146,
-    "rank_delta_7d": -1
+    "rank_delta_7d": 0
   },
   "tanstack/table": {
     "delta_7d": 0,
@@ -2993,7 +2993,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 278,
-    "rank_delta_7d": 0
+    "rank_delta_7d": 1
   },
   "vapor/vapor": {
     "delta_7d": 0,

@@ -32,7 +32,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 259,
-    "rank_delta_7d": 3
+    "rank_delta_7d": 2
   },
   "adguardteam/adguardhome": {
     "delta_7d": 0,
@@ -95,7 +95,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 264,
-    "rank_delta_7d": -3
+    "rank_delta_7d": -2
   },
   "alpinejs/alpine": {
     "delta_7d": 0,
@@ -298,7 +298,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 240,
-    "rank_delta_7d": 0
+    "rank_delta_7d": -1
   },
   "avajs/ava": {
     "delta_7d": 0,
@@ -354,7 +354,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 219,
-    "rank_delta_7d": 1
+    "rank_delta_7d": 2
   },
   "biomejs/biome": {
     "delta_7d": 0,
@@ -1082,7 +1082,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 75,
-    "rank_delta_7d": -1
+    "rank_delta_7d": 0
   },
   "golang/go": {
     "delta_7d": 0,
@@ -1207,7 +1207,7 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 236,
+    "rank": 237,
     "rank_delta_7d": -1
   },
   "huggingface/diffusers": {
@@ -1879,8 +1879,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 237,
-    "rank_delta_7d": 6
+    "rank": 236,
+    "rank_delta_7d": 7
   },
   "nginxproxymanager/nginx-proxy-manager": {
     "delta_7d": 0,
@@ -2258,7 +2258,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 235,
-    "rank_delta_7d": 1
+    "rank_delta_7d": 0
   },
   "prometheus/node_exporter": {
     "delta_7d": 0,
@@ -2321,7 +2321,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 221,
-    "rank_delta_7d": 0
+    "rank_delta_7d": -1
   },
   "questdb/questdb": {
     "delta_7d": 0,
@@ -2776,7 +2776,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 74,
-    "rank_delta_7d": 1
+    "rank_delta_7d": 0
   },
   "tabler/tabler-icons": {
     "delta_7d": 0,
@@ -3028,7 +3028,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 241,
-    "rank_delta_7d": -2
+    "rank_delta_7d": -1
   },
   "vercel/turborepo": {
     "delta_7d": 0,

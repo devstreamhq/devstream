@@ -227,8 +227,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 231,
-    "rank_delta_7d": 0
+    "rank": 230,
+    "rank_delta_7d": 1
   },
   "apache/spark": {
     "delta_7d": 0,
@@ -1879,8 +1879,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 236,
-    "rank_delta_7d": 7
+    "rank": 235,
+    "rank_delta_7d": 8
   },
   "nginxproxymanager/nginx-proxy-manager": {
     "delta_7d": 0,
@@ -2257,8 +2257,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 235,
-    "rank_delta_7d": 0
+    "rank": 236,
+    "rank_delta_7d": -1
   },
   "prometheus/node_exporter": {
     "delta_7d": 0,
@@ -2299,8 +2299,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 230,
-    "rank_delta_7d": 0
+    "rank": 231,
+    "rank_delta_7d": -1
   },
   "python/cpython": {
     "delta_7d": 0,

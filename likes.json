@@ -4,7 +4,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 261,
-    "rank_delta_7d": -1
+    "rank_delta_7d": 0
   },
   "acassen/keepalived": {
     "delta_7d": 0,
@@ -32,7 +32,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 260,
-    "rank_delta_7d": 1
+    "rank_delta_7d": 0
   },
   "adguardteam/adguardhome": {
     "delta_7d": 0,
@@ -66,8 +66,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 188,
-    "rank_delta_7d": 0
+    "rank": 187,
+    "rank_delta_7d": 1
   },
   "akullpp/awesome-java": {
     "delta_7d": 0,
@@ -81,14 +81,14 @@
     "flagged": false,
     "likes": 0,
     "rank": 108,
-    "rank_delta_7d": -1
+    "rank_delta_7d": 0
   },
   "alamofire/alamofire": {
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
     "rank": 182,
-    "rank_delta_7d": -1
+    "rank_delta_7d": 0
   },
   "allthingssmitty/css-protips": {
     "delta_7d": 0,
@@ -262,8 +262,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 454,
-    "rank_delta_7d": 0
+    "rank": 455,
+    "rank_delta_7d": -1
   },
   "aristocratos/btop": {
     "delta_7d": 0,
@@ -368,14 +368,14 @@
     "flagged": false,
     "likes": 0,
     "rank": 204,
-    "rank_delta_7d": 2
+    "rank_delta_7d": 1
   },
   "bridgecrewio/checkov": {
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 455,
-    "rank_delta_7d": 0
+    "rank": 456,
+    "rank_delta_7d": -1
   },
   "burntsushi/ripgrep": {
     "delta_7d": 0,
@@ -431,14 +431,14 @@
     "flagged": false,
     "likes": 0,
     "rank": 423,
-    "rank_delta_7d": -1
+    "rank_delta_7d": 0
   },
   "chakra-ui/chakra-ui": {
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 187,
-    "rank_delta_7d": 0
+    "rank": 188,
+    "rank_delta_7d": -1
   },
   "chalarangelo/30-seconds-of-code": {
     "delta_7d": 0,
@@ -480,7 +480,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 422,
-    "rank_delta_7d": 1
+    "rank_delta_7d": 0
   },
   "chentsulin/awesome-graphql": {
     "delta_7d": 0,
@@ -566,6 +566,13 @@
     "rank": 42,
     "rank_delta_7d": 0
   },
+  "conn3xorg/conn3x": {
+    "delta_7d": 0,
+    "flagged": false,
+    "likes": 0,
+    "rank": 454,
+    "rank_delta_7d": 0
+  },
   "containerd/containerd": {
     "delta_7d": 0,
     "flagged": false,
@@ -578,7 +585,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 215,
-    "rank_delta_7d": -1
+    "rank_delta_7d": 0
   },
   "conventional-changelog/commitlint": {
     "delta_7d": 0,
@@ -592,14 +599,14 @@
     "flagged": false,
     "likes": 0,
     "rank": 107,
-    "rank_delta_7d": 1
+    "rank_delta_7d": 0
   },
   "crewaiinc/crewai": {
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
     "rank": 120,
-    "rank_delta_7d": 1
+    "rank_delta_7d": 0
   },
   "crowdsecurity/crowdsec": {
     "delta_7d": 0,
@@ -760,7 +767,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 216,
-    "rank_delta_7d": -1
+    "rank_delta_7d": 0
   },
   "duckdb/duckdb": {
     "delta_7d": 0,
@@ -900,7 +907,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 181,
-    "rank_delta_7d": 1
+    "rank_delta_7d": 0
   },
   "felangel/bloc": {
     "delta_7d": 0,
@@ -1047,7 +1054,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 251,
-    "rank_delta_7d": 3
+    "rank_delta_7d": 2
   },
   "glanceapp/glance": {
     "delta_7d": 0,
@@ -1124,7 +1131,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 255,
-    "rank_delta_7d": -2
+    "rank_delta_7d": -1
   },
   "grafana/grafana": {
     "delta_7d": 0,
@@ -1355,7 +1362,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 79,
-    "rank_delta_7d": -1
+    "rank_delta_7d": 0
   },
   "jestjs/jest": {
     "delta_7d": 0,
@@ -1530,14 +1537,14 @@
     "flagged": false,
     "likes": 0,
     "rank": 167,
-    "rank_delta_7d": 1
+    "rank_delta_7d": 0
   },
   "langfuse/langfuse": {
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
     "rank": 205,
-    "rank_delta_7d": 0
+    "rank_delta_7d": 1
   },
   "laravel/framework": {
     "delta_7d": 0,
@@ -1740,7 +1747,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 420,
-    "rank_delta_7d": 1
+    "rank_delta_7d": 0
   },
   "mobxjs/mobx": {
     "delta_7d": 0,
@@ -1782,7 +1789,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 421,
-    "rank_delta_7d": -1
+    "rank_delta_7d": 0
   },
   "motiondivision/motion": {
     "delta_7d": 0,
@@ -1922,7 +1929,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 121,
-    "rank_delta_7d": -1
+    "rank_delta_7d": 0
   },
   "oai/openapi-specification": {
     "delta_7d": 0,
@@ -1992,7 +1999,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 54,
-    "rank_delta_7d": 1
+    "rank_delta_7d": 0
   },
   "openbao/openbao": {
     "delta_7d": 0,
@@ -2006,7 +2013,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 71,
-    "rank_delta_7d": -1
+    "rank_delta_7d": 0
   },
   "openhands/openhands": {
     "delta_7d": 0,
@@ -2223,7 +2230,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 303,
-    "rank_delta_7d": 1
+    "rank_delta_7d": 0
   },
   "prestodb/presto": {
     "delta_7d": 0,
@@ -2566,7 +2573,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 304,
-    "rank_delta_7d": -1
+    "rank_delta_7d": 0
   },
   "semaphoreui/semaphore": {
     "delta_7d": 0,
@@ -2615,7 +2622,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 168,
-    "rank_delta_7d": -1
+    "rank_delta_7d": 0
   },
   "sharkdp/hyperfine": {
     "delta_7d": 0,
@@ -2657,7 +2664,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 212,
-    "rank_delta_7d": 4
+    "rank_delta_7d": 2
   },
   "solido/awesome-flutter": {
     "delta_7d": 0,
@@ -2720,7 +2727,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 72,
-    "rank_delta_7d": -1
+    "rank_delta_7d": -2
   },
   "stretchr/testify": {
     "delta_7d": 0,
@@ -2818,7 +2825,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 55,
-    "rank_delta_7d": -1
+    "rank_delta_7d": 0
   },
   "temporalio/temporal": {
     "delta_7d": 0,
@@ -3042,7 +3049,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 78,
-    "rank_delta_7d": 1
+    "rank_delta_7d": 0
   },
   "vitessio/vitess": {
     "delta_7d": 0,

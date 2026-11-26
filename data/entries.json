@@ -1055,6 +1055,19 @@
       "added_by_seed": true
     },
     {
+      "repo": "conn3xorg/conn3x",
+      "repo_id": 1431839745,
+      "category": "devops-infra",
+      "description": "One binary to provision and configure your infrastructure.",
+      "submitted_by": "jamesconwaydev",
+      "submitted_at": "2026-11-26T00:03:03Z",
+      "issue": 569,
+      "status": "live",
+      "warned_at": null,
+      "superseded_by": null,
+      "added_by_seed": false
+    },
+    {
       "repo": "containerd/containerd",
       "repo_id": 46089560,
       "category": "devops-infra",

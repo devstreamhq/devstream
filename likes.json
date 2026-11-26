@@ -220,8 +220,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 408,
-    "rank_delta_7d": -1
+    "rank": 409,
+    "rank_delta_7d": -2
   },
   "apache/kafka": {
     "delta_7d": 0,
@@ -885,8 +885,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 409,
-    "rank_delta_7d": -1
+    "rank": 408,
+    "rank_delta_7d": 0
   },
   "fastapi/fastapi": {
     "delta_7d": 0,

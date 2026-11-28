@@ -4,7 +4,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 263,
-    "rank_delta_7d": -2
+    "rank_delta_7d": -3
   },
   "acassen/keepalived": {
     "delta_7d": 0,
@@ -95,7 +95,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 265,
-    "rank_delta_7d": -3
+    "rank_delta_7d": -2
   },
   "alpinejs/alpine": {
     "delta_7d": 0,
@@ -116,7 +116,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 165,
-    "rank_delta_7d": -2
+    "rank_delta_7d": -1
   },
   "android/compose-samples": {
     "delta_7d": 0,
@@ -298,7 +298,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 241,
-    "rank_delta_7d": -2
+    "rank_delta_7d": -1
   },
   "avajs/ava": {
     "delta_7d": 0,
@@ -466,7 +466,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 298,
-    "rank_delta_7d": 0
+    "rank_delta_7d": -1
   },
   "chartjs/chart.js": {
     "delta_7d": 0,
@@ -515,7 +515,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 145,
-    "rank_delta_7d": -1
+    "rank_delta_7d": -2
   },
   "cline/cline": {
     "delta_7d": 0,
@@ -598,8 +598,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 108,
-    "rank_delta_7d": -1
+    "rank": 107,
+    "rank_delta_7d": 0
   },
   "crewaiinc/crewai": {
     "delta_7d": 0,
@@ -620,7 +620,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 146,
-    "rank_delta_7d": -3
+    "rank_delta_7d": -2
   },
   "d3/d3": {
     "delta_7d": 0,
@@ -724,8 +724,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 70,
-    "rank_delta_7d": -1
+    "rank": 71,
+    "rank_delta_7d": -2
   },
   "dokku/dokku": {
     "delta_7d": 0,
@@ -830,7 +830,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 259,
-    "rank_delta_7d": 4
+    "rank_delta_7d": 3
   },
   "eslint/eslint": {
     "delta_7d": 0,
@@ -850,8 +850,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 194,
-    "rank_delta_7d": 0
+    "rank": 195,
+    "rank_delta_7d": -1
   },
   "excalidraw/excalidraw": {
     "delta_7d": 0,
@@ -1075,7 +1075,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 286,
-    "rank_delta_7d": 0
+    "rank_delta_7d": -1
   },
   "gofiber/fiber": {
     "delta_7d": 0,
@@ -1131,7 +1131,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 256,
-    "rank_delta_7d": -2
+    "rank_delta_7d": -1
   },
   "grafana/grafana": {
     "delta_7d": 0,
@@ -1404,7 +1404,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 164,
-    "rank_delta_7d": 0
+    "rank_delta_7d": -1
   },
   "juliangarnier/anime": {
     "delta_7d": 0,
@@ -1446,7 +1446,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 279,
-    "rank_delta_7d": -3
+    "rank_delta_7d": -2
   },
   "keras-team/keras": {
     "delta_7d": 0,
@@ -1487,8 +1487,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 195,
-    "rank_delta_7d": -2
+    "rank": 194,
+    "rank_delta_7d": -1
   },
   "kong/kong": {
     "delta_7d": 0,
@@ -1642,7 +1642,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 287,
-    "rank_delta_7d": -2
+    "rank_delta_7d": -1
   },
   "meirwah/awesome-incident-response": {
     "delta_7d": 0,
@@ -1669,8 +1669,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 107,
-    "rank_delta_7d": -1
+    "rank": 108,
+    "rank_delta_7d": -2
   },
   "mfornos/awesome-microservices": {
     "delta_7d": 0,
@@ -1823,8 +1823,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 71,
-    "rank_delta_7d": 1
+    "rank": 70,
+    "rank_delta_7d": 2
   },
   "mysql/mysql-server": {
     "delta_7d": 0,
@@ -1851,8 +1851,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 346,
-    "rank_delta_7d": -2
+    "rank": 345,
+    "rank_delta_7d": -1
   },
   "nestjs/nest": {
     "delta_7d": 0,
@@ -1866,7 +1866,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 255,
-    "rank_delta_7d": 0
+    "rank_delta_7d": -1
   },
   "netdata/netdata": {
     "delta_7d": 0,
@@ -1887,7 +1887,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 234,
-    "rank_delta_7d": 7
+    "rank_delta_7d": 5
   },
   "nginxproxymanager/nginx-proxy-manager": {
     "delta_7d": 0,
@@ -2012,8 +2012,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 73,
-    "rank_delta_7d": -2
+    "rank": 72,
+    "rank_delta_7d": -1
   },
   "openhands/openhands": {
     "delta_7d": 0,
@@ -2412,7 +2412,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 300,
-    "rank_delta_7d": -3
+    "rank_delta_7d": -2
   },
   "realm/realm-swift": {
     "delta_7d": 0,
@@ -2594,7 +2594,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 264,
-    "rank_delta_7d": -4
+    "rank_delta_7d": -3
   },
   "serhii-londar/open-source-mac-os-apps": {
     "delta_7d": 0,
@@ -2726,8 +2726,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 72,
-    "rank_delta_7d": -2
+    "rank": 73,
+    "rank_delta_7d": -3
   },
   "stretchr/testify": {
     "delta_7d": 0,
@@ -2874,7 +2874,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 277,
-    "rank_delta_7d": 0
+    "rank_delta_7d": -1
   },
   "traefik/traefik": {
     "delta_7d": 0,
@@ -3035,7 +3035,7 @@
     "flagged": false,
     "likes": 0,
     "rank": 242,
-    "rank_delta_7d": -2
+    "rank_delta_7d": -1
   },
   "vercel/turborepo": {
     "delta_7d": 0,
@@ -3062,8 +3062,8 @@
     "delta_7d": 0,
     "flagged": false,
     "likes": 0,
-    "rank": 345,
-    "rank_delta_7d": 1
+    "rank": 346,
+    "rank_delta_7d": 0
   },
   "vllm-project/vllm": {
     "delta_7d": 0,
